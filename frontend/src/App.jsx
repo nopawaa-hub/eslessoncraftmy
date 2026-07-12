@@ -444,20 +444,14 @@ function App() {
   }
 
   if (!currentUser) {
-    // TEMP: sign-in disabled for review — auto-login as demo user
-    const demoUser = { name: "Demo Teacher", email: "demo@test.com", role: "teacher" };
     return (
-      <div className="app-root" data-page={activePage}>
-        <Sidebar activePage={activePage} setActivePage={setActivePage} collapsed={collapsed} setCollapsed={setCollapsed} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
-        <div className="main-column">
-          <TopBar setMobileOpen={setMobileOpen} setActivePage={setActivePage} backendStatus={backendStatus} theme={theme} setTheme={setTheme} currentUser={demoUser} onLogout={handleLogout} />
-          <main className="page-wrap">{renderPage(context)}</main>
-        </div>
-        <button className="copilot-fab" onClick={() => setCopilotOpen((open) => !open)} aria-label="Toggle AI copilot">
-          {copilotOpen ? <X /> : <Sparkles />}
-        </button>
-        <AICopilot open={copilotOpen} setOpen={setCopilotOpen} setActivePage={setActivePage} />
-      </div>
+      <LoginScreen
+        backendStatus={backendStatus}
+        onLogin={handleLogin}
+        theme={theme}
+        setTheme={setTheme}
+        onDemoLogin={() => handleLogin({ token: "demo-token", user: { name: "Demo Teacher", email: "demo@test.com", role: "teacher" } })}
+      />
     );
   }
 
@@ -517,7 +511,7 @@ function AuthLoading({ theme }) {
   );
 }
 
-function LoginScreen({ backendStatus, onLogin, theme, setTheme }) {
+function LoginScreen({ backendStatus, onLogin, theme, setTheme, onDemoLogin }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [scriptReady, setScriptReady] = useState(false);
@@ -600,7 +594,7 @@ function LoginScreen({ backendStatus, onLogin, theme, setTheme }) {
                   if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
                     setError("Google sign-in prompt failed. Try clicking again or refreshing the page.");
                   }
-                });
+                 });
               }
             }}
           >
@@ -611,6 +605,16 @@ function LoginScreen({ backendStatus, onLogin, theme, setTheme }) {
               <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
             </svg>
             <span>{busy ? "Signing in…" : "Sign in with Google"}</span>
+          </button>
+        )}
+        {onDemoLogin && (
+          <button
+            type="button"
+            className="secondary-btn"
+            style={{ width: "100%", marginTop: "0.75rem", display: "flex", justifyContent: "center", alignItems: "center", gap: "0.5rem" }}
+            onClick={onDemoLogin}
+          >
+            <Sparkles size={16} /> Continue as Demo Teacher (Skip Sign-in)
           </button>
         )}
         {busy && <p className="auth-status">Signing you in...</p>}
