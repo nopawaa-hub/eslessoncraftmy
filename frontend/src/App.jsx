@@ -2176,7 +2176,7 @@ function AnalyticsPage({ lessons = [], classes = [], liveMode }) {
     </section>
   );
 
-  const classes = (
+  const classesView = (
     <section className="analytics-tab-grid">
       <AnalysisCard
         title="Class Comparison"
@@ -2326,7 +2326,7 @@ function AnalyticsPage({ lessons = [], classes = [], liveMode }) {
     </section>
   );
 
-  const tabViews = { Overview: overview, Students: students, Classes: classes, Topics: topics, Assessments: assessmentsView, Predictions: predictions, "AI Insights": insights };
+  const tabViews = { Overview: overview, Students: students, Classes: classesView, Topics: topics, Assessments: assessmentsView, Predictions: predictions, "AI Insights": insights };
 
   return (
     <div className="page-stack">
