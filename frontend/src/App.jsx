@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   AlertTriangle,
+  ArrowUp,
+  ArrowDown,
   ArrowRight,
   BarChart3,
   Bell,
