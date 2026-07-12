@@ -484,11 +484,11 @@ function renderPage(context) {
     case "timetable":
       return <TimetablePage {...context} />;
     case "materials":
-      return <MaterialsPage liveMode={context.liveMode} />;
+      return <MaterialsPage liveMode={context.liveMode} setActivePage={context.setActivePage} />;
     case "analytics":
-      return <AnalyticsPage lessons={context.lessons} classes={context.classes} liveMode={context.liveMode} />;
+      return <AnalyticsPage lessons={context.lessons} classes={context.classes} liveMode={context.liveMode} setActivePage={context.setActivePage} />;
     case "reports":
-      return <ReportsPage lessons={context.lessons} classes={context.classes} liveMode={context.liveMode} />;
+      return <ReportsPage lessons={context.lessons} classes={context.classes} liveMode={context.liveMode} setActivePage={context.setActivePage} />;
     case "settings":
       return <SettingsPage {...context} />;
     default:
@@ -705,10 +705,10 @@ function Dashboard({ setActivePage, setCopilotOpen, lessons = [], classes = [], 
   ] : summaryStats;
 
   const dynamicAnalytics = liveMode ? [
-    { title: "Reading Comprehension", value: lessons.length ? "82%" : "0%", note: lessons.length ? "Computed from active RPH objectives" : "Nothing to show, generate a reading lesson plan to track", tone: "emerald" },
-    { title: "Writing Accuracy", value: lessons.length ? "74%" : "0%", note: lessons.length ? "Writing skills aligned to KSSR" : "Nothing to show, generate a writing lesson plan to track", tone: "amber" },
-    { title: "Speaking Confidence", value: classes.length ? "78%" : "0%", note: classes.length ? "Based on oral PBD observations" : "Nothing to show, add a class roster to track", tone: "indigo" },
-    { title: "Pupils at Risk", value: classes.length ? "0" : "0", note: classes.length ? "No pupils flagged in current classes" : "Nothing to show, add a class roster to evaluate", tone: "rose" },
+    { title: "Reading Comprehension", value: lessons.length ? "82%" : "0%", note: lessons.length ? "Computed from active RPH objectives" : "Nothing to show, generate a reading lesson plan to track", tone: "emerald", actionLabel: "+ Create Lesson Plan", onAction: () => setActivePage("lesson-planner") },
+    { title: "Writing Accuracy", value: lessons.length ? "74%" : "0%", note: lessons.length ? "Writing skills aligned to KSSR" : "Nothing to show, generate a writing lesson plan to track", tone: "amber", actionLabel: "+ Create Lesson Plan", onAction: () => setActivePage("lesson-planner") },
+    { title: "Speaking Confidence", value: classes.length ? "78%" : "0%", note: classes.length ? "Based on oral PBD observations" : "Nothing to show, add a class roster to track", tone: "indigo", actionLabel: "+ Create Class", onAction: () => setActivePage("classes") },
+    { title: "Pupils at Risk", value: classes.length ? "0" : "0", note: classes.length ? "No pupils flagged in current classes" : "Nothing to show, add a class roster to evaluate", tone: "rose", actionLabel: "+ Create Class", onAction: () => setActivePage("classes") },
   ] : analyticsCards;
 
   const rphCount = lessons.length;
@@ -744,26 +744,47 @@ function Dashboard({ setActivePage, setCopilotOpen, lessons = [], classes = [], 
         <Card className="span-2" title="Today’s English schedule" subtitle={liveMode ? (classes.length ? `${classes.length} classes scheduled across your workspace` : "0 classes · 0 teaching hours") : "5 classes · 5 teaching hours"} action="Open full schedule" onAction={() => setActivePage("timetable")}>
           <div className="class-list">
             {todayItems.map((item) => <ClassRow key={item.id} item={item} onClick={() => setActivePage("timetable")} />)}
-            {!todayItems.length && <p className="body-copy">Nothing to show, you can start create your schedule.</p>}
+            {!todayItems.length && (
+              <div className="empty-state-box" style={{ padding: "20px 16px", textAlign: "center", border: "1px dashed var(--border)", borderRadius: 12, margin: "8px 0" }}>
+                <p className="body-copy" style={{ marginBottom: 12 }}>Nothing to show, you can start create your schedule.</p>
+                <button type="button" className="secondary-btn" onClick={() => setActivePage("timetable")} style={{ margin: "0 auto" }}><CalendarDays /> + Create Schedule</button>
+              </div>
+            )}
           </div>
         </Card>
         <Card title="AI Insights" subtitle={liveMode ? (lessons.length ? "Recommendations based on your RPH" : "No recommendations yet") : "English-only recommendations · 4 baru"}>
           <div className="insight-list">
             {(liveMode ? [] : aiInsights).map((item) => <Insight key={item.title} item={item} onClick={() => item.action.includes("Generate") ? setActivePage("lesson-planner") : item.action.includes("analytics") ? setActivePage("analytics") : setActivePage("pbd")} />)}
-            {liveMode && <p className="body-copy">Nothing to show, start creating lesson plans or PBD to generate AI insights.</p>}
+            {liveMode && (
+              <div className="empty-state-box" style={{ padding: "20px 16px", textAlign: "center", border: "1px dashed var(--border)", borderRadius: 12, margin: "8px 0" }}>
+                <p className="body-copy" style={{ marginBottom: 12 }}>Nothing to show, start creating lesson plans or PBD to generate AI insights.</p>
+                <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+                  <button type="button" className="primary-btn" onClick={() => setActivePage("lesson-planner")}><Sparkles /> + Lesson Plan</button>
+                  <button type="button" className="secondary-btn" onClick={() => setActivePage("pbd")}><BookOpen /> + PBD</button>
+                </div>
+              </div>
+            )}
           </div>
         </Card>
       </section>
 
       <section className="insight-strip">
-        {dynamicAnalytics.map((item) => <Metric key={item.title} title={item.title} value={item.value} note={item.note} tone={item.tone} />)}
+        {dynamicAnalytics.map((item) => <Metric key={item.title} title={item.title} value={item.value} note={item.note} tone={item.tone} actionLabel={item.actionLabel} onAction={item.onAction} />)}
       </section>
 
       <section className="dashboard-grid">
         <Card className="span-2" title="Recent English materials and RPH" subtitle="Upload, reuse and generate follow-up tasks with AI" action="Upload" onAction={() => setActivePage("materials")}>
           <div className="material-grid">
             {recent.map((item) => <MaterialTile key={item.title || item.name} item={item} />)}
-            {!recent.length && <p className="body-copy">Nothing to show, you can start create your lesson plan or upload materials.</p>}
+            {!recent.length && (
+              <div className="empty-state-box span-2" style={{ padding: "24px 16px", textAlign: "center", border: "1px dashed var(--border)", borderRadius: 12, width: "100%" }}>
+                <p className="body-copy" style={{ marginBottom: 14 }}>Nothing to show, you can start create your lesson plan or upload materials.</p>
+                <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+                  <button type="button" className="primary-btn" onClick={() => setActivePage("lesson-planner")}><Sparkles /> + Create Lesson Plan</button>
+                  <button type="button" className="secondary-btn" onClick={() => setActivePage("materials")}><Upload /> Upload Materials</button>
+                </div>
+              </div>
+            )}
           </div>
         </Card>
         <Card title="This week’s English goals">
@@ -1097,7 +1118,12 @@ function ClassesPage({ classes = [], refreshClasses, setSelectedClassId, setActi
                 <em>Open class database</em>
               </button>
             ))}
-            {!classes.length && <p className="body-copy">Nothing to show, you can start create your class.</p>}
+            {!classes.length && (
+              <div className="empty-state-box wide" style={{ padding: "24px 16px", textAlign: "center", border: "1px dashed var(--border)", borderRadius: 12, width: "100%" }}>
+                <p className="body-copy" style={{ marginBottom: 14 }}>Nothing to show, you can start create your class.</p>
+                <button type="button" className="primary-btn" onClick={() => setShowClassForm(true)} style={{ margin: "0 auto" }}><Plus /> + Create Class</button>
+              </div>
+            )}
           </div>
         </Card>
         {!showClassForm && notice && <div className="success-note span-2"><CheckCircle2 /> {notice}</div>}
@@ -1348,7 +1374,14 @@ function PBDPage({ classes = [], liveMode }) {
                     <td><input className="comment-input" value={record.remarks || ""} onChange={(event) => updateRecord(index, "remarks", event.target.value)} /></td>
                   </tr>
                 ))}
-                {!records.length && <tr><td colSpan="5" style={{ textAlign: "center", padding: 24, color: "var(--muted)" }}>Nothing to show, you can start select a class and template to record PBD.</td></tr>}
+                {!records.length && (
+                  <tr>
+                    <td colSpan="5" style={{ textAlign: "center", padding: 28 }}>
+                      <p className="body-copy" style={{ marginBottom: 12 }}>Nothing to show, you can start select a class and template to record PBD.</p>
+                      <button type="button" className="secondary-btn" onClick={() => setActivePage?.("classes")} style={{ margin: "0 auto" }}><Plus /> + Create Class</button>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -1356,23 +1389,33 @@ function PBDPage({ classes = [], liveMode }) {
         </Card>
       )}
 
-      {tab === "analytics" && <PBDOverview liveMode={liveMode} classes={classes} />}
+      {tab === "analytics" && <PBDOverview liveMode={liveMode} classes={classes} setActivePage={setActivePage} />}
     </div>
   );
 }
 
-function PBDOverview({ liveMode, classes = [] }) {
+function PBDOverview({ liveMode, classes = [], setActivePage }) {
   if (liveMode && !classes.length) {
     return (
       <div className="page-stack">
         <section className="stat-grid three">
-          <Metric title="Avg English TP" value="0" note="Nothing to show, start creating your class." tone="indigo" />
-          <Metric title="Evidence Completion" value="0%" note="Nothing to show, start recording PBD." tone="emerald" />
-          <Metric title="Vocabulary Risk" value="0" note="Nothing to show, start evaluating pupils." tone="rose" />
+          <Metric title="Avg English TP" value="0" note="Nothing to show, start creating your class." tone="indigo" actionLabel="+ Create Class" onAction={() => setActivePage?.("classes")} />
+          <Metric title="Evidence Completion" value="0%" note="Nothing to show, start recording PBD." tone="emerald" actionLabel="+ Record PBD" onAction={() => setActivePage?.("pbd")} />
+          <Metric title="Vocabulary Risk" value="0" note="Nothing to show, start evaluating pupils." tone="rose" actionLabel="+ Create Class" onAction={() => setActivePage?.("classes")} />
         </section>
         <section className="dashboard-grid">
-          <Card className="span-2" title="English TP Distribution"><p className="body-copy">Nothing to show, you can start create your class to view TP distribution.</p></Card>
-          <Card title="AI Insight"><p className="body-copy">Nothing to show, you can start record PBD assessments to receive AI pupil insights.</p></Card>
+          <Card className="span-2" title="English TP Distribution">
+            <div className="empty-state-box" style={{ padding: "16px", textAlign: "center" }}>
+              <p className="body-copy" style={{ marginBottom: 12 }}>Nothing to show, you can start create your class to view TP distribution.</p>
+              <button type="button" className="primary-btn" onClick={() => setActivePage?.("classes")} style={{ margin: "0 auto" }}><Plus /> + Create Class</button>
+            </div>
+          </Card>
+          <Card title="AI Insight">
+            <div className="empty-state-box" style={{ padding: "16px", textAlign: "center" }}>
+              <p className="body-copy" style={{ marginBottom: 12 }}>Nothing to show, you can start record PBD assessments to receive AI pupil insights.</p>
+              <button type="button" className="secondary-btn" onClick={() => setActivePage?.("pbd")} style={{ margin: "0 auto" }}><BookOpen /> + Record PBD</button>
+            </div>
+          </Card>
         </section>
       </div>
     );
@@ -2062,7 +2105,7 @@ function TimetablePage({ setActivePage, liveMode, classes: savedClasses = [], le
   );
 }
 
-function MaterialsPage({ liveMode }) {
+function MaterialsPage({ liveMode, setActivePage }) {
   const [items, setItems] = useState(liveMode ? [] : materials);
   const [notice, setNotice] = useState("");
   const uploadRef = useRef(null);
@@ -2087,18 +2130,32 @@ function MaterialsPage({ liveMode }) {
         <button className="primary-btn" onClick={() => uploadRef.current?.click()}><Upload /> Upload</button>
       </section>
       {notice && <div className="success-note"><CheckCircle2 /> {notice}</div>}
-      <section className="material-grid wide">{items.map((item) => <MaterialTile key={item.name} item={item} />)}{!items.length && <p className="body-copy">Nothing to show, you can start upload your materials.</p>}</section>
+      <section className="material-grid wide">
+        {items.map((item) => <MaterialTile key={item.name} item={item} />)}
+        {!items.length && (
+          <div className="empty-state-box wide" style={{ padding: "32px 16px", textAlign: "center", border: "1px dashed var(--border)", borderRadius: 12, width: "100%" }}>
+            <p className="body-copy" style={{ marginBottom: 14 }}>Nothing to show, you can start upload your materials.</p>
+            <button type="button" className="primary-btn" onClick={() => uploadRef.current?.click()} style={{ margin: "0 auto" }}><Upload /> + Upload Material</button>
+          </div>
+        )}
+      </section>
     </div>
   );
 }
 
-function AnalyticsPage({ lessons = [], classes = [], liveMode }) {
+function AnalyticsPage({ lessons = [], classes = [], liveMode, setActivePage }) {
   if (liveMode && !classes.length && !lessons.length) {
     return (
       <div className="page-stack">
         <PageHeader eyebrow="Analytics & Insights" title="Pedagogy & Student Analytics" subtitle="AI-driven classroom analytics and PBD mastery tracking." />
         <Card title="No Analytics Data Yet" subtitle="Create your first class roster and lesson plan to generate live analytics.">
-          <p className="body-copy">Nothing to show, you can start create your class and lesson plan to view interactive analytics.</p>
+          <div className="empty-state-box" style={{ padding: "24px 16px", textAlign: "center" }}>
+            <p className="body-copy" style={{ marginBottom: 16 }}>Nothing to show, you can start create your class and lesson plan to view interactive analytics.</p>
+            <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+              <button type="button" className="primary-btn" onClick={() => setActivePage?.("classes")}><Plus /> + Create Class</button>
+              <button type="button" className="secondary-btn" onClick={() => setActivePage?.("lesson-planner")}><Sparkles /> + Generate Lesson Plan</button>
+            </div>
+          </div>
         </Card>
       </div>
     );
@@ -2724,7 +2781,7 @@ function AnomalyChart() {
   );
 }
 
-function ReportsPage({ lessons = [], classes = [], compact = false, liveMode = false }) {
+function ReportsPage({ lessons = [], classes = [], compact = false, liveMode = false, setActivePage }) {
   const [classFilter, setClassFilter] = useState("all");
   const reports = ["Individual English PBD Report", "Full Class English Report", "TP Distribution Report", "Parent-Friendly English Progress Report"];
   const visibleLessons = classFilter === "all"
@@ -2749,7 +2806,15 @@ function ReportsPage({ lessons = [], classes = [], compact = false, liveMode = f
             {classes.map((schoolClass) => <option key={schoolClass._id} value={schoolClass._id}>{schoolClass.name} · {schoolClass.year}</option>)}
           </select>
         </label>
-        <div className="material-grid">{(visibleLessons.length ? visibleLessons : liveMode ? [] : materials.slice(0, 4)).map((item) => <MaterialTile key={item._id || item.name} item={{ name: item.title || item.name, subject: item.classId?.name || item.className || item.subject || "RPH", size: item.year || item.type, updated: String(item.createdAt || item.updated || "Ready").slice(0, 10) }} />)}{!visibleLessons.length && liveMode && <p className="body-copy">Nothing to show, you can start create your lesson plan to generate reports.</p>}</div>
+        <div className="material-grid">
+          {(visibleLessons.length ? visibleLessons : liveMode ? [] : materials.slice(0, 4)).map((item) => <MaterialTile key={item._id || item.name} item={{ name: item.title || item.name, subject: item.classId?.name || item.className || item.subject || "RPH", size: item.year || item.type, updated: String(item.createdAt || item.updated || "Ready").slice(0, 10) }} />)}
+          {!visibleLessons.length && liveMode && (
+            <div className="empty-state-box span-2" style={{ padding: "24px 16px", textAlign: "center", border: "1px dashed var(--border)", borderRadius: 12, width: "100%" }}>
+              <p className="body-copy" style={{ marginBottom: 14 }}>Nothing to show, you can start create your lesson plan to generate reports.</p>
+              <button type="button" className="primary-btn" onClick={() => setActivePage?.("lesson-planner")} style={{ margin: "0 auto" }}><Sparkles /> + Create Lesson Plan</button>
+            </div>
+          )}
+        </div>
       </Card>}
     </div>
   );
@@ -2992,9 +3057,10 @@ function EvaluatePage({ lessons = [], liveMode = false }) {
                     ))}
                   </select>
                 ) : (
-                  <p className="muted" style={{ padding: 12, border: "1px solid var(--border)", borderRadius: 10 }}>
-                    Nothing to show, you can start create your lesson plan in the Lesson Planner.
-                  </p>
+                  <div className="empty-state-box" style={{ padding: "16px", textAlign: "center", border: "1px dashed var(--border)", borderRadius: 10 }}>
+                    <p className="muted" style={{ marginBottom: 12 }}>Nothing to show, you can start create your lesson plan in the Lesson Planner.</p>
+                    <button type="button" className="primary-btn" onClick={() => setActivePage?.("lesson-planner")} style={{ margin: "0 auto" }}><Sparkles /> + Open Lesson Planner</button>
+                  </div>
                 )}
               </label>
             )}
@@ -3363,7 +3429,7 @@ function Tabs({ tabs, active, setActive }) {
   return <div className="tabs">{tabs.map((tab) => <button key={tab} className={active === tab ? "active" : ""} onClick={() => setActive(tab)}>{tab}</button>)}</div>;
 }
 
-function Metric({ title, value, note, tone }) {
+function Metric({ title, value, note, tone, onAction, actionLabel }) {
   const isZero = String(value) === "0%" || String(value) === "0" || Number(value) === 0;
   const barValue = isZero ? 0 : (typeof value === "number" ? Math.min(100, Math.max(0, value)) : (parseInt(String(value), 10) || (tone === "rose" ? 35 : 76)));
   return (
@@ -3373,6 +3439,11 @@ function Metric({ title, value, note, tone }) {
       <strong>{value}</strong>
       <small>{note}</small>
       <Progress value={barValue} />
+      {onAction && actionLabel && (
+        <button type="button" className="secondary-btn" onClick={onAction} style={{ marginTop: 12, width: "100%", justifyContent: "center", padding: "6px 12px", fontSize: "0.8rem" }}>
+          {actionLabel}
+        </button>
+      )}
     </div>
   );
 }
