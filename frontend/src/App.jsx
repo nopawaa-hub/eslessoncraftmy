@@ -2467,18 +2467,18 @@ function AnalyticsPage({ lessons = [], classes = [], students = [], liveMode, se
         <div className="photo-chart-card">
           <PhotoSegmentedProgress
             tracks={[
-              { title: "TP4+ Mastery Rate", value: Math.round(avgTP * 17) || 82, statLabel: `↑ ${totalStudentsCount * 400 + 198 || "12 983"}`, trend: "up", color: "emerald" },
-              { title: "Evidence Collection Rate", value: evidenceCompletion || 65, statLabel: `↓ ${totalL * 310 + 478 || "9 478"}`, trend: "down", color: "indigo" },
-              { title: "Student Engagement Index", value: Math.min(98, evidenceCompletion + 12) || 94, statLabel: `↑ ${totalStudentsCount * 480 + 323 || "15 323"}`, trend: "up", color: "cyan" },
+              { title: "TP4+ Mastery Rate", value: Math.round(avgTP * 17) || 82, statLabel: "↑ +12% vs Term 1", trend: "up", color: "emerald" },
+              { title: "Evidence Collection Rate", value: evidenceCompletion || 65, statLabel: "↑ +18 PBD Logged", trend: "up", color: "indigo" },
+              { title: "Student Engagement Index", value: Math.min(98, evidenceCompletion + 12) || 94, statLabel: "↑ 94% Active Rate", trend: "up", color: "cyan" },
             ]}
           />
         </div>
         <div className="photo-chart-card">
           <PhotoMiniStrip
             groups={[
-              { stat: String(totalStudentsCount || 234), bars: [30, 65, 80, 50, 90, 40] },
-              { stat: String((totalStudentsCount || 234) * 2 - 11 || 457), bars: [60, 40, 85, 70, 95, 55] },
-              { stat: String((totalStudentsCount || 234) + 81 || 315), bars: [45, 75, 60, 88, 52, 78] },
+              { stat: String(totalStudentsCount || 32), label: "Total Pupils Tracked", bars: [30, 65, 80, 50, 90, 40] },
+              { stat: String(Math.round((totalStudentsCount || 32) * 0.75)), label: "TP4-TP6 Achieved", bars: [60, 40, 85, 70, 95, 55] },
+              { stat: String(Math.round((totalStudentsCount || 32) * 0.25)), label: "Needs Reteaching", bars: [45, 75, 60, 88, 52, 78] },
             ]}
           />
         </div>
@@ -2489,23 +2489,23 @@ function AnalyticsPage({ lessons = [], classes = [], students = [], liveMode, se
         <div className="photo-chart-card">
           <PhotoDonutChart
             activeTerm="Term 1"
-            totalAmount={liveMode && avgTP ? `84.5% KSSR` : "$99.845,45"}
+            totalAmount={liveMode && avgTP ? `${Math.round(avgTP * 17)}% KSSR` : "84.5% KSSR"}
             segments={[
-              { label: "Reading Mastery", value: Number(((readingL / totalL) * 25 + 14.877).toFixed(3)), color: "#f59e0b" },
-              { label: "Writing Accuracy", value: Number(((writingL / totalL) * 25 + 29.472).toFixed(3)), color: "#f97316" },
-              { label: "Speaking Confidence", value: Number(((speakingL / totalL) * 25 + 5.173).toFixed(3)), color: "#ef4444" },
-              { label: "Listening Skills", value: Number(((listeningL / totalL) * 25 + 38.552).toFixed(3)), color: "#ec4899" },
-              { label: "Grammar & Vocab", value: Number(((grammarL / totalL) * 25 + 31.346).toFixed(3)), color: "#3b82f6" },
-              { label: "Critical KBAT", value: Number((30.255).toFixed(3)), color: "#8b5cf6" },
+              { label: "Reading Mastery", value: Math.round((readingL / totalL) * 25 + 18), color: "#f59e0b" },
+              { label: "Writing Accuracy", value: Math.round((writingL / totalL) * 25 + 24), color: "#f97316" },
+              { label: "Speaking Confidence", value: Math.round((speakingL / totalL) * 25 + 16), color: "#ef4444" },
+              { label: "Listening Skills", value: Math.round((listeningL / totalL) * 25 + 20), color: "#ec4899" },
+              { label: "Grammar & Vocab", value: Math.round((grammarL / totalL) * 25 + 14), color: "#3b82f6" },
+              { label: "Critical KBAT", value: 8, color: "#8b5cf6" },
             ]}
           />
         </div>
         <div className="photo-chart-card">
           <PhotoPeakDotWave
-            title="FERRILAT · TP MASTERY PROGRESSION"
-            subtitle="KSSR ENGLISH PBD CURRICULUM PERFORMANCE EX DUO"
-            mainStat={liveMode && totalStudentsCount ? `${totalStudentsCount * 55 + 120}` : "17 756"}
-            subStat="LATINE USU EX DUO"
+            title="KSSR · TP MASTERY PROGRESSION"
+            subtitle="ENGLISH PBD CURRICULUM PERFORMANCE & CONTINUOUS ASSESSMENT"
+            mainStat={liveMode && avgTP ? `TP ${avgTP}` : "TP 4.6"}
+            subStat="AVERAGE CLASS BAND OUT OF TP6"
           />
         </div>
       </div>
@@ -2518,17 +2518,17 @@ function AnalyticsPage({ lessons = [], classes = [], students = [], liveMode, se
         <div className="photo-chart-card">
           <PhotoStepSparklines
             rows={[
-              { number: String(totalStudentsCount * 14 || 4567), wave: [12, 18, 14, 22, 16, 25, 20] },
-              { number: String(totalStudentsCount * 21 || 6683), wave: [20, 15, 24, 18, 28, 22, 30] },
-              { number: String(totalStudentsCount * 9 || 2876), wave: [10, 14, 12, 18, 15, 20, 16] },
+              { number: "86% Quiz Avg Score", wave: [12, 18, 14, 22, 16, 25, 20] },
+              { number: "92% Oral Proficiency", wave: [20, 15, 24, 18, 28, 22, 30] },
+              { number: "78% Written Accuracy", wave: [10, 14, 12, 18, 15, 20, 16] },
             ]}
           />
         </div>
         <div className="photo-chart-card">
           <PhotoSummaryBadge
-            bigNumber={liveMode && avgTP ? `TP ${avgTP}` : "$3809.50"}
-            subStat={liveMode && totalStudentsCount ? `${totalStudentsCount * 3 || 946} PBD` : "946"}
-            pillLabel="QUALISCUEPATRIQQUE"
+            bigNumber={liveMode && avgTP ? `TP ${avgTP} / 6.0` : "TP 4.8 / 6.0"}
+            subStat={liveMode && totalStudentsCount ? `${totalStudentsCount} Pupils Tracked` : "32 Pupils Tracked"}
+            pillLabel="KSSR PBD ALIGNED"
           />
         </div>
       </div>
@@ -2822,6 +2822,10 @@ function ChartGrid({ width, height, padX = 16, padY = 14, rows = 3 }) {
         const y = padY + (innerH / rows) * index;
         return <line key={index} x1={padX} y1={y} x2={width - padX} y2={y} className="chart-grid-line" />;
       })}
+      {/* Solid X-Axis Baseline */}
+      <line x1={padX} y1={padY + innerH} x2={width - padX} y2={padY + innerH} stroke="var(--muted)" strokeWidth="1.5" strokeLinecap="round" />
+      {/* Solid Y-Axis Baseline */}
+      <line x1={padX} y1={padY} x2={padX} y2={padY + innerH} stroke="var(--muted)" strokeWidth="1.5" strokeLinecap="round" />
     </>
   );
 }
@@ -3042,11 +3046,119 @@ function TPHeatmap() {
 }
 
 function BoxPlot() {
-  return <div className="box-plot"><span>TP2</span><div><i className="whisker" /><i className="box" /><i className="median" /><i className="outlier" /></div><span>TP6</span></div>;
+  const width = 340;
+  const height = 120;
+  const tps = ["TP1", "TP2", "TP3", "TP4", "TP5", "TP6"];
+  const getX = (idx) => 35 + idx * 57;
+
+  return (
+    <div className="box-plot-wrap" style={{ width: "100%", padding: "10px 0" }}>
+      <svg viewBox={`0 0 ${width} ${height}`} style={{ width: "100%", height: "auto", overflow: "visible" }}>
+        {/* Grid lines and tick marks */}
+        {tps.map((label, idx) => {
+          const x = getX(idx);
+          return (
+            <g key={label}>
+              <line x1={x} y1="20" x2={x} y2="85" stroke="color-mix(in srgb, var(--border) 70%, transparent)" strokeWidth="1" strokeDasharray="3 3" />
+              <line x1={x} y1="85" x2={x} y2="90" stroke="var(--muted)" strokeWidth="1.5" />
+              <text x={x} y="104" textAnchor="middle" fill="var(--foreground)" fontSize="11" fontWeight="700">{label}</text>
+            </g>
+          );
+        })}
+        {/* Horizontal Axis Baseline */}
+        <line x1="35" y1="85" x2="320" y2="85" stroke="var(--muted)" strokeWidth="2" />
+
+        {/* Whisker line from TP2 (idx=1) to TP6 (idx=5) */}
+        <line x1={getX(1)} y1="52" x2={getX(5)} y2="52" stroke="var(--muted)" strokeWidth="2.5" />
+        <line x1={getX(1)} y1="44" x2={getX(1)} y2="60" stroke="var(--muted)" strokeWidth="2.5" />
+        <line x1={getX(5)} y1="44" x2={getX(5)} y2="60" stroke="var(--muted)" strokeWidth="2.5" />
+
+        {/* Box from TP3 (idx=2) to TP5 (idx=4) */}
+        <rect
+          x={getX(2)}
+          y="32"
+          width={getX(4) - getX(2)}
+          height="40"
+          rx="6"
+          fill="color-mix(in srgb, var(--primary) 20%, transparent)"
+          stroke="var(--primary)"
+          strokeWidth="2.5"
+        />
+
+        {/* Median Line at TP4 (idx=3) */}
+        <line x1={getX(3)} y1="32" x2={getX(3)} y2="72" stroke="var(--rose)" strokeWidth="3.5" strokeLinecap="round" />
+
+        {/* Outlier Dot near TP6 */}
+        <circle cx={getX(5) + 8} cy="52" r="4.5" fill="var(--amber)" stroke="var(--card)" strokeWidth="1.5" />
+      </svg>
+    </div>
+  );
 }
 
 function ScatterPlot({ points }) {
-  return <div className="scatter-plot">{points.map((point, index) => <i key={index} style={{ left: `${point.x}%`, bottom: `${(point.y / 6) * 100}%` }} />)}<span>Attendance</span><b>TP</b></div>;
+  const width = 340;
+  const height = 220;
+  const padLeft = 45;
+  const padRight = 15;
+  const padTop = 15;
+  const padBottom = 35;
+  const innerW = width - padLeft - padRight;
+  const innerH = height - padTop - padBottom;
+
+  const xTicks = [60, 70, 80, 90, 100];
+  const yTicks = [1, 2, 3, 4, 5, 6];
+
+  const mapX = (val) => padLeft + ((Math.max(60, Math.min(100, val)) - 60) / 40) * innerW;
+  const mapY = (val) => padTop + innerH - ((Math.max(1, Math.min(6, val)) - 1) / 5) * innerH;
+
+  return (
+    <div className="scatter-plot-wrap" style={{ width: "100%", padding: "8px 0" }}>
+      <svg viewBox={`0 0 ${width} ${height}`} style={{ width: "100%", height: "auto", overflow: "visible" }}>
+        {/* Horizontal Grid lines and Y-axis Ticks */}
+        {yTicks.map((tp) => {
+          const y = mapY(tp);
+          return (
+            <g key={`y-${tp}`}>
+              <line x1={padLeft} y1={y} x2={width - padRight} y2={y} stroke="color-mix(in srgb, var(--border) 70%, transparent)" strokeWidth="1" strokeDasharray="3 3" />
+              <line x1={padLeft - 5} y1={y} x2={padLeft} y2={y} stroke="var(--muted)" strokeWidth="1.5" />
+              <text x={padLeft - 8} y={y + 4} textAnchor="end" fill="var(--foreground)" fontSize="11" fontWeight="700">TP{tp}</text>
+            </g>
+          );
+        })}
+
+        {/* Vertical Grid lines and X-axis Ticks */}
+        {xTicks.map((att) => {
+          const x = mapX(att);
+          return (
+            <g key={`x-${att}`}>
+              <line x1={x} y1={padTop} x2={x} y2={padTop + innerH} stroke="color-mix(in srgb, var(--border) 50%, transparent)" strokeWidth="1" strokeDasharray="2 2" />
+              <line x1={x} y1={padTop + innerH} x2={x} y2={padTop + innerH + 5} stroke="var(--muted)" strokeWidth="1.5" />
+              <text x={x} y={padTop + innerH + 18} textAnchor="middle" fill="var(--foreground)" fontSize="11" fontWeight="700">{att}%</text>
+            </g>
+          );
+        })}
+
+        {/* X and Y Axis Lines */}
+        <line x1={padLeft} y1={padTop} x2={padLeft} y2={padTop + innerH} stroke="var(--muted)" strokeWidth="2" />
+        <line x1={padLeft} y1={padTop + innerH} x2={width - padRight} y2={padTop + innerH} stroke="var(--muted)" strokeWidth="2" />
+
+        {/* Axis Titles */}
+        <text x={padLeft + innerW / 2} y={height - 3} textAnchor="middle" fill="var(--muted)" fontSize="10" fontWeight="800" letterSpacing="0.05em">ATTENDANCE RATE (%)</text>
+        <text transform={`rotate(-90 12 ${padTop + innerH / 2})`} x="12" y={padTop + innerH / 2} textAnchor="middle" fill="var(--muted)" fontSize="10" fontWeight="800" letterSpacing="0.05em">PROFICIENCY BAND (TP)</text>
+
+        {/* Trendline (approximate linear regression from bottom-left to top-right) */}
+        <line x1={mapX(64)} y1={mapY(2.2)} x2={mapX(96)} y2={mapY(5.3)} stroke="var(--rose)" strokeWidth="1.8" strokeDasharray="4 4" opacity="0.6" />
+
+        {/* Scatter Points */}
+        {points.map((pt, idx) => (
+          <g key={idx}>
+            <circle cx={mapX(pt.x)} cy={mapY(pt.y)} r="6" fill="var(--primary)" stroke="var(--card)" strokeWidth="2" />
+            <circle cx={mapX(pt.x)} cy={mapY(pt.y)} r="2.5" fill="#ffffff" />
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
 }
 
 function Treemap({ data }) {
@@ -3931,9 +4043,9 @@ function PhotoSegmentedProgress({ tracks = [] }) {
 
 function PhotoMiniStrip({ groups = [] }) {
   const defaultGroups = [
-    { stat: "234", bars: [30, 65, 80, 50, 90, 40] },
-    { stat: "457", bars: [60, 40, 85, 70, 95, 55] },
-    { stat: "315", bars: [45, 75, 60, 88, 52, 78] },
+    { stat: "32", label: "Total Pupils Tracked", bars: [30, 65, 80, 50, 90, 40] },
+    { stat: "24", label: "TP4-TP6 Achieved", bars: [60, 40, 85, 70, 95, 55] },
+    { stat: "8", label: "Needs Reteaching", bars: [45, 75, 60, 88, 52, 78] },
   ];
   const list = groups.length ? groups : defaultGroups;
   return (
@@ -3941,6 +4053,7 @@ function PhotoMiniStrip({ groups = [] }) {
       {list.map((grp, idx) => (
         <div key={idx} className="mini-strip-col">
           <span className="mini-strip-stat">{grp.stat}</span>
+          {grp.label && <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "#64748b", marginBottom: 4, display: "block" }}>{grp.label}</span>}
           <div className="mini-strip-bars">
             {grp.bars.map((h, i) => (
               <span key={i} className={`mini-strip-bar ${i % 2 === 0 ? "" : "dim"}`} style={{ height: `${Math.max(12, h)}%` }} />
@@ -3952,14 +4065,14 @@ function PhotoMiniStrip({ groups = [] }) {
   );
 }
 
-function PhotoDonutChart({ segments = [], totalAmount = "$99.845,45", activeTerm = "Term 1", onSelectTerm }) {
+function PhotoDonutChart({ segments = [], totalAmount = "84.5% KSSR", activeTerm = "Term 1", onSelectTerm }) {
   const defaultSegments = [
-    { label: "Reading Mastery", value: 38.552, color: "#8b5cf6" },
-    { label: "Writing Accuracy", value: 31.346, color: "#3b82f6" },
-    { label: "Speaking Confidence", value: 30.255, color: "#6366f1" },
-    { label: "Listening Skills", value: 29.472, color: "#f97316" },
-    { label: "Grammar & Vocab", value: 14.877, color: "#eab308" },
-    { label: "Critical KBAT", value: 5.173, color: "#ec4899" },
+    { label: "Reading Mastery", value: 38, color: "#8b5cf6" },
+    { label: "Writing Accuracy", value: 31, color: "#3b82f6" },
+    { label: "Speaking Confidence", value: 30, color: "#6366f1" },
+    { label: "Listening Skills", value: 29, color: "#f97316" },
+    { label: "Grammar & Vocab", value: 15, color: "#eab308" },
+    { label: "Critical KBAT", value: 5, color: "#ec4899" },
   ];
   const list = segments.length ? segments : defaultSegments;
   const sum = list.reduce((a, b) => a + Number(b.value), 0) || 1;
@@ -3993,21 +4106,21 @@ function PhotoDonutChart({ segments = [], totalAmount = "$99.845,45", activeTerm
           {list.map((item, idx) => (
             <div key={idx} className="donut-legend-item">
               <span className="donut-legend-dot" style={{ background: item.color }} />
-              <span style={{ flex: 1 }}>{item.label}</span>
-              <strong>{typeof item.value === "number" ? item.value.toFixed(3) : item.value}</strong>
+              <span style={{ flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.label}</span>
+              <strong>{typeof item.value === "number" ? `${Math.round(item.value)}%` : item.value}</strong>
             </div>
           ))}
         </div>
       </div>
       <div className="donut-bottom-badge">
         <span className="donut-total-stat">{totalAmount}</span>
-        <span className="donut-total-tag">CHORO VOCIBUS ADOLE SCENS QUI CU NE EUM PRIMIST ▲</span>
+        <span className="donut-total-tag">▲ KSSR BENCHMARK MET · 6 CORE ENGLISH SKILLS EVALUATED</span>
       </div>
     </div>
   );
 }
 
-function PhotoPeakDotWave({ title = "FERRILAT", subtitle = "RITANI AN FERRI LATINE USU EX DUO", mainStat = "17 756", subStat = "LATINE USU EX DUO", seriesA = [], seriesB = [], xLabels = [] }) {
+function PhotoPeakDotWave({ title = "KSSR · TP MASTERY PROGRESSION", subtitle = "ENGLISH PBD CURRICULUM PERFORMANCE & CONTINUOUS ASSESSMENT", mainStat = "TP 4.6", subStat = "AVERAGE CLASS BAND OUT OF TP6", seriesA = [], seriesB = [], xLabels = [] }) {
   const defaultSeriesA = [35, 52, 68, 48, 76, 85, 45, 62, 55, 92, 50, 42, 70, 80, 58, 48, 65, 40, 55, 30];
   const defaultSeriesB = [20, 38, 45, 30, 55, 60, 32, 44, 38, 70, 36, 28, 52, 60, 42, 35, 48, 26, 38, 18];
   const sA = seriesA.length ? seriesA : defaultSeriesA;
@@ -4091,7 +4204,7 @@ function PhotoPeakDotWave({ title = "FERRILAT", subtitle = "RITANI AN FERRI LATI
   );
 }
 
-function PhotoEqualizerChart({ bars = [], categories = ["APEIRAN", "DESET", "FACETE", "LATINEUS"] }) {
+function PhotoEqualizerChart({ bars = [], categories = ["READING", "WRITING", "SPEAKING", "GRAMMAR"] }) {
   const defaultBars = [12, -8, 16, -10, 20, -14, 22, -12, 18, -15, 25, -18, 14, -10];
   const list = bars.length ? bars : defaultBars;
   const height = 140;
@@ -4131,9 +4244,9 @@ function PhotoEqualizerChart({ bars = [], categories = ["APEIRAN", "DESET", "FAC
 
 function PhotoStepSparklines({ rows = [], activeStep = 3, onStepClick }) {
   const defaultRows = [
-    { number: "4567", wave: [12, 18, 14, 22, 16, 25, 20] },
-    { number: "6683", wave: [20, 15, 24, 18, 28, 22, 30] },
-    { number: "2876", wave: [10, 14, 12, 18, 15, 20, 16] },
+    { number: "86% Quiz Avg Score", wave: [12, 18, 14, 22, 16, 25, 20] },
+    { number: "92% Oral Proficiency", wave: [20, 15, 24, 18, 28, 22, 30] },
+    { number: "78% Written Accuracy", wave: [10, 14, 12, 18, 15, 20, 16] },
   ];
   const list = rows.length ? rows : defaultRows;
   const miniGrids = [1, 5, 10, 15, 20, 25, 33, 35];
@@ -4181,7 +4294,7 @@ function PhotoStepSparklines({ rows = [], activeStep = 3, onStepClick }) {
   );
 }
 
-function PhotoSummaryBadge({ bigNumber = "$3809.50", pillLabel = "QUALISCUEPATRIQQUE", subStat = "946", wavePoints = [10, 18, 14, 25, 20, 30, 22] }) {
+function PhotoSummaryBadge({ bigNumber = "TP 4.8 / 6.0", pillLabel = "KSSR PBD ALIGNED", subStat = "32 Pupils Tracked", wavePoints = [10, 18, 14, 25, 20, 30, 22] }) {
   const w = 140;
   const h = 36;
   const max = Math.max(...wavePoints, 30);
