@@ -6478,3 +6478,580 @@ html.dark body #root .feedback-tabs {
   border-color: rgba(196, 181, 253, 0.18) !important;
 }
 
+/* ==========================================================================
+   ULTRA-PREMIUM PHOTO-ACCURATE ANALYTICS CHART UI OVERHAUL (Image ID: 2BNC1A4)
+   ========================================================================== */
+
+.photo-analytics-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  margin-top: 16px;
+}
+
+.photo-top-row {
+  display: grid;
+  grid-template-columns: 1.35fr 1.65fr 1fr;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.photo-middle-row {
+  display: grid;
+  grid-template-columns: 1fr 1.65fr;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.photo-bottom-row {
+  display: grid;
+  grid-template-columns: 1.35fr 1.65fr 1fr;
+  gap: 20px;
+  align-items: stretch;
+}
+
+@media (max-width: 1200px) {
+  .photo-top-row,
+  .photo-middle-row,
+  .photo-bottom-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Card Containers */
+.photo-chart-card {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.07);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.photo-chart-card:hover {
+  box-shadow: 0 16px 40px -12px rgba(99, 102, 241, 0.14);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+/* Top Left: 4 Radial Ring Counters */
+.radial-rings-grid {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.radial-ring-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.radial-ring-svg {
+  width: 72px;
+  height: 72px;
+  transform: rotate(-90deg);
+}
+
+.radial-ring-circle-bg {
+  fill: none;
+  stroke: #f1f5f9;
+  stroke-width: 6;
+}
+
+.radial-ring-circle-progress {
+  fill: none;
+  stroke-width: 6;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s ease;
+}
+
+.radial-ring-value {
+  position: absolute;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #1e293b;
+  transform: translateY(24px);
+  text-align: center;
+  width: 72px;
+}
+
+.radial-ring-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  text-align: center;
+}
+
+/* Top Middle: Segmented Progress List with Arrows */
+.segmented-list-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  justify-content: center;
+  height: 100%;
+}
+
+.segmented-list-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 16px;
+}
+
+.segmented-track-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.segmented-track-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #64748b;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.segmented-bars-strip {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.segmented-bar-pill {
+  height: 10px;
+  flex: 1;
+  border-radius: 2px;
+  background: #e2e8f0;
+  transition: background 0.3s ease;
+}
+
+.segmented-bar-pill.active.emerald { background: #10b981; }
+.segmented-bar-pill.active.indigo { background: #6366f1; }
+.segmented-bar-pill.active.cyan { background: #06b6d4; }
+.segmented-bar-pill.active.rose { background: #ec4899; }
+.segmented-bar-pill.active.amber { background: #f59e0b; }
+
+.segmented-stat-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.segmented-stat-badge.up { color: #10b981; }
+.segmented-stat-badge.down { color: #ec4899; }
+
+/* Top Right: Mini Column Strip */
+.mini-strip-grid {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  gap: 16px;
+  height: 100%;
+  padding-top: 8px;
+}
+
+.mini-strip-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.mini-strip-stat {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.mini-strip-bars {
+  display: flex;
+  gap: 4px;
+  align-items: flex-end;
+  height: 48px;
+  width: 100%;
+  justify-content: center;
+}
+
+.mini-strip-bar {
+  width: 6px;
+  border-radius: 3px;
+  background: #14b8a6;
+  transition: height 0.4s ease;
+}
+
+.mini-strip-bar.dim {
+  background: #cbd5e1;
+}
+
+/* Middle Left: Interactive Donut with Legend & Pill */
+.donut-card-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.donut-top-split {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.donut-chart-container {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.donut-svg-ring {
+  width: 180px;
+  height: 180px;
+  transform: rotate(-90deg);
+}
+
+.donut-center-selector {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #334155;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.donut-center-selector:hover {
+  background: #6366f1;
+  color: #ffffff;
+  border-color: #6366f1;
+}
+
+.donut-legend-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.donut-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.donut-legend-dot {
+  width: 16px;
+  height: 8px;
+  border-radius: 4px;
+}
+
+.donut-bottom-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: #f8fafc;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+}
+
+.donut-total-stat {
+  font-size: 1.45rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.donut-total-tag {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #0d9488;
+  background: #ccfbf1;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+/* Middle Right: Large Peak Dot Area Wave Chart */
+.area-wave-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.area-wave-title h3 {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #1e293b;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.area-wave-title p {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+  margin: 2px 0 0;
+}
+
+.area-wave-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.area-wave-metric strong {
+  font-size: 1.65rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.area-wave-metric span {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.area-wave-svg-container {
+  width: 100%;
+  height: 240px;
+  position: relative;
+}
+
+.area-wave-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.area-wave-x-axis {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid #f1f5f9;
+  margin-top: 6px;
+}
+
+.area-wave-x-axis span {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+/* Bottom Left: Bi-Directional Equalizer Wave Bars */
+.equalizer-chart-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+  justify-content: space-between;
+}
+
+.equalizer-svg-area {
+  height: 140px;
+  width: 100%;
+}
+
+.equalizer-pills-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.equalizer-tag-pill {
+  background: #ccfbf1;
+  color: #0f766e;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 6px 10px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: center;
+  flex: 1;
+}
+
+/* Bottom Middle: Sparkline Rows & Step Badges */
+.sparkline-rows-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  height: 100%;
+  justify-content: space-between;
+}
+
+.sparkline-row-item {
+  display: grid;
+  grid-template-columns: 65px 1fr auto;
+  align-items: center;
+  gap: 14px;
+}
+
+.sparkline-number {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #1e293b;
+}
+
+.sparkline-svg-wave {
+  height: 28px;
+  width: 100%;
+}
+
+.step-badges-strip {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.step-badge-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  border: 1.5px solid #cbd5e1;
+  color: #64748b;
+  background: #ffffff;
+}
+
+.step-badge-circle.active {
+  border-color: #ec4899;
+  color: #ec4899;
+  background: #fdf2f8;
+}
+
+/* Bottom Right: Summary Metric Badge Card */
+.summary-badge-layout {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  gap: 16px;
+}
+
+.summary-top-metric {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.summary-big-number {
+  font-size: 2.1rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.summary-sub-stat {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #64748b;
+}
+
+.summary-pill-tag {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1.5px solid #cbd5e1;
+  color: #475569;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: #ffffff;
+  align-self: flex-start;
+}
+
+/* Dark Mode Overrides for Photo Analytics */
+html.dark body #root .photo-chart-card {
+  background: rgba(18, 14, 28, 0.88) !important;
+  border-color: rgba(196, 181, 253, 0.18) !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5) !important;
+}
+
+html.dark body #root .radial-ring-value,
+html.dark body #root .segmented-stat-badge,
+html.dark body #root .mini-strip-stat,
+html.dark body #root .donut-total-stat,
+html.dark body #root .area-wave-metric strong,
+html.dark body #root .area-wave-title h3,
+html.dark body #root .sparkline-number,
+html.dark body #root .summary-big-number {
+  color: #ffffff !important;
+}
+
+html.dark body #root .radial-ring-label,
+html.dark body #root .segmented-track-title,
+html.dark body #root .area-wave-title p,
+html.dark body #root .area-wave-x-axis span,
+html.dark body #root .donut-legend-item,
+html.dark body #root .summary-sub-stat {
+  color: #a5b4fc !important;
+}
+
+html.dark body #root .donut-bottom-badge,
+html.dark body #root .donut-center-selector {
+  background: rgba(30, 24, 46, 0.9) !important;
+  border-color: rgba(196, 181, 253, 0.25) !important;
+  color: #ffffff !important;
+}
+
+html.dark body #root .segmented-bar-pill {
+  background: rgba(51, 65, 85, 0.6) !important;
+}
+
+html.dark body #root .equalizer-tag-pill {
+  background: rgba(13, 148, 136, 0.25) !important;
+  color: #5eead4 !important;
+}
+
+html.dark body #root .summary-pill-tag {
+  background: rgba(30, 24, 46, 0.9) !important;
+  border-color: rgba(196, 181, 253, 0.3) !important;
+  color: #e0e7ff !important;
+}
+
+html.dark body #root .step-badge-circle {
+  background: rgba(30, 24, 46, 0.9) !important;
+  border-color: rgba(196, 181, 253, 0.3) !important;
+  color: #cbd5e1 !important;
+}
+
+html.dark body #root .step-badge-circle.active {
+  background: rgba(236, 72, 153, 0.2) !important;
+  border-color: #ec4899 !important;
+  color: #f472b6 !important;
+}
+
