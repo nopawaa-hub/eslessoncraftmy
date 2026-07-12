@@ -352,7 +352,8 @@ function App() {
   const [lessons, setLessons] = useState([]);
   const [classes, setClasses] = useState([]);
   const [selectedClassId, setSelectedClassId] = useState("");
-  const liveMode = typeof window !== "undefined" && (window.location.pathname.startsWith("/testing") || window.location.search.includes("live=1"));
+  const isDemoUser = currentUser?.email === "demo@test.com" || currentUser?.role === "demo" || String(currentUser?._id) === "000000000000000000000001";
+  const liveMode = typeof window !== "undefined" && (window.location.pathname.startsWith("/testing") || window.location.search.includes("live=1") || (currentUser && !isDemoUser));
 
   const refreshLessons = async () => {
     try {
