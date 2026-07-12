@@ -80,7 +80,7 @@ app.use((req, res) => {
 app.use((error, _req, res, _next) => {
   console.error(error);
   res.status(error.statusCode || 500).json({
-    error: "Server error. Please try again or check the backend logs.",
+    error: error.message || "Server error. Please try again or check the backend logs.",
     detail: process.env.NODE_ENV === "production" ? undefined : error.message,
   });
 });
