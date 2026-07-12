@@ -41,6 +41,39 @@ router.post("/", requireDatabase, async (req, res, next) => {
 
 router.get("/", requireDatabase, async (req, res, next) => {
   try {
+    const isDemoTeacher = String(req.user._id) === "000000000000000000000001" || req.user.email === "demo@test.com";
+    if (isDemoTeacher) {
+      const existing = await SchoolClass.countDocuments({ teacherId: req.user._id });
+      if (existing === 0) {
+        await SchoolClass.create([
+          {
+            teacherId: req.user._id,
+            name: "5 Bestari",
+            year: "Year 5",
+            subject: "English",
+            studentCount: 32,
+            studentProficiency: "Mixed ability",
+            classroomEnvironment: "Standard classroom with limited ICT",
+            teachingNotes: "Active participants during group work, reading comprehension needs support.",
+            tags: ["High energy", "Group work"],
+            status: "active"
+          },
+          {
+            teacherId: req.user._id,
+            name: "3 Mawar",
+            year: "Year 3",
+            subject: "English",
+            studentCount: 28,
+            studentProficiency: "Low-to-mid proficiency",
+            classroomEnvironment: "Standard classroom with projector",
+            teachingNotes: "Focus heavily on phonics and guided vocabulary practice.",
+            tags: ["Phonics focus", "Visual learners"],
+            status: "active"
+          }
+        ]);
+      }
+    }
+
     const query = { teacherId: req.user._id };
     if (req.query.status) query.status = req.query.status;
     if (req.query.year) query.year = req.query.year;
