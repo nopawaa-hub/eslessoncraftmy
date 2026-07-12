@@ -4009,28 +4009,36 @@ function PhotoRadialRings({ rings = [] }) {
   ];
   const list = rings.length ? rings : defaultRings;
   return (
-    <div className="radial-rings-grid">
-      {list.map((item, idx) => {
-        const radius = 28;
-        const circumference = 2 * Math.PI * radius;
-        const offset = circumference - (Math.min(100, Math.max(0, item.value)) / 100) * circumference;
-        return (
-          <div key={idx} className="radial-ring-item">
-            <svg className="radial-ring-svg" viewBox="0 0 72 72">
-              <circle cx="36" cy="36" r={radius} className="radial-ring-circle-bg" />
-              <circle
-                cx="36"
-                cy="36"
-                r={radius}
-                className="radial-ring-circle-progress"
-                style={{ stroke: item.color || "#6366f1", strokeDasharray: circumference, strokeDashoffset: offset }}
-              />
-            </svg>
-            <span className="radial-ring-value">{item.value}%</span>
-            <span className="radial-ring-label">{item.label}</span>
-          </div>
-        );
-      })}
+    <div style={{ width: "100%" }}>
+      <div style={{ marginBottom: "14px" }}>
+        <h4 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 800, color: "var(--foreground)" }}>Core Skill Competency (TP4+ Attainment)</h4>
+        <p style={{ margin: "3px 0 0 0", fontSize: "0.75rem", color: "var(--muted)", lineHeight: 1.3 }}>
+          Percentage of pupils achieving proficiency band TP4, TP5, or TP6 in the 4 primary KSSR English domains.
+        </p>
+      </div>
+      <div className="radial-rings-grid">
+        {list.map((item, idx) => {
+          const radius = 28;
+          const circumference = 2 * Math.PI * radius;
+          const offset = circumference - (Math.min(100, Math.max(0, item.value)) / 100) * circumference;
+          return (
+            <div key={idx} className="radial-ring-item">
+              <svg className="radial-ring-svg" viewBox="0 0 72 72">
+                <circle cx="36" cy="36" r={radius} className="radial-ring-circle-bg" />
+                <circle
+                  cx="36"
+                  cy="36"
+                  r={radius}
+                  className="radial-ring-circle-progress"
+                  style={{ stroke: item.color || "#6366f1", strokeDasharray: circumference, strokeDashoffset: offset }}
+                />
+              </svg>
+              <span className="radial-ring-value">{item.value}%</span>
+              <span className="radial-ring-label">{item.label}</span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -4043,27 +4051,35 @@ function PhotoSegmentedProgress({ tracks = [] }) {
   ];
   const list = tracks.length ? tracks : defaultTracks;
   return (
-    <div className="segmented-list-wrap">
-      {list.map((track, idx) => {
-        const totalPills = 24;
-        const activeCount = Math.round((track.value / 100) * totalPills);
-        return (
-          <div key={idx} className="segmented-list-row">
-            <div className="segmented-track-col">
-              <span className="segmented-track-title">{track.title}</span>
-              <div className="segmented-bars-strip">
-                {Array.from({ length: totalPills }, (_, i) => (
-                  <span key={i} className={`segmented-bar-pill ${i < activeCount ? `active ${track.color || "emerald"}` : ""}`} />
-                ))}
+    <div style={{ width: "100%" }}>
+      <div style={{ marginBottom: "14px" }}>
+        <h4 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 800, color: "var(--foreground)" }}>PBD Operational & Engagement Metrics</h4>
+        <p style={{ margin: "3px 0 0 0", fontSize: "0.75rem", color: "var(--muted)", lineHeight: 1.3 }}>
+          Tracking mastery velocity, continuous assessment evidence logging, and active class participation.
+        </p>
+      </div>
+      <div className="segmented-list-wrap">
+        {list.map((track, idx) => {
+          const totalPills = 24;
+          const activeCount = Math.round((track.value / 100) * totalPills);
+          return (
+            <div key={idx} className="segmented-list-row">
+              <div className="segmented-track-col">
+                <span className="segmented-track-title">{track.title}</span>
+                <div className="segmented-bars-strip">
+                  {Array.from({ length: totalPills }, (_, i) => (
+                    <span key={i} className={`segmented-bar-pill ${i < activeCount ? `active ${track.color || "emerald"}` : ""}`} />
+                  ))}
+                </div>
+              </div>
+              <div className={`segmented-stat-badge ${track.trend === "up" ? "up" : "down"}`}>
+                {track.trend === "up" ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
+                <span>{track.statLabel}</span>
               </div>
             </div>
-            <div className={`segmented-stat-badge ${track.trend === "up" ? "up" : "down"}`}>
-              {track.trend === "up" ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
-              <span>{track.statLabel}</span>
-            </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -4076,18 +4092,26 @@ function PhotoMiniStrip({ groups = [] }) {
   ];
   const list = groups.length ? groups : defaultGroups;
   return (
-    <div className="mini-strip-grid">
-      {list.map((grp, idx) => (
-        <div key={idx} className="mini-strip-col">
-          <span className="mini-strip-stat">{grp.stat}</span>
-          {grp.label && <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "#64748b", marginBottom: 4, display: "block" }}>{grp.label}</span>}
-          <div className="mini-strip-bars">
-            {grp.bars.map((h, i) => (
-              <span key={i} className={`mini-strip-bar ${i % 2 === 0 ? "" : "dim"}`} style={{ height: `${Math.max(12, h)}%` }} />
-            ))}
+    <div style={{ width: "100%" }}>
+      <div style={{ marginBottom: "14px" }}>
+        <h4 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 800, color: "var(--foreground)" }}>Pupil Mastery Cohort Distribution</h4>
+        <p style={{ margin: "3px 0 0 0", fontSize: "0.75rem", color: "var(--muted)", lineHeight: 1.3 }}>
+          Cohort breakdown by overall attainment tiers and intervention requirements across PBD evaluations.
+        </p>
+      </div>
+      <div className="mini-strip-grid">
+        {list.map((grp, idx) => (
+          <div key={idx} className="mini-strip-col">
+            <span className="mini-strip-stat">{grp.stat}</span>
+            {grp.label && <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "#64748b", marginBottom: 4, display: "block" }}>{grp.label}</span>}
+            <div className="mini-strip-bars">
+              {grp.bars.map((h, i) => (
+                <span key={i} className={`mini-strip-bar ${i % 2 === 0 ? "" : "dim"}`} style={{ height: `${Math.max(12, h)}%` }} />
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
