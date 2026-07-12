@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LessonCraft MY | History Vault</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body data-page="history">
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="index.html"><span>✎</span><strong>LessonCraft <em>MY</em></strong></a>
+        <nav>
+          <a href="index.html">Dashboard</a>
+          <a href="generate.html">Generate Lesson</a>
+          <a href="analyze.html">Analyze Lesson</a>
+          <a href="improve.html">Improve Lesson</a>
+          <a href="simulate.html">Simulate Classroom</a>
+          <a href="evaluate.html">Evaluate Lesson</a>
+          <a class="active" href="history.html">History Vault</a>
+          <a href="schedule.html">Schedule</a>
+          <a href="assessment.html">Assessment</a>
+        </nav>
+        <div class="status-card"><small>Gemini AI</small><strong id="apiStatus">Checking...</strong></div>
+      </aside>
+      <main class="page">
+        <header class="page-header"><p class="eyebrow">Database</p><h1>History Vault</h1><p>Every generated KSSR lesson plan is saved here for viewing, evaluation, scheduling, and deletion.</p></header>
+        <section class="panel data-panel">
+          <div class="data-toolbar">
+            <h2>Saved Lesson Plans</h2>
+            <button class="primary-btn compact-btn" id="refreshHistory">Refresh</button>
+          </div>
+          <div id="historyList" class="data-list">Loading saved lessons...</div>
+          <article id="historyDetail" class="result-section hidden"></article>
+        </section>
+      </main>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>

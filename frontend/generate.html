@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LessonCraft MY | Generate Lesson</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body data-page="generate">
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="index.html"><span>✎</span><strong>LessonCraft <em>MY</em></strong></a>
+        <nav>
+          <a href="index.html">Dashboard</a>
+          <a class="active" href="generate.html">Generate Lesson</a>
+          <a href="analyze.html">Analyze Lesson</a>
+          <a href="improve.html">Improve Lesson</a>
+          <a href="simulate.html">Simulate Classroom</a>
+          <a href="evaluate.html">Evaluate Lesson</a>
+          <a href="history.html">History Vault</a>
+          <a href="schedule.html">Schedule</a>
+          <a href="assessment.html">Assessment</a>
+        </nav>
+        <div class="status-card"><small>Gemini AI</small><strong id="apiStatus">Checking...</strong></div>
+      </aside>
+      <main class="page">
+        <header class="page-header"><p class="eyebrow">Create</p><h1>Generate Lesson</h1><p>Build a primary school KSSR lesson plan with simple instructions, group work, visual support, and scaffolded learning.</p></header>
+        <section class="two-column">
+          <form class="panel form-card" id="generateForm">
+            <label>Topic<input id="topic" placeholder="Example: Parts of plants" required /></label>
+            <label>Subject<select id="subject"><option>Bahasa Melayu</option><option selected>English</option><option>Mathematics</option><option>Science</option><option>History</option><option>Islamic Education</option><option>Moral Education</option></select></label>
+            <div class="form-row">
+              <label>Year<select id="year"><option>Year 1</option><option>Year 2</option><option>Year 3</option><option selected>Year 4</option><option>Year 5</option><option>Year 6</option></select></label>
+              <label>Skill<select id="skill"><option>Reading</option><option>Writing</option><option>Speaking</option><option>Listening</option></select></label>
+            </div>
+            <label>Classroom Type<select id="classroomType"><option>Mixed ability class</option><option>Large class with limited ICT</option><option>Low proficiency pupils</option><option>Active group-learning class</option></select></label>
+            <button class="primary-btn" type="submit">Generate Lesson</button>
+          </form>
+          <section class="panel output-card"><div class="output-head"><h2>Lesson Plan</h2><span class="spinner hidden" id="spinner"></span></div><div id="output" class="output empty">Your generated lesson appears here.</div></section>
+        </section>
+      </main>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>

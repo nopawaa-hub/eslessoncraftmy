@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LessonCraft MY | Analyze Lesson</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body data-page="analyze">
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="index.html"><span>✎</span><strong>LessonCraft <em>MY</em></strong></a>
+        <nav>
+          <a href="index.html">Dashboard</a><a href="generate.html">Generate Lesson</a><a class="active" href="analyze.html">Analyze Lesson</a><a href="improve.html">Improve Lesson</a><a href="simulate.html">Simulate Classroom</a><a href="evaluate.html">Evaluate Lesson</a><a href="history.html">History Vault</a><a href="schedule.html">Schedule</a><a href="assessment.html">Assessment</a>
+        </nav>
+        <div class="status-card"><small>Gemini AI</small><strong id="apiStatus">Checking...</strong></div>
+      </aside>
+      <main class="page">
+        <header class="page-header"><p class="eyebrow">Diagnose</p><h1>Analyze Lesson</h1><p>Upload .txt/.pdf or paste lesson text to check KSSR alignment, engagement, HOTS, weaknesses, and improvements.</p></header>
+        <section class="studio-layout">
+          <form class="panel form-card studio-card" id="analyzeForm">
+            <div class="card-title-row">
+              <h2>Provide Lesson Plan</h2>
+              <div class="segmented-control" data-mode-group="analyze">
+                <button type="button" class="active" data-mode-button="file">Upload File</button>
+                <button type="button" data-mode-button="text">Paste Text</button>
+              </div>
+            </div>
+            <div class="mode-panel hidden" data-mode-panel="text">
+              <label>Lesson Plan Text<textarea id="lessonPlan" rows="13">CS: Listen and respond to simple instructions.
+LS: Pupils identify correct words from a short text.
+LO: Pupils answer worksheet questions.
+
+Teacher explains the text. Pupils complete worksheet individually. Teacher marks answers.</textarea></label>
+            </div>
+            <div class="mode-panel" data-mode-panel="file">
+              <label class="upload-dropzone">Upload .txt or .pdf
+                <input id="lessonFile" type="file" accept=".txt,.pdf" />
+                <span class="upload-icon">⇧</span>
+                <strong id="analyzeFileName">Drop your lesson plan PDF/TXT here</strong>
+                <small>PDF files can be previewed before and after analysis.</small>
+              </label>
+            </div>
+            <button class="primary-btn" type="submit">Analyze Lesson</button>
+          </form>
+          <section class="panel output-card studio-card">
+            <div class="output-head"><h2>Analysis</h2><span class="spinner hidden" id="spinner"></span></div>
+            <div id="analyzePreview" class="doc-preview hidden"></div>
+            <div id="output" class="output empty">Analysis appears here.</div>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>

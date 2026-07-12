@@ -1,0 +1,1567 @@
+{
+  "project": {
+    "name": "EduPilot Teacher Management Dashboard",
+    "architecture_version": "1.0.0",
+    "domain": "AI-powered teacher management dashboard for Malaysian schools",
+    "primary_users": ["Teacher", "Admin", "Panel Head"],
+    "mission": "Help Malaysian teachers plan lessons, record PBD evidence, manage timetables, analyze student performance, and generate AI-assisted teaching artifacts with minimal administrative friction.",
+    "core_modules": [
+      "AI Lesson Plan Generator (RPH Generator)",
+      "Pentaksiran Bilik Darjah (PBD)",
+      "Schedule Planner / Timetable",
+      "Student Performance Analytics",
+      "Materials Library",
+      "AI Teaching Copilot",
+      "Rubric Builder",
+      "UASA Examination Records",
+      "Evaluation Forms",
+      "Classroom Evidence Uploads",
+      "Role-based access"
+    ],
+    "stack_overview": {
+      "frontend": "React/Vite today, scalable to route-based React architecture",
+      "backend": "Node.js Express REST API",
+      "database": "MongoDB with Mongoose models",
+      "ai": "Gemini primary with OpenAI-compatible fallback path",
+      "storage": "Local/upload service now, object storage recommended for production",
+      "deployment": "Single web app during MVP, separable services later"
+    },
+    "status": {
+      "frontend": "Prototype UI active",
+      "backend": "Express API active",
+      "database": "MongoDB required for persistence",
+      "ai_provider": "Gemini configured",
+      "documentation": "Architecture viewer package"
+    }
+  },
+  "frontend": {
+    "current_shape": {
+      "entry": "frontend/src/main.jsx",
+      "main_app": "frontend/src/App.jsx",
+      "styles": "frontend/src/index.css",
+      "build_tool": "Vite",
+      "framework": "React",
+      "routing": "Client state page switching in current prototype",
+      "api_base_strategy": "Use backend origin in production and http://localhost:3000 during Vite dev"
+    },
+    "recommended_structure": {
+      "src/app": "Application shell, route registration, global providers",
+      "src/features/lesson-planner": "RPH generator forms, result preview, export actions",
+      "src/features/pbd": "PBD key-in, assessment records, evidence, reports",
+      "src/features/timetable": "Weekly schedule, period editing, lesson linking",
+      "src/features/analytics": "Skill dashboards, intervention analytics, heatmaps",
+      "src/features/materials": "Material upload, repository, tagging, lesson attachment",
+      "src/features/copilot": "AI chat, contextual actions, prompt history",
+      "src/features/rubrics": "Rubric templates, criteria editor, TP mapping",
+      "src/shared/components": "Reusable UI primitives",
+      "src/shared/api": "Typed API clients and response mappers",
+      "src/shared/state": "Global app state and cache helpers"
+    },
+    "layout_system": {
+      "shell": "Sticky sidebar, top bar, content canvas, floating AI copilot",
+      "navigation": "Overview, Lesson Planner, PBD, Timetable, Materials, Analytics, Reports, Settings",
+      "responsive_strategy": "Desktop persistent sidebar, mobile drawer navigation",
+      "design_language": "Neutral SaaS dashboard, glass surfaces, high-density cards, restrained gradients"
+    },
+    "state_management": {
+      "current": "React useState/useEffect for page state, form state, generated lesson result, PBD rows, timetable slots",
+      "recommended": "TanStack Query for server cache, Zustand or React context for UI shell state, URL routes for deep links",
+      "server_state": ["lesson plans", "students", "PBD records", "schedules", "materials", "analytics"],
+      "client_state": ["active navigation item", "theme", "open copilot", "unsaved form drafts", "expanded cards"]
+    }
+  },
+  "backend": {
+    "current_shape": {
+      "entry": "backend/server.js",
+      "framework": "Express",
+      "models_dir": "backend/models",
+      "routes_dir": "backend/routes",
+      "services_dir": "backend/services",
+      "template_dir": "backend/templates",
+      "environment": [".env", "MONGO_URI", "AI_PROVIDER", "GEMINI_API_KEY", "OPENAI_API_KEY"]
+    },
+    "responsibilities": [
+      "Expose REST endpoints for lesson planning, PBD, schedule, documents, evaluation, assessment, student records and users",
+      "Validate requests before persistence",
+      "Call AI providers through aiProvider service",
+      "Normalize AI output into stable application objects",
+      "Persist generated artifacts into MongoDB",
+      "Generate document exports for lesson plans"
+    ],
+    "services": {
+      "aiProvider": "Provider adapter for Gemini and OpenAI-style AI requests",
+      "pedagogyEngine": "Prompt construction, lesson generation, analysis, improvement, simulation, evaluation normalization",
+      "lessonDocx": "DOCX/PDF lesson document generation helpers",
+      "fileText": "PDF/DOCX/TXT extraction for uploaded evidence or lesson analysis",
+      "db": "MongoDB connection and requireDatabase middleware",
+      "sowLibrary": "KPM default Scheme of Work context and custom SOW instruction builders",
+      "kssrAnalyzer": "Heuristic KSSR alignment checks and prompt requirements"
+    },
+    "route_groups": [
+      "/generate",
+      "/lesson-plans",
+      "/schedule",
+      "/assessment",
+      "/student-records",
+      "/documents",
+      "/evaluate",
+      "/analyze",
+      "/improve",
+      "/simulate",
+      "/kssr-check",
+      "/schemes-of-work",
+      "/users"
+    ],
+    "scalability_notes": [
+      "Move AI generation to a job queue for long-running generation and retry behavior",
+      "Separate upload/document processing from the core API when file volume grows",
+      "Introduce typed request validation with Zod or Joi",
+      "Add route-level RBAC middleware before multi-school deployment",
+      "Add audit logging for generated reports, evidence uploads and admin edits"
+    ]
+  },
+  "database": {
+    "engine": "MongoDB",
+    "orm": "Mongoose",
+    "tables": [
+      {
+        "name": "Users",
+        "fields": {
+          "_id": "ObjectId",
+          "name": "String",
+          "email": "String",
+          "role": "Enum<Teacher|Admin|Panel>",
+          "schoolId": "ObjectId",
+          "settings": "Object",
+          "createdAt": "Date",
+          "updatedAt": "Date"
+        },
+        "primary_key": "_id",
+        "foreign_keys": ["schoolId"],
+        "relationships": ["owns LessonPlans", "owns Schedules", "creates Materials", "reviews Analytics"],
+        "indexes": ["email unique", "schoolId", "role"],
+        "scalability_notes": "Use compound schoolId + role indexes for multi-school dashboards."
+      },
+      {
+        "name": "Classes",
+        "fields": {
+          "_id": "ObjectId",
+          "schoolId": "ObjectId",
+          "teacherId": "ObjectId",
+          "name": "String",
+          "year": "String",
+          "subjectIds": "ObjectId[]",
+          "studentIds": "ObjectId[]"
+        },
+        "primary_key": "_id",
+        "foreign_keys": ["schoolId", "teacherId", "subjectIds", "studentIds"],
+        "relationships": ["has Students", "has Schedules", "has Assessments", "has Analytics"],
+        "indexes": ["schoolId", "teacherId", "year"],
+        "scalability_notes": "Classes should become the core tenancy boundary for teacher-level data views."
+      },
+      {
+        "name": "Students",
+        "fields": {
+          "_id": "ObjectId",
+          "classId": "ObjectId",
+          "name": "String",
+          "studentNumber": "String",
+          "demographics": "Object",
+          "supportNeeds": "String[]",
+          "guardianContact": "Object"
+        },
+        "primary_key": "_id",
+        "foreign_keys": ["classId"],
+        "relationships": ["has AssessmentRecords", "has Evidence", "has Analytics"],
+        "indexes": ["classId", "studentNumber"],
+        "scalability_notes": "Keep sensitive student data separated from analytics aggregates where possible."
+      },
+      {
+        "name": "Subjects",
+        "fields": {
+          "_id": "ObjectId",
+          "name": "String",
+          "curriculum": "String",
+          "standards": "Object[]",
+          "skills": "String[]"
+        },
+        "primary_key": "_id",
+        "foreign_keys": [],
+        "relationships": ["used by LessonPlans", "used by Assessments", "used by Analytics"],
+        "indexes": ["name", "curriculum"],
+        "scalability_notes": "Version standards by curriculum year to keep historical lesson plans stable."
+      },
+      {
+        "name": "LessonPlans",
+        "fields": {
+          "_id": "ObjectId",
+          "teacherId": "ObjectId",
+          "classId": "ObjectId",
+          "scheduleId": "ObjectId",
+          "subject": "String",
+          "year": "String",
+          "topic": "String",
+          "skill": "String",
+          "title": "String",
+          "contentStandard": "String",
+          "learningStandard": "String",
+          "objectives": "String[]",
+          "activities": "String[]",
+          "assessments": "String[]",
+          "generatedFields": "Object",
+          "status": "Enum<draft|linked|completed>",
+          "tags": "String[]",
+          "createdAt": "Date",
+          "updatedAt": "Date"
+        },
+        "primary_key": "_id",
+        "foreign_keys": ["teacherId", "classId", "scheduleId"],
+        "relationships": ["belongs to Schedule", "uses Materials", "creates Assessment evidence"],
+        "indexes": ["teacherId", "subject", "year", "topic", "status", "updatedAt"],
+        "scalability_notes": "Store AI output in generatedFields but expose stable normalized fields for querying."
+      },
+      {
+        "name": "Assessments",
+        "fields": {
+          "_id": "ObjectId",
+          "classId": "ObjectId",
+          "lessonPlanId": "ObjectId",
+          "rubricId": "ObjectId",
+          "type": "String",
+          "skill": "String",
+          "records": "AssessmentRecord[]",
+          "createdBy": "ObjectId",
+          "createdAt": "Date"
+        },
+        "primary_key": "_id",
+        "foreign_keys": ["classId", "lessonPlanId", "rubricId", "createdBy"],
+        "relationships": ["has many student records", "feeds Analytics", "uses Rubrics"],
+        "indexes": ["classId", "lessonPlanId", "skill", "createdAt"],
+        "scalability_notes": "Consider separate AssessmentRecords collection when rows become large."
+      },
+      {
+        "name": "Rubrics",
+        "fields": {
+          "_id": "ObjectId",
+          "teacherId": "ObjectId",
+          "subject": "String",
+          "skill": "String",
+          "criteria": "Object[]",
+          "tpMapping": "Object",
+          "isTemplate": "Boolean"
+        },
+        "primary_key": "_id",
+        "foreign_keys": ["teacherId"],
+        "relationships": ["used by Assessments", "generated by AI", "exported in Reports"],
+        "indexes": ["teacherId", "subject", "skill", "isTemplate"],
+        "scalability_notes": "Version rubric templates to preserve past assessment meaning."
+      },
+      {
+        "name": "Schedules",
+        "fields": {
+          "_id": "ObjectId",
+          "userId": "ObjectId",
+          "classId": "ObjectId",
+          "name": "String",
+          "weekStart": "Date",
+          "date": "Date",
+          "title": "String",
+          "subject": "String",
+          "year": "String",
+          "startTime": "String",
+          "endTime": "String",
+          "lessonPlanId": "ObjectId",
+          "status": "Enum<planned|linked|completed>"
+        },
+        "primary_key": "_id",
+        "foreign_keys": ["userId", "classId", "lessonPlanId"],
+        "relationships": ["links to LessonPlans", "contains Periods", "drives Teacher workflow"],
+        "indexes": ["userId", "date", "classId", "status"],
+        "scalability_notes": "Separate recurring Periods from dated schedule instances for calendar accuracy."
+      },
+      {
+        "name": "Materials",
+        "fields": {
+          "_id": "ObjectId",
+          "ownerId": "ObjectId",
+          "classId": "ObjectId",
+          "lessonPlanId": "ObjectId",
+          "name": "String",
+          "type": "String",
+          "url": "String",
+          "tags": "String[]",
+          "metadata": "Object",
+          "createdAt": "Date"
+        },
+        "primary_key": "_id",
+        "foreign_keys": ["ownerId", "classId", "lessonPlanId"],
+        "relationships": ["attached to LessonPlans", "used as Evidence", "indexed for search"],
+        "indexes": ["ownerId", "classId", "lessonPlanId", "tags"],
+        "scalability_notes": "Move binaries to object storage and keep metadata in MongoDB."
+      },
+      {
+        "name": "EvaluationForms",
+        "fields": {
+          "_id": "ObjectId",
+          "lessonPlanId": "ObjectId",
+          "teacherId": "ObjectId",
+          "reflection": "String",
+          "scores": "Object",
+          "annotations": "Object[]",
+          "followUps": "String[]"
+        },
+        "primary_key": "_id",
+        "foreign_keys": ["lessonPlanId", "teacherId"],
+        "relationships": ["reviews LessonPlans", "feeds improvement suggestions"],
+        "indexes": ["lessonPlanId", "teacherId"],
+        "scalability_notes": "Keep annotation ranges stable if document editing becomes collaborative."
+      },
+      {
+        "name": "Analytics",
+        "fields": {
+          "_id": "ObjectId",
+          "classId": "ObjectId",
+          "studentId": "ObjectId",
+          "subject": "String",
+          "skill": "String",
+          "period": "String",
+          "metrics": "Object",
+          "aiInsights": "Object[]",
+          "generatedAt": "Date"
+        },
+        "primary_key": "_id",
+        "foreign_keys": ["classId", "studentId"],
+        "relationships": ["aggregates Assessments", "summarizes Evidence", "powers Dashboard"],
+        "indexes": ["classId", "studentId", "subject", "skill", "period"],
+        "scalability_notes": "Use precomputed aggregates and background jobs for large schools."
+      }
+    ]
+  },
+  "ai_system": {
+    "providers": [
+      {
+        "name": "Gemini",
+        "role": "Primary generation provider",
+        "best_for": ["RPH generation", "lesson improvement", "structured JSON output", "teacher copilot"]
+      },
+      {
+        "name": "OpenAI-compatible fallback",
+        "role": "Fallback and advanced reasoning provider",
+        "best_for": ["complex analytics explanations", "rubric critique", "multi-step planning"]
+      }
+    ],
+    "pipeline": [
+      "User input or selected context",
+      "Frontend request mapper",
+      "Backend route validation",
+      "Prompt engine",
+      "Context injection from KSSR, SOW, class profile, PBD records and materials",
+      "Provider adapter",
+      "AI model response",
+      "JSON normalization and fallback repair",
+      "Database persistence",
+      "Dashboard rendering and export"
+    ],
+    "prompt_context": {
+      "curriculum": "KSSR, DSKP, learning standards, Scheme of Work",
+      "classroom": "Year, class name, number of pupils, mixed ability needs",
+      "evidence": "PBD records, TP distribution, uploaded classroom evidence",
+      "teacher_preferences": "Template type, lesson flow, materials, assessment type"
+    },
+    "flows": [
+      {
+        "name": "RPH generation",
+        "steps": ["Form input", "KSSR prompt requirements", "Gemini/OpenAI", "Normalize lesson fields", "Save LessonPlan", "Preview and export"]
+      },
+      {
+        "name": "Rubric generation",
+        "steps": ["Skill and outcome input", "TP criteria prompt", "AI criteria draft", "Teacher edits", "Save Rubric template"]
+      },
+      {
+        "name": "Analytics insight generation",
+        "steps": ["Aggregate PBD records", "Detect weak topics", "Inject classroom profile", "AI summary", "Intervention suggestions"]
+      },
+      {
+        "name": "Teaching copilot",
+        "steps": ["Current page context", "Teacher question", "Relevant records retrieval", "AI response", "Suggested action buttons"]
+      }
+    ],
+    "token_optimization": [
+      "Send summarized class analytics instead of raw student rows when possible",
+      "Use stable prompt templates with compact JSON schemas",
+      "Cache generated rubric templates by subject, year and skill",
+      "Store normalized AI output to avoid re-generating unchanged artifacts",
+      "Use retrieval filters before injecting materials or evidence text"
+    ],
+    "security_notes": [
+      "Never send unnecessary guardian contact or sensitive demographics to AI",
+      "Redact student identifiers for aggregate analytics prompts",
+      "Log prompt metadata without storing full sensitive prompt bodies by default",
+      "Add admin controls for AI provider selection and data retention"
+    ]
+  },
+  "features": [
+    {
+      "name": "AI Lesson Planner",
+      "purpose": "Generate KSSR-aligned RPH lesson plans from teacher inputs and classroom context.",
+      "components_used": ["LessonPlannerPage", "InputRphForm", "LessonPreview", "ProcedureTimeline", "ExportActions"],
+      "database_tables": ["LessonPlans", "Schedules", "Materials", "Subjects", "Classes"],
+      "api_routes": ["POST /generate", "GET /lesson-plans", "PUT /lesson-plans/:id", "POST /documents/lesson-plan"],
+      "ai_dependencies": ["Prompt engine", "KSSR context injection", "Gemini/OpenAI provider", "JSON normalizer"],
+      "user_flow": ["Open planner", "Choose English skill/year/topic", "Add objectives/materials", "Generate RPH", "Review procedure", "Export or attach to timetable"],
+      "future_extensions": ["Version history", "Collaborative editing", "Lesson quality score", "Reusable school templates", "One-click differentiation by TP group"]
+    },
+    {
+      "name": "PBD System",
+      "purpose": "Record classroom assessment evidence, TP levels and teacher comments.",
+      "components_used": ["PbdOverview", "KeyInTable", "EvidenceUploader", "PbdReports", "StudentPortfolioCard"],
+      "database_tables": ["Assessments", "Students", "Classes", "Rubrics", "Analytics"],
+      "api_routes": ["POST /assessment", "GET /student-records", "POST /student-record", "GET /assessment"],
+      "ai_dependencies": ["Intervention insight generation", "Comment suggestion", "TP pattern summarization"],
+      "user_flow": ["Select class", "Create assessment", "Key in scores", "Attach evidence", "Review TP distribution", "Generate report"],
+      "future_extensions": ["Bulk CSV import", "Offline key-in", "Parent-facing summaries", "Auto TP suggestions from rubrics"]
+    },
+    {
+      "name": "Rubric Builder",
+      "purpose": "Create reusable criteria and TP descriptors for skill-based assessment.",
+      "components_used": ["RubricBuilder", "CriteriaEditor", "TpMappingGrid", "RubricPreview"],
+      "database_tables": ["Rubrics", "Assessments", "Subjects"],
+      "api_routes": ["POST /assessment/rubrics", "GET /assessment/rubrics", "PUT /assessment/rubrics/:id"],
+      "ai_dependencies": ["Rubric draft generation", "Criteria refinement", "TP descriptor normalization"],
+      "user_flow": ["Choose skill", "Generate rubric", "Edit criteria", "Save template", "Apply to PBD"],
+      "future_extensions": ["School-approved rubrics", "Rubric marketplace", "Rubric analytics by criterion"]
+    },
+    {
+      "name": "Timetable Planner",
+      "purpose": "Manage recurring and dated class periods, link lessons and spot missing RPH.",
+      "components_used": ["WeeklyScheduleGrid", "PeriodCard", "ScheduleFixesPanel", "LessonLinkSelector"],
+      "database_tables": ["Schedules", "LessonPlans", "Classes", "Users"],
+      "api_routes": ["GET /schedule/overview", "POST /schedule/periods", "PUT /schedule/periods/:id", "POST /schedule/links"],
+      "ai_dependencies": ["Suggest RPH for unplanned slots", "Detect overloaded teaching days", "Recommend lesson sequencing"],
+      "user_flow": ["Create timetable", "Add periods", "Generate missing RPH", "Link lesson to period", "Teach and update status"],
+      "future_extensions": ["Drag and drop periods", "Conflict detection", "School-level timetable import", "Calendar sync"]
+    },
+    {
+      "name": "Analytics Dashboard",
+      "purpose": "Transform PBD and exam records into actionable teaching insights.",
+      "components_used": ["SkillPerformanceChart", "TopicHeatmap", "InterventionPlanner", "AiInsightCards", "TrendCards"],
+      "database_tables": ["Analytics", "Assessments", "Students", "Classes", "LessonPlans"],
+      "api_routes": ["GET /analytics/overview", "GET /analytics/class/:id", "POST /analyze", "POST /simulate"],
+      "ai_dependencies": ["Weakness summarization", "Intervention recommendation", "Predictive UASA support"],
+      "user_flow": ["Open analytics", "Review skill gaps", "Inspect heatmap", "Open AI insight", "Create intervention lesson"],
+      "future_extensions": ["Predictive risk scoring", "School-wide dashboards", "Teacher performance analytics", "Exportable leadership reports"]
+    },
+    {
+      "name": "Material Repository",
+      "purpose": "Store, tag and attach teaching files, worksheets, slides, audio and evidence.",
+      "components_used": ["MaterialGrid", "UploadDropzone", "MaterialDetailDrawer", "AttachToLessonAction"],
+      "database_tables": ["Materials", "LessonPlans", "Classes", "Users"],
+      "api_routes": ["POST /materials", "GET /materials", "POST /documents/extract-text"],
+      "ai_dependencies": ["Material summarization", "Quiz generation from material", "Evidence extraction"],
+      "user_flow": ["Upload material", "Tag by subject/skill", "Attach to RPH", "Generate follow-up task"],
+      "future_extensions": ["Object storage", "OCR", "Versioning", "Shared school library", "Content recommendation"]
+    },
+    {
+      "name": "Evaluation Forms",
+      "purpose": "Capture lesson reflection, annotations and improvement feedback after teaching.",
+      "components_used": ["EvaluationForm", "AnnotationList", "ReflectionEditor", "ImprovementSuggestions"],
+      "database_tables": ["EvaluationForms", "LessonPlans", "Analytics"],
+      "api_routes": ["POST /evaluate", "GET /evaluations", "POST /improve"],
+      "ai_dependencies": ["Lesson critique", "KSSR alignment check", "Improvement rewrite"],
+      "user_flow": ["Open taught lesson", "Fill reflection", "Run AI evaluation", "Save follow-up actions"],
+      "future_extensions": ["Panel review workflow", "Peer observation", "Evidence-linked reflection"]
+    },
+    {
+      "name": "AI Copilot",
+      "purpose": "Provide contextual help across lesson planning, PBD, analytics and reporting.",
+      "components_used": ["AICopilot", "ContextSummary", "SuggestedActionList", "PromptInput"],
+      "database_tables": ["LessonPlans", "Assessments", "Analytics", "Materials", "Users"],
+      "api_routes": ["POST /copilot", "POST /generate", "POST /analyze", "POST /improve"],
+      "ai_dependencies": ["Provider adapter", "Context retrieval", "Prompt templates", "Action formatter"],
+      "user_flow": ["Ask question", "Copilot reads current context", "AI responds", "Teacher applies suggested action"],
+      "future_extensions": ["Conversation memory", "Tool calling", "Voice input", "Agentic multi-step workflows"]
+    }
+  ],
+  "routes": [
+    {
+      "method": "GET",
+      "endpoint": "/health",
+      "auth_required": false,
+      "request_shape": {},
+      "response_shape": { "ok": "Boolean", "app": "String", "aiProvider": "String", "database": "String" }
+    },
+    {
+      "method": "POST",
+      "endpoint": "/generate",
+      "auth_required": true,
+      "request_shape": { "topic": "String", "year": "String", "subject": "String", "skill": "String", "className": "String", "durationMinutes": "Number", "objectives": "String", "materials": "String" },
+      "response_shape": { "title": "String", "objectives": "String[]", "procedure": "Object[]", "lessonPlanId": "ObjectId", "savedLessonPlan": "LessonPlan" }
+    },
+    {
+      "method": "GET",
+      "endpoint": "/lesson-plans",
+      "auth_required": true,
+      "request_shape": { "query": { "year": "String?", "subject": "String?", "status": "String?", "search": "String?" } },
+      "response_shape": "LessonPlan[]"
+    },
+    {
+      "method": "GET",
+      "endpoint": "/lesson-plans/:id",
+      "auth_required": true,
+      "request_shape": { "params": { "id": "ObjectId" } },
+      "response_shape": "LessonPlan"
+    },
+    {
+      "method": "PUT",
+      "endpoint": "/lesson-plans/:id",
+      "auth_required": true,
+      "request_shape": { "title": "String?", "objectives": "String[]?", "activities": "String[]?", "status": "String?" },
+      "response_shape": "LessonPlan"
+    },
+    {
+      "method": "DELETE",
+      "endpoint": "/lesson-plans/:id",
+      "auth_required": true,
+      "request_shape": { "params": { "id": "ObjectId" } },
+      "response_shape": { "ok": "Boolean", "deletedId": "ObjectId" }
+    },
+    {
+      "method": "GET",
+      "endpoint": "/schedule/overview",
+      "auth_required": true,
+      "request_shape": {},
+      "response_shape": { "schedule": "Schedule", "periods": "Period[]", "links": "ScheduleLessonLink[]" }
+    },
+    {
+      "method": "POST",
+      "endpoint": "/schedule/periods",
+      "auth_required": true,
+      "request_shape": { "day": "String", "startTime": "String", "endTime": "String", "className": "String", "subject": "String", "year": "String" },
+      "response_shape": "Period"
+    },
+    {
+      "method": "PUT",
+      "endpoint": "/schedule/periods/:id",
+      "auth_required": true,
+      "request_shape": { "day": "String?", "startTime": "String?", "endTime": "String?", "notes": "String?" },
+      "response_shape": "Period"
+    },
+    {
+      "method": "DELETE",
+      "endpoint": "/schedule/periods/:id",
+      "auth_required": true,
+      "request_shape": { "params": { "id": "ObjectId" } },
+      "response_shape": { "ok": "Boolean", "deletedId": "ObjectId" }
+    },
+    {
+      "method": "POST",
+      "endpoint": "/schedule/links",
+      "auth_required": true,
+      "request_shape": { "periodId": "ObjectId", "lessonPlanId": "ObjectId", "scheduledDate": "Date?" },
+      "response_shape": "ScheduleLessonLink"
+    },
+    {
+      "method": "POST",
+      "endpoint": "/assessment",
+      "auth_required": true,
+      "request_shape": { "classId": "ObjectId", "lessonPlanId": "ObjectId?", "records": "Object[]" },
+      "response_shape": "Assessment"
+    },
+    {
+      "method": "GET",
+      "endpoint": "/student-records",
+      "auth_required": true,
+      "request_shape": { "query": { "classId": "ObjectId?", "studentId": "ObjectId?" } },
+      "response_shape": "StudentRecord[]"
+    },
+    {
+      "method": "POST",
+      "endpoint": "/evaluate",
+      "auth_required": true,
+      "request_shape": { "lessonPlan": "String", "classData": "String?" },
+      "response_shape": { "annotations": "Object[]" }
+    },
+    {
+      "method": "POST",
+      "endpoint": "/analyze",
+      "auth_required": true,
+      "request_shape": { "lessonPlan": "String" },
+      "response_shape": { "engagementLevel": "String", "hotsLevel": "String", "weaknesses": "String[]", "improvements": "String[]" }
+    },
+    {
+      "method": "POST",
+      "endpoint": "/improve",
+      "auth_required": true,
+      "request_shape": { "lessonPlan": "String" },
+      "response_shape": { "improvedLesson": "String", "pedagogicalMoves": "String[]", "differentiation": "String[]" }
+    },
+    {
+      "method": "POST",
+      "endpoint": "/simulate",
+      "auth_required": true,
+      "request_shape": { "lessonPlan": "String" },
+      "response_shape": { "engagementPercent": "Number", "studentReactions": "String[]", "teachingIssues": "String[]" }
+    },
+    {
+      "method": "POST",
+      "endpoint": "/documents/lesson-plan",
+      "auth_required": true,
+      "request_shape": { "title": "String", "lessonDetails": "Object", "procedure": "Object[]", "format": "docx|pdf" },
+      "response_shape": "Binary document"
+    },
+    {
+      "method": "GET",
+      "endpoint": "/schemes-of-work",
+      "auth_required": true,
+      "request_shape": {},
+      "response_shape": "SchemeOfWork[]"
+    }
+  ],
+  "components": [
+    {
+      "name": "AppShell",
+      "location": "frontend/src/App.jsx",
+      "props": ["activePage", "setActivePage", "theme", "backendStatus"],
+      "responsibilities": ["Own global layout", "Render sidebar/topbar", "Switch active page", "Mount AI copilot"],
+      "parent_child_relationships": { "parent": "main.jsx", "children": ["Sidebar", "TopBar", "AICopilot", "Page modules"] }
+    },
+    {
+      "name": "Sidebar",
+      "location": "frontend/src/App.jsx",
+      "props": ["activePage", "setActivePage", "collapsed", "mobileOpen"],
+      "responsibilities": ["Primary navigation", "Responsive drawer", "Active page indicator"],
+      "parent_child_relationships": { "parent": "AppShell", "children": ["NavItem"] }
+    },
+    {
+      "name": "TopBar",
+      "location": "frontend/src/App.jsx",
+      "props": ["setMobileOpen", "setActivePage", "backendStatus", "theme", "setTheme"],
+      "responsibilities": ["Search affordance", "Create action", "Theme toggle", "Backend status display"],
+      "parent_child_relationships": { "parent": "AppShell", "children": ["SearchBox", "ProfileStatus"] }
+    },
+    {
+      "name": "Dashboard",
+      "location": "frontend/src/App.jsx",
+      "props": ["setActivePage", "setCopilotOpen", "lessons"],
+      "responsibilities": ["Show teacher daily summary", "Show AI insights", "Open core workflows"],
+      "parent_child_relationships": { "parent": "AppShell", "children": ["StatCard", "ClassRow", "Insight", "MaterialTile", "Goal"] }
+    },
+    {
+      "name": "LessonPlanner",
+      "location": "frontend/src/App.jsx",
+      "props": ["refreshLessons", "setActivePage"],
+      "responsibilities": ["Collect RPH inputs", "Call POST /generate", "Render generated RPH", "Export or attach materials"],
+      "parent_child_relationships": { "parent": "AppShell", "children": ["FormGrid", "LessonPreview", "SkeletonList"] }
+    },
+    {
+      "name": "LessonPreview",
+      "location": "frontend/src/App.jsx",
+      "props": ["result"],
+      "responsibilities": ["Render AI-generated objectives, criteria, activities, assessment, differentiation and procedure"],
+      "parent_child_relationships": { "parent": "LessonPlanner", "children": ["ProcedureList", "AlignmentGrid"] }
+    },
+    {
+      "name": "PBDPage",
+      "location": "frontend/src/App.jsx",
+      "props": [],
+      "responsibilities": ["Manage PBD tabs", "Own student row state", "Import/export CSV"],
+      "parent_child_relationships": { "parent": "AppShell", "children": ["PBDOverview", "KeyInTable", "TemplateGrid", "PortfolioGrid", "AIAnalysis"] }
+    },
+    {
+      "name": "KeyInTable",
+      "location": "frontend/src/App.jsx",
+      "props": ["students", "updateScore"],
+      "responsibilities": ["Editable scores", "Auto TP calculation", "Local save indicator"],
+      "parent_child_relationships": { "parent": "PBDPage", "children": ["Badge"] }
+    },
+    {
+      "name": "TimetablePage",
+      "location": "frontend/src/App.jsx",
+      "props": ["setActivePage"],
+      "responsibilities": ["Render weekly English timetable", "Add/import slots", "Expose missing RPH worklist"],
+      "parent_child_relationships": { "parent": "AppShell", "children": ["PeriodCard", "ScheduleFixesPanel"] }
+    },
+    {
+      "name": "MaterialsPage",
+      "location": "frontend/src/App.jsx",
+      "props": [],
+      "responsibilities": ["Display English materials", "Upload local material metadata", "Create folder notice"],
+      "parent_child_relationships": { "parent": "AppShell", "children": ["MaterialTile"] }
+    },
+    {
+      "name": "AnalyticsPage",
+      "location": "frontend/src/App.jsx",
+      "props": [],
+      "responsibilities": ["Display English skill performance", "Show AI insights", "Show intervention planner and heatmap"],
+      "parent_child_relationships": { "parent": "AppShell", "children": ["Metric", "BarSet", "Heatmap", "Insight"] }
+    },
+    {
+      "name": "AICopilot",
+      "location": "frontend/src/App.jsx",
+      "props": ["open", "setOpen", "setActivePage"],
+      "responsibilities": ["Show contextual AI insight panel", "Route teacher to suggested actions"],
+      "parent_child_relationships": { "parent": "AppShell", "children": ["Insight", "PromptInput"] }
+    },
+    {
+      "name": "Card",
+      "location": "frontend/src/App.jsx",
+      "props": ["title", "subtitle", "action", "onAction", "className", "children"],
+      "responsibilities": ["Reusable panel container", "Optional action button", "Consistent dashboard hierarchy"],
+      "parent_child_relationships": { "parent": "Many page modules", "children": ["Arbitrary children"] }
+    }
+  ],
+  "state_management": {
+    "current_pattern": "Local React state in page components",
+    "global_state": {
+      "activePage": "Controls current dashboard section",
+      "collapsed": "Sidebar collapsed state",
+      "mobileOpen": "Mobile nav drawer state",
+      "copilotOpen": "AI copilot visibility",
+      "theme": "Light/dark theme stored in localStorage",
+      "backendStatus": "Health result displayed in top bar",
+      "lessons": "Fetched English lesson plans"
+    },
+    "feature_state": {
+      "LessonPlanner": ["form", "difficulty", "loading", "result", "error"],
+      "PBDPage": ["active tab", "students", "import file ref"],
+      "TimetablePage": ["classes", "notice", "import file ref"],
+      "MaterialsPage": ["items", "notice", "upload file ref"]
+    },
+    "recommended_evolution": [
+      "Use URL routing for page state",
+      "Use TanStack Query for server data and invalidation",
+      "Use optimistic updates for timetable and PBD tables",
+      "Persist unsaved RPH drafts in localStorage or IndexedDB",
+      "Add central toast/notification store"
+    ]
+  },
+  "dependencies": [
+    { "name": "react", "purpose": "Frontend component system", "layer": "frontend" },
+    { "name": "react-dom", "purpose": "Render React app", "layer": "frontend" },
+    { "name": "vite", "purpose": "Dev server and production build", "layer": "frontend" },
+    { "name": "lucide-react", "purpose": "Icon system", "layer": "frontend" },
+    { "name": "express", "purpose": "REST API server", "layer": "backend" },
+    { "name": "mongoose", "purpose": "MongoDB models and queries", "layer": "backend" },
+    { "name": "cors", "purpose": "Cross-origin API access during dev", "layer": "backend" },
+    { "name": "dotenv", "purpose": "Environment variable loading", "layer": "backend" },
+    { "name": "multer", "purpose": "File upload parsing", "layer": "backend" },
+    { "name": "mammoth", "purpose": "DOCX text extraction", "layer": "backend" },
+    { "name": "pdf-parse", "purpose": "PDF text extraction", "layer": "backend" },
+    { "name": "docx", "purpose": "DOCX generation", "layer": "backend" },
+    { "name": "pizzip", "purpose": "DOCX templating support", "layer": "backend" }
+  ],
+  "workflows": [
+    {
+      "name": "Teacher Workflow",
+      "steps": ["Login", "Create Timetable", "Generate Lesson Plan", "Conduct Lesson", "Key in PBD", "Upload Evidence", "Analyze Performance"],
+      "systems_touched": ["Users", "Schedules", "LessonPlans", "Assessments", "Materials", "Analytics", "AI Copilot"],
+      "success_metric": "Teacher can move from timetable to lesson to PBD evidence without re-entering context."
+    },
+    {
+      "name": "Admin Workflow",
+      "steps": ["Manage Teachers", "Monitor Analytics", "Export Reports", "Review Performance"],
+      "systems_touched": ["Users", "Classes", "Analytics", "Reports", "Role-based access"],
+      "success_metric": "Admin sees school-wide progress and identifies support needs quickly."
+    },
+    {
+      "name": "AI Workflow",
+      "steps": ["User Prompt", "Prompt Engine", "Gemini/OpenAI", "Formatter", "Database", "Dashboard"],
+      "systems_touched": ["Frontend forms", "Backend AI services", "Database", "Dashboard UI"],
+      "success_metric": "AI output is normalized, traceable, editable and persisted."
+    }
+  ],
+  "future_scalability": [
+    {
+      "phase": "Phase 1",
+      "title": "Production MVP Hardening",
+      "items": ["Real authentication", "RBAC middleware", "server-side validation", "persistent uploads", "route-based frontend", "audit logging"]
+    },
+    {
+      "phase": "Phase 2",
+      "title": "School Scale",
+      "items": ["Multi-school support", "Admin analytics", "school-level timetables", "panel-approved rubrics", "shared materials library"]
+    },
+    {
+      "phase": "Phase 3",
+      "title": "Connected Learning Ecosystem",
+      "items": ["Parent portal", "LMS integration", "real-time collaboration", "calendar sync", "mobile app"]
+    },
+    {
+      "phase": "Phase 4",
+      "title": "Advanced Intelligence",
+      "items": ["AI predictive analytics", "offline mode", "voice copilot", "auto evidence summarization", "microservice separation"]
+    }
+  ],
+  "coding_standards": {
+    "frontend": [
+      "Keep feature modules isolated by domain",
+      "Use reusable card/table/form primitives",
+      "Prefer explicit prop names over generic data blobs",
+      "Keep AI response rendering defensive against missing fields",
+      "Avoid duplicate mixed-language labels unless product intentionally supports bilingual mode"
+    ],
+    "backend": [
+      "Validate all route bodies before database writes",
+      "Normalize all AI responses before returning to frontend",
+      "Keep provider-specific AI code inside aiProvider service",
+      "Use lean queries for read-heavy dashboards",
+      "Add structured errors with stable error codes"
+    ],
+    "data": [
+      "Use schoolId/classId as multi-tenant query anchors",
+      "Keep large evidence files out of MongoDB",
+      "Version AI-generated artifacts and rubrics",
+      "Avoid storing raw prompts containing sensitive student information"
+    ],
+    "testing": [
+      "Smoke test health, generate, lesson fetch, schedule overview and document export",
+      "Snapshot-test normalized AI output shapes",
+      "Use browser checks for no horizontal overflow and no dead primary buttons"
+    ]
+  },
+  "design_system": {
+    "principles": [
+      "Calm SaaS dashboard over decorative landing page",
+      "Dense but readable cards for teacher workflow",
+      "Clear status chips for Ready, Needs RPH, PBD due, Needs support",
+      "AI insights must be visible and actionable, never hidden behind only a chat widget"
+    ],
+    "tokens": {
+      "background": "warm off-white or near-black",
+      "foreground": "deep neutral ink",
+      "primary": "indigo/violet",
+      "success": "emerald",
+      "warning": "amber",
+      "risk": "rose",
+      "radius": "12-18px for cards and controls",
+      "shadow": "soft low-contrast elevation"
+    },
+    "patterns": [
+      "Sticky sidebar navigation",
+      "Top search and quick create action",
+      "Page header with action buttons",
+      "Metric cards",
+      "Expandable module details",
+      "Timeline workflows",
+      "ERD cards with relationship lines",
+      "Method badges for APIs"
+    ]
+  },
+  "mindmap": {
+    "systems": [
+      { "id": "frontend", "label": "Frontend System", "type": "frontend", "color": "#6454d6" },
+      { "id": "backend", "label": "Backend System", "type": "backend", "color": "#2b7bdc" },
+      { "id": "ai", "label": "AI System", "type": "ai", "color": "#9867f0" },
+      { "id": "database", "label": "Database System", "type": "database", "color": "#18a47b" },
+      { "id": "auth", "label": "Authentication & Security", "type": "auth", "color": "#d85972" },
+      { "id": "storage", "label": "File & Media Storage", "type": "storage", "color": "#c98212" },
+      { "id": "analytics", "label": "Analytics Engine", "type": "analytics", "color": "#0f9abf" },
+      { "id": "future", "label": "Future Scalability Layer", "type": "future", "color": "#71717a" }
+    ],
+    "nodes": [
+      {
+        "id": "platform",
+        "label": "AI Teacher Management Platform",
+        "type": "root",
+        "description": "Central operating system for Malaysian teacher planning, PBD evidence, analytics, AI assistance and reporting.",
+        "parent": null,
+        "children": ["frontend-system", "backend-system", "ai-system", "database-system", "auth-security", "file-storage", "analytics-engine", "scheduling-system", "pbd-engine", "lesson-engine", "evaluation-engine", "notification-system", "admin-management", "reporting-export", "future-layer"],
+        "related_nodes": ["teacher-workflow-flow", "ai-orchestration-flow"],
+        "feature_links": ["AI Lesson Planner", "PBD System", "Timetable Planner", "Analytics Dashboard", "AI Copilot"],
+        "api_links": ["/generate", "/lesson-plans", "/schedule/overview", "/assessment"],
+        "database_links": ["Users", "Classes", "Students", "LessonPlans", "Assessments", "Analytics"]
+      },
+      {
+        "id": "frontend-system",
+        "label": "Frontend System",
+        "type": "frontend",
+        "description": "Interactive dashboard, navigation shell, pages, forms, tables, charts, uploads and AI copilot surface.",
+        "parent": "platform",
+        "children": ["frontend-pages", "frontend-layouts", "frontend-components", "frontend-state", "frontend-hooks", "frontend-forms", "frontend-charts", "frontend-upload-ui", "frontend-search"],
+        "related_nodes": ["backend-api-gateway", "ai-copilot-ui", "state-update-flow"],
+        "feature_links": ["AI Lesson Planner", "PBD System", "Analytics Dashboard"],
+        "api_links": ["/generate", "/lesson-plans", "/schedule/overview"],
+        "database_links": []
+      },
+      {
+        "id": "frontend-pages",
+        "label": "Pages",
+        "type": "frontend_component",
+        "description": "Route-level or page-level screens that frame each teacher workflow.",
+        "parent": "frontend-system",
+        "children": ["page-dashboard", "page-lesson-planner", "page-pbd", "page-timetable", "page-materials", "page-analytics", "page-reports", "page-settings"],
+        "related_nodes": ["frontend-layouts", "frontend-state"],
+        "feature_links": ["AI Lesson Planner", "PBD System", "Timetable Planner"],
+        "api_links": [],
+        "database_links": []
+      },
+      {
+        "id": "page-dashboard",
+        "label": "Dashboard Page",
+        "type": "frontend_component",
+        "description": "Daily command center showing schedule, AI insights, English goals and recent materials.",
+        "parent": "frontend-pages",
+        "children": ["dashboard-stat-cards", "dashboard-ai-insights", "dashboard-today-schedule"],
+        "related_nodes": ["analytics-engine", "ai-copilot-ui"],
+        "feature_links": ["Analytics Dashboard", "AI Copilot"],
+        "api_links": ["GET /lesson-plans"],
+        "database_links": ["LessonPlans", "Analytics"]
+      },
+      {
+        "id": "page-lesson-planner",
+        "label": "Lesson Planner Page",
+        "type": "frontend_component",
+        "description": "RPH generation form and generated lesson preview.",
+        "parent": "frontend-pages",
+        "children": ["input-rph-form", "lesson-preview-component", "export-actions", "attach-material-action"],
+        "related_nodes": ["lesson-engine", "ai-rph-generation", "schedule-linking"],
+        "feature_links": ["AI Lesson Planner"],
+        "api_links": ["POST /generate", "POST /documents/lesson-plan"],
+        "database_links": ["LessonPlans", "Schedules", "Materials"]
+      },
+      {
+        "id": "input-rph-form",
+        "label": "Input RPH Form",
+        "type": "frontend_component",
+        "description": "Collects subject, year, skill, topic, objectives, materials, assessment type and classroom context.",
+        "parent": "page-lesson-planner",
+        "children": ["form-validation", "draft-state", "generate-button"],
+        "related_nodes": ["backend-validation", "prompt-builder"],
+        "feature_links": ["AI Lesson Planner"],
+        "api_links": ["POST /generate"],
+        "database_links": ["LessonPlans"]
+      },
+      {
+        "id": "page-pbd",
+        "label": "PBD Page",
+        "type": "frontend_component",
+        "description": "Assessment overview, key-in table, rubrics, portfolio, UASA and AI analysis tabs.",
+        "parent": "frontend-pages",
+        "children": ["pbd-keyin-table", "rubric-builder-ui", "student-portfolio-ui", "pbd-report-ui"],
+        "related_nodes": ["pbd-engine", "analytics-trigger", "evidence-upload-flow"],
+        "feature_links": ["PBD System", "Rubric Builder"],
+        "api_links": ["POST /assessment", "GET /student-records"],
+        "database_links": ["Assessments", "Students", "Rubrics", "Analytics"]
+      },
+      {
+        "id": "pbd-keyin-table",
+        "label": "PBD Key-in Table",
+        "type": "frontend_component",
+        "description": "Editable rows for attendance, score, TP level, comments and evidence actions.",
+        "parent": "page-pbd",
+        "children": ["score-input", "tp-badge", "evidence-action", "csv-import-export"],
+        "related_nodes": ["tp-calculation-engine", "analytics-trigger"],
+        "feature_links": ["PBD System"],
+        "api_links": ["POST /assessment"],
+        "database_links": ["Assessments", "Students", "Analytics"]
+      },
+      {
+        "id": "page-timetable",
+        "label": "Timetable Page",
+        "type": "frontend_component",
+        "description": "Weekly schedule grid, RPH attention panel and period actions.",
+        "parent": "frontend-pages",
+        "children": ["weekly-schedule-grid", "period-card", "schedule-fixes-panel", "new-slot-action"],
+        "related_nodes": ["scheduling-system", "lesson-engine"],
+        "feature_links": ["Timetable Planner"],
+        "api_links": ["GET /schedule/overview", "POST /schedule/periods"],
+        "database_links": ["Schedules", "LessonPlans", "Classes"]
+      },
+      {
+        "id": "frontend-state",
+        "label": "State Management",
+        "type": "state",
+        "description": "Client state for active page, theme, copilot, forms, timetable slots, PBD rows and server cache.",
+        "parent": "frontend-system",
+        "children": ["active-page-state", "theme-state", "form-state", "server-cache", "optimistic-updates"],
+        "related_nodes": ["state-update-flow", "backend-api-gateway"],
+        "feature_links": ["AI Lesson Planner", "PBD System", "Timetable Planner"],
+        "api_links": [],
+        "database_links": []
+      },
+      {
+        "id": "frontend-hooks",
+        "label": "Hooks & Utilities",
+        "type": "shared_utility",
+        "description": "Reusable frontend logic for API calls, media queries, local drafts, uploads and filters.",
+        "parent": "frontend-system",
+        "children": ["use-api-client", "use-mobile", "use-local-draft", "use-upload", "use-search-filter"],
+        "related_nodes": ["frontend-state", "backend-api-gateway"],
+        "feature_links": [],
+        "api_links": [],
+        "database_links": []
+      },
+      {
+        "id": "frontend-layouts",
+        "label": "Layouts",
+        "type": "frontend_component",
+        "description": "App shell, sidebar, topbar, page header, dashboard canvas and responsive mobile drawer.",
+        "parent": "frontend-system",
+        "children": ["app-shell-layout", "sidebar-layout", "topbar-layout", "page-header-layout"],
+        "related_nodes": ["frontend-state", "auth-security"],
+        "feature_links": ["All frontend modules"],
+        "api_links": [],
+        "database_links": []
+      },
+      {
+        "id": "frontend-components",
+        "label": "Shared Components",
+        "type": "frontend_component",
+        "description": "Reusable UI primitives used by page modules, including cards, tables, badges, panels, charts and forms.",
+        "parent": "frontend-system",
+        "children": ["card-component", "badge-component", "table-component", "modal-component", "chart-component", "ai-copilot-ui", "lesson-preview-component"],
+        "related_nodes": ["frontend-pages", "frontend-state"],
+        "feature_links": ["AI Lesson Planner", "PBD System", "Analytics Dashboard"],
+        "api_links": [],
+        "database_links": []
+      },
+      {
+        "id": "lesson-preview-component",
+        "label": "Lesson Preview Component",
+        "type": "frontend_component",
+        "description": "Renders normalized AI output into objectives, success criteria, activities, assessment, differentiation and procedure cards.",
+        "parent": "frontend-components",
+        "children": ["alignment-grid", "procedure-list", "export-actions"],
+        "related_nodes": ["ai-rph-generation", "db-lessonplans"],
+        "feature_links": ["AI Lesson Planner"],
+        "api_links": ["POST /generate"],
+        "database_links": ["LessonPlans"]
+      },
+      {
+        "id": "ai-copilot-ui",
+        "label": "AI Copilot UI",
+        "type": "frontend_component",
+        "description": "Floating contextual assistant panel that surfaces recommendations and routes teachers to the next best action.",
+        "parent": "frontend-components",
+        "children": ["prompt-input", "insight-card", "suggested-action-button", "context-summary"],
+        "related_nodes": ["ai-system", "ai-analytics-insights", "teacher-workflow-flow"],
+        "feature_links": ["AI Copilot", "Analytics Dashboard"],
+        "api_links": ["/analyze", "/improve", "/generate"],
+        "database_links": ["LessonPlans", "Assessments", "Analytics"]
+      },
+      {
+        "id": "backend-system",
+        "label": "Backend System",
+        "type": "backend",
+        "description": "Express API, controllers, services, persistence, AI orchestration, exports and upload processing.",
+        "parent": "platform",
+        "children": ["backend-api-gateway", "auth-middleware", "controllers", "backend-services", "repositories", "queue-system", "file-handlers", "ai-orchestrator", "analytics-processor", "export-engine", "notification-service"],
+        "related_nodes": ["frontend-system", "database-system", "ai-system"],
+        "feature_links": ["AI Lesson Planner", "PBD System", "Analytics Dashboard"],
+        "api_links": ["/generate", "/schedule", "/assessment", "/documents"],
+        "database_links": ["Users", "LessonPlans", "Assessments", "Materials"]
+      },
+      {
+        "id": "backend-api-gateway",
+        "label": "API Gateway",
+        "type": "api",
+        "description": "REST route boundary for health, generation, lesson plans, schedules, PBD, documents and analytics actions.",
+        "parent": "backend-system",
+        "children": ["route-generate", "route-lesson-plans", "route-schedule", "route-assessment", "route-documents", "route-ai-analysis"],
+        "related_nodes": ["auth-middleware", "controllers"],
+        "feature_links": ["AI Lesson Planner", "PBD System"],
+        "api_links": ["/generate", "/lesson-plans", "/schedule/overview", "/assessment"],
+        "database_links": []
+      },
+      {
+        "id": "controllers",
+        "label": "Controllers",
+        "type": "backend_service",
+        "description": "Thin route handlers that validate requests, call services and return stable JSON contracts.",
+        "parent": "backend-system",
+        "children": ["lesson-controller", "schedule-controller", "assessment-controller", "documents-controller", "users-controller"],
+        "related_nodes": ["backend-services", "repositories"],
+        "feature_links": [],
+        "api_links": [],
+        "database_links": []
+      },
+      {
+        "id": "route-generate",
+        "label": "POST /generate",
+        "type": "api",
+        "description": "Creates an AI-generated lesson plan, normalizes the response and persists a LessonPlan record.",
+        "parent": "backend-api-gateway",
+        "children": ["generate-validation", "generate-ai-call", "generate-persist"],
+        "related_nodes": ["ai-rph-generation", "db-lessonplans", "lesson-engine"],
+        "feature_links": ["AI Lesson Planner"],
+        "api_links": ["POST /generate"],
+        "database_links": ["LessonPlans", "Schedules"]
+      },
+      {
+        "id": "route-lesson-plans",
+        "label": "/lesson-plans Routes",
+        "type": "api",
+        "description": "List, read, update and delete generated or edited lesson plans.",
+        "parent": "backend-api-gateway",
+        "children": ["lesson-list-route", "lesson-detail-route", "lesson-update-route", "lesson-delete-route"],
+        "related_nodes": ["db-lessonplans", "lesson-engine"],
+        "feature_links": ["AI Lesson Planner", "Reports"],
+        "api_links": ["GET /lesson-plans", "PUT /lesson-plans/:id", "DELETE /lesson-plans/:id"],
+        "database_links": ["LessonPlans"]
+      },
+      {
+        "id": "route-schedule",
+        "label": "/schedule Routes",
+        "type": "api",
+        "description": "Manage overview, periods, links and dated schedule items.",
+        "parent": "backend-api-gateway",
+        "children": ["schedule-overview-route", "period-create-route", "period-update-route", "schedule-link-route"],
+        "related_nodes": ["scheduling-system", "db-lessonplans"],
+        "feature_links": ["Timetable Planner"],
+        "api_links": ["GET /schedule/overview", "POST /schedule/periods", "POST /schedule/links"],
+        "database_links": ["Schedules", "LessonPlans"]
+      },
+      {
+        "id": "route-assessment",
+        "label": "/assessment Routes",
+        "type": "api",
+        "description": "Create and retrieve PBD assessment records, rubric-linked scores and evidence metadata.",
+        "parent": "backend-api-gateway",
+        "children": ["assessment-create-route", "assessment-list-route", "student-record-route"],
+        "related_nodes": ["pbd-engine", "analytics-trigger"],
+        "feature_links": ["PBD System"],
+        "api_links": ["POST /assessment", "GET /student-records"],
+        "database_links": ["Assessments", "Students", "Analytics"]
+      },
+      {
+        "id": "route-documents",
+        "label": "/documents Routes",
+        "type": "api",
+        "description": "Generate DOCX/PDF exports and extract text from uploaded lesson or evidence files.",
+        "parent": "backend-api-gateway",
+        "children": ["docx-export-route", "pdf-export-route", "text-extraction-route"],
+        "related_nodes": ["export-engine", "file-storage"],
+        "feature_links": ["Reporting & Export System", "Material Repository"],
+        "api_links": ["POST /documents/lesson-plan"],
+        "database_links": ["LessonPlans", "Materials"]
+      },
+      {
+        "id": "route-ai-analysis",
+        "label": "AI Analysis Routes",
+        "type": "api",
+        "description": "Analyze, improve, simulate, evaluate and KSSR-check lesson plans through the AI system.",
+        "parent": "backend-api-gateway",
+        "children": ["analyze-route", "improve-route", "simulate-route", "evaluate-route", "kssr-check-route"],
+        "related_nodes": ["ai-system", "evaluation-engine", "analytics-engine"],
+        "feature_links": ["AI Copilot", "Evaluation Forms", "Analytics Dashboard"],
+        "api_links": ["/analyze", "/improve", "/simulate", "/evaluate", "/kssr-check"],
+        "database_links": ["LessonPlans", "Analytics"]
+      },
+      {
+        "id": "backend-services",
+        "label": "Shared Services",
+        "type": "backend_service",
+        "description": "Domain services for pedagogy, AI provider calls, file text extraction, DOCX generation, KSSR analysis and database access.",
+        "parent": "backend-system",
+        "children": ["pedagogy-engine", "ai-provider-service", "lesson-docx-service", "file-text-service", "kssr-analyzer", "sow-library", "db-service"],
+        "related_nodes": ["ai-orchestrator", "export-engine", "file-handlers"],
+        "feature_links": ["AI Lesson Planner", "Evaluation Forms"],
+        "api_links": ["/generate", "/evaluate", "/documents/lesson-plan"],
+        "database_links": ["LessonPlans"]
+      },
+      {
+        "id": "queue-system",
+        "label": "Queue System",
+        "type": "scheduled_job",
+        "description": "Future background worker layer for long AI jobs, document exports, analytics aggregation and notifications.",
+        "parent": "backend-system",
+        "children": ["ai-generation-job", "analytics-aggregation-job", "document-export-job", "notification-job"],
+        "related_nodes": ["ai-system", "analytics-engine", "notification-system"],
+        "feature_links": ["Analytics Dashboard", "Reporting & Export System"],
+        "api_links": [],
+        "database_links": ["Analytics", "LessonPlans"]
+      },
+      {
+        "id": "ai-system",
+        "label": "AI System",
+        "type": "ai",
+        "description": "Prompt orchestration, provider abstraction, context injection, safety, structured formatting and retry logic.",
+        "parent": "platform",
+        "children": ["prompt-builder", "context-injection", "curriculum-alignment", "student-performance-context", "ai-rph-generation", "ai-rubric-generation", "differentiation-engine", "ai-analytics-insights", "recommendation-engine", "prompt-history", "ai-caching", "token-optimization", "safety-filters", "hallucination-prevention", "structured-output-formatting", "retry-system", "ai-provider-abstraction"],
+        "related_nodes": ["lesson-engine", "pbd-engine", "analytics-engine", "ai-copilot-ui"],
+        "feature_links": ["AI Lesson Planner", "AI Copilot", "Rubric Builder", "Analytics Dashboard"],
+        "api_links": ["/generate", "/analyze", "/improve", "/simulate", "/evaluate"],
+        "database_links": ["LessonPlans", "Assessments", "Analytics", "Materials"]
+      },
+      {
+        "id": "prompt-builder",
+        "label": "Prompt Builder",
+        "type": "ai_service",
+        "description": "Builds task-specific prompts with schema requirements, KSSR constraints and teacher context.",
+        "parent": "ai-system",
+        "children": ["prompt-template-registry", "json-schema-contracts", "system-instructions", "task-specific-user-prompt"],
+        "related_nodes": ["context-injection", "structured-output-formatting"],
+        "feature_links": ["AI Lesson Planner", "Rubric Builder"],
+        "api_links": ["/generate"],
+        "database_links": []
+      },
+      {
+        "id": "context-injection",
+        "label": "Context Injection",
+        "type": "ai_service",
+        "description": "Injects curriculum, class profile, PBD evidence, materials, timetable and teacher preferences into prompts.",
+        "parent": "ai-system",
+        "children": ["kssr-context", "sow-context", "class-profile-context", "pbd-summary-context", "material-excerpt-context", "schedule-context"],
+        "related_nodes": ["database-system", "file-storage", "analytics-engine"],
+        "feature_links": ["AI Lesson Planner", "AI Copilot"],
+        "api_links": ["/generate", "/analyze"],
+        "database_links": ["Subjects", "Classes", "Assessments", "Materials", "Schedules"]
+      },
+      {
+        "id": "ai-rph-generation",
+        "label": "RPH Generation",
+        "type": "ai_service",
+        "description": "Generates document-ready lesson details, objectives, success criteria, activities, assessment, differentiation and procedure.",
+        "parent": "ai-system",
+        "children": ["lesson-detail-generator", "procedure-generator", "assessment-generator", "differentiation-generator", "rph-normalizer"],
+        "related_nodes": ["lesson-engine", "route-generate"],
+        "feature_links": ["AI Lesson Planner"],
+        "api_links": ["POST /generate"],
+        "database_links": ["LessonPlans"]
+      },
+      {
+        "id": "ai-analytics-insights",
+        "label": "AI Analytics Insights",
+        "type": "ai_service",
+        "description": "Turns PBD aggregates and skill gaps into teacher-readable intervention recommendations.",
+        "parent": "ai-system",
+        "children": ["weakness-summary", "risk-detection", "intervention-plan", "uasa-forecast-explanation"],
+        "related_nodes": ["analytics-engine", "recommendation-engine"],
+        "feature_links": ["Analytics Dashboard", "PBD System"],
+        "api_links": ["/analyze", "/simulate"],
+        "database_links": ["Analytics", "Assessments", "Students"]
+      },
+      {
+        "id": "ai-provider-abstraction",
+        "label": "AI Provider Abstraction",
+        "type": "ai_service",
+        "description": "Separates Gemini/OpenAI details from feature services and supports fallback provider selection.",
+        "parent": "ai-system",
+        "children": ["gemini-provider", "openai-provider", "provider-config", "provider-fallback"],
+        "related_nodes": ["retry-system", "safety-filters"],
+        "feature_links": ["AI Copilot", "AI Lesson Planner"],
+        "api_links": [],
+        "database_links": []
+      },
+      {
+        "id": "structured-output-formatting",
+        "label": "Structured Output Formatting",
+        "type": "ai_service",
+        "description": "Repairs, validates and normalizes model responses into stable JSON shapes before frontend rendering or database writes.",
+        "parent": "ai-system",
+        "children": ["json-parse-repair", "fallback-shapes", "field-normalizers", "schema-contracts"],
+        "related_nodes": ["prompt-builder", "retry-system", "route-generate"],
+        "feature_links": ["AI Lesson Planner", "AI Copilot", "Evaluation Forms"],
+        "api_links": ["/generate", "/evaluate", "/analyze"],
+        "database_links": ["LessonPlans", "Analytics"]
+      },
+      {
+        "id": "database-system",
+        "label": "Database System",
+        "type": "database",
+        "description": "MongoDB collections, relationships, indexes, permission mapping and analytics aggregation inputs.",
+        "parent": "platform",
+        "children": ["db-users", "db-classes", "db-students", "db-subjects", "db-lessonplans", "db-assessments", "db-rubrics", "db-schedules", "db-materials", "db-evaluationforms", "db-analytics", "db-indexes", "cascade-rules", "normalization-rules"],
+        "related_nodes": ["backend-system", "analytics-engine", "auth-security"],
+        "feature_links": ["PBD System", "AI Lesson Planner", "Analytics Dashboard"],
+        "api_links": [],
+        "database_links": ["Users", "Classes", "Students", "LessonPlans", "Assessments", "Rubrics", "Schedules", "Materials", "EvaluationForms", "Analytics"]
+      },
+      {
+        "id": "db-lessonplans",
+        "label": "LessonPlans Collection",
+        "type": "database_table",
+        "description": "Stores AI-generated and edited RPH records, normalized fields, generatedFields and schedule links.",
+        "parent": "database-system",
+        "children": ["lesson-fields", "lesson-generated-fields", "lesson-indexes", "lesson-schedule-fk"],
+        "related_nodes": ["lesson-engine", "scheduling-system", "evaluation-engine"],
+        "feature_links": ["AI Lesson Planner"],
+        "api_links": ["/lesson-plans", "/generate"],
+        "database_links": ["Schedules", "Materials", "EvaluationForms"]
+      },
+      {
+        "id": "db-assessments",
+        "label": "Assessments Collection",
+        "type": "database_table",
+        "description": "Stores PBD assessment records, scores, TP levels, rubric links and evidence pointers.",
+        "parent": "database-system",
+        "children": ["assessment-records", "tp-fields", "rubric-reference", "evidence-reference"],
+        "related_nodes": ["pbd-engine", "analytics-trigger"],
+        "feature_links": ["PBD System"],
+        "api_links": ["/assessment"],
+        "database_links": ["Students", "Rubrics", "Analytics"]
+      },
+      {
+        "id": "auth-security",
+        "label": "Authentication & Security",
+        "type": "auth",
+        "description": "Identity, teacher/admin/panel access control, tenant permissions, upload rules, AI privacy and audit logging.",
+        "parent": "platform",
+        "children": ["login-flow", "role-based-access", "school-tenancy", "route-guards", "data-policy", "upload-validation", "ai-redaction", "audit-log"],
+        "related_nodes": ["backend-api-gateway", "database-system"],
+        "feature_links": ["Role-based access"],
+        "api_links": ["/users"],
+        "database_links": ["Users", "Classes"]
+      },
+      {
+        "id": "file-storage",
+        "label": "File & Media Storage",
+        "type": "storage",
+        "description": "Materials, evidence files, generated DOCX/PDF exports, extracted text and future object storage mapping.",
+        "parent": "platform",
+        "children": ["materials-upload", "evidence-upload-flow", "docx-export-storage", "pdf-export-storage", "file-text-extraction", "object-storage-adapter"],
+        "related_nodes": ["materials-page", "pbd-engine", "evaluation-engine"],
+        "feature_links": ["Material Repository", "Classroom Evidence Uploads"],
+        "api_links": ["/documents/lesson-plan"],
+        "database_links": ["Materials", "Assessments", "LessonPlans"]
+      },
+      {
+        "id": "analytics-engine",
+        "label": "Analytics Engine",
+        "type": "analytics_pipeline",
+        "description": "Aggregates PBD records, assessment scores, evidence and lesson outcomes into insights and intervention plans.",
+        "parent": "platform",
+        "children": ["analytics-ingestion", "analytics-aggregation", "topic-heatmap", "skill-performance", "risk-detection", "intervention-planner", "predictive-insights", "report-ready-metrics"],
+        "related_nodes": ["pbd-engine", "ai-analytics-insights", "reporting-export"],
+        "feature_links": ["Analytics Dashboard"],
+        "api_links": ["/analyze", "/simulate"],
+        "database_links": ["Analytics", "Assessments", "Students", "Classes"]
+      },
+      {
+        "id": "scheduling-system",
+        "label": "Scheduling System",
+        "type": "feature",
+        "description": "Timetable periods, schedule import, RPH attention states, lesson plan linking and conflict checks.",
+        "parent": "platform",
+        "children": ["weekly-grid-engine", "period-management", "schedule-linking", "conflict-detection", "missing-rph-detection"],
+        "related_nodes": ["lesson-engine", "teacher-workflow-flow"],
+        "feature_links": ["Timetable Planner"],
+        "api_links": ["/schedule/overview", "/schedule/periods", "/schedule/links"],
+        "database_links": ["Schedules", "LessonPlans", "Classes"]
+      },
+      {
+        "id": "pbd-engine",
+        "label": "PBD Assessment Engine",
+        "type": "feature",
+        "description": "Assessment templates, rubrics, score mapping, TP calculation, evidence, history and AI intervention suggestions.",
+        "parent": "platform",
+        "children": ["assessment-templates", "rubric-engine", "dynamic-criteria", "score-mapping-logic", "tp-calculation-engine", "analytics-trigger", "student-performance-history", "predictive-insights", "ai-intervention-suggestions"],
+        "related_nodes": ["analytics-engine", "ai-system", "evaluation-engine"],
+        "feature_links": ["PBD System", "Rubric Builder"],
+        "api_links": ["/assessment", "/student-records"],
+        "database_links": ["Assessments", "Students", "Rubrics", "Analytics"]
+      },
+      {
+        "id": "lesson-engine",
+        "label": "Lesson Planning Engine",
+        "type": "feature",
+        "description": "RPH generation, lesson edit lifecycle, schedule linking, document export and material attachment.",
+        "parent": "platform",
+        "children": ["rph-input-schema", "ai-rph-generation", "lesson-preview-component", "lesson-versioning", "schedule-linking", "document-export-job"],
+        "related_nodes": ["scheduling-system", "pbd-engine", "ai-system"],
+        "feature_links": ["AI Lesson Planner"],
+        "api_links": ["/generate", "/lesson-plans", "/documents/lesson-plan"],
+        "database_links": ["LessonPlans", "Schedules", "Materials"]
+      },
+      {
+        "id": "evaluation-engine",
+        "label": "Evaluation & Forms Engine",
+        "type": "feature",
+        "description": "Post-lesson reflection, annotated critique, improvement suggestions and panel review pathways.",
+        "parent": "platform",
+        "children": ["reflection-form", "annotation-engine", "ai-evaluation", "improvement-rewrite", "follow-up-actions"],
+        "related_nodes": ["lesson-engine", "analytics-engine"],
+        "feature_links": ["Evaluation Forms"],
+        "api_links": ["/evaluate", "/improve", "/kssr-check"],
+        "database_links": ["EvaluationForms", "LessonPlans", "Analytics"]
+      },
+      {
+        "id": "notification-system",
+        "label": "Notification System",
+        "type": "scheduled_job",
+        "description": "Future reminder and workflow notification layer for missing RPH, pending PBD, reports and admin review.",
+        "parent": "platform",
+        "children": ["missing-rph-reminder", "pbd-deadline-reminder", "admin-review-alert", "parent-summary-notice"],
+        "related_nodes": ["queue-system", "analytics-engine"],
+        "feature_links": ["Future Systems"],
+        "api_links": [],
+        "database_links": ["Users", "Schedules", "Assessments"]
+      },
+      {
+        "id": "admin-management",
+        "label": "Admin Management",
+        "type": "feature",
+        "description": "Teacher management, school dashboards, panel review, exports, permissions and performance monitoring.",
+        "parent": "platform",
+        "children": ["teacher-directory", "school-dashboard", "panel-review", "role-management", "export-monitoring"],
+        "related_nodes": ["auth-security", "analytics-engine", "reporting-export"],
+        "feature_links": ["Role-based access"],
+        "api_links": ["/users"],
+        "database_links": ["Users", "Classes", "Analytics"]
+      },
+      {
+        "id": "reporting-export",
+        "label": "Reporting & Export System",
+        "type": "feature",
+        "description": "PDF/DOCX/CSV reports for RPH, PBD, class analytics, parent summaries and admin reporting.",
+        "parent": "platform",
+        "children": ["docx-export", "pdf-export", "csv-export", "parent-report", "admin-report", "print-layouts"],
+        "related_nodes": ["export-engine", "analytics-engine", "pbd-engine"],
+        "feature_links": ["Reports"],
+        "api_links": ["/documents/lesson-plan"],
+        "database_links": ["LessonPlans", "Assessments", "Analytics"]
+      },
+      {
+        "id": "future-layer",
+        "label": "Future Scalability Layer",
+        "type": "future_system",
+        "description": "Enterprise extensions for multi-school deployment, parent/student portals, mobile, offline, real-time and integrations.",
+        "parent": "platform",
+        "children": ["multi-tenant-schools", "parent-dashboard", "student-portal", "mobile-apps", "offline-sync", "real-time-collaboration", "ai-teaching-assistant", "voice-input", "ocr-marking", "smart-attendance", "lms-integrations", "national-curriculum-apis"],
+        "related_nodes": ["auth-security", "queue-system", "notification-system"],
+        "feature_links": ["Future Scalability"],
+        "api_links": [],
+        "database_links": ["Users", "Classes", "Analytics"]
+      },
+      {
+        "id": "teacher-workflow-flow",
+        "label": "Teacher Creates Lesson → Evidence → Analytics",
+        "type": "event_flow",
+        "description": "Teacher creates lesson plan, links timetable, records PBD, uploads evidence, receives analytics and AI recommendations.",
+        "parent": "platform",
+        "children": ["event-generate-rph", "event-link-schedule", "event-keyin-pbd", "event-upload-evidence", "event-analytics-refresh", "event-ai-recommendation"],
+        "related_nodes": ["lesson-engine", "scheduling-system", "pbd-engine", "analytics-engine", "ai-system"],
+        "feature_links": ["AI Lesson Planner", "Timetable Planner", "PBD System", "Analytics Dashboard"],
+        "api_links": ["/generate", "/schedule/links", "/assessment", "/analyze"],
+        "database_links": ["LessonPlans", "Schedules", "Assessments", "Materials", "Analytics"]
+      },
+      {
+        "id": "ai-orchestration-flow",
+        "label": "AI Orchestration Flow",
+        "type": "event_flow",
+        "description": "User prompt passes through prompt engine, context injection, provider adapter, formatter, database persistence and UI display.",
+        "parent": "platform",
+        "children": ["event-user-prompt", "event-prompt-build", "event-context-inject", "event-provider-call", "event-format-output", "event-save-output", "event-render-dashboard"],
+        "related_nodes": ["prompt-builder", "context-injection", "ai-provider-abstraction", "structured-output-formatting"],
+        "feature_links": ["AI Copilot", "AI Lesson Planner", "Analytics Dashboard"],
+        "api_links": ["/generate", "/analyze", "/improve"],
+        "database_links": ["LessonPlans", "Analytics"]
+      }
+    ],
+    "edges": [
+      { "from": "lesson-engine", "to": "scheduling-system", "type": "links_to", "label": "lesson linked to timetable slot" },
+      { "from": "scheduling-system", "to": "pbd-engine", "type": "triggers", "label": "conducted lesson creates assessment need" },
+      { "from": "pbd-engine", "to": "file-storage", "type": "writes", "label": "evidence upload" },
+      { "from": "pbd-engine", "to": "analytics-engine", "type": "triggers", "label": "score and TP update analytics" },
+      { "from": "analytics-engine", "to": "ai-analytics-insights", "type": "feeds", "label": "weakness summary to AI" },
+      { "from": "ai-analytics-insights", "to": "ai-copilot-ui", "type": "recommends", "label": "teacher next action" },
+      { "from": "evaluation-engine", "to": "lesson-engine", "type": "improves", "label": "post-lesson rewrite suggestions" },
+      { "from": "frontend-system", "to": "backend-api-gateway", "type": "calls", "label": "REST fetches" },
+      { "from": "backend-services", "to": "database-system", "type": "reads_writes", "label": "Mongoose models" },
+      { "from": "backend-services", "to": "ai-system", "type": "orchestrates", "label": "AI task calls" },
+      { "from": "auth-security", "to": "backend-api-gateway", "type": "guards", "label": "RBAC route protection" },
+      { "from": "file-storage", "to": "context-injection", "type": "feeds", "label": "material excerpts for AI" },
+      { "from": "admin-management", "to": "reporting-export", "type": "requests", "label": "admin export reports" },
+      { "from": "queue-system", "to": "notification-system", "type": "dispatches", "label": "scheduled reminders" },
+      { "from": "future-layer", "to": "auth-security", "type": "depends_on", "label": "multi-tenant permissions" }
+    ],
+    "dependencies": [
+      { "source": "AI Lesson Planner", "depends_on": ["AI System", "LessonPlans", "Schedules", "Materials"] },
+      { "source": "PBD System", "depends_on": ["Students", "Assessments", "Rubrics", "Analytics Engine"] },
+      { "source": "Analytics Dashboard", "depends_on": ["Assessments", "Students", "AI Analytics Insights"] },
+      { "source": "Timetable Planner", "depends_on": ["Schedules", "LessonPlans", "Classes"] },
+      { "source": "AI Copilot", "depends_on": ["Prompt Builder", "Context Injection", "Recommendation Engine"] },
+      { "source": "Reports", "depends_on": ["LessonPlans", "Assessments", "Analytics", "Export Engine"] }
+    ],
+    "flows": [
+      {
+        "id": "teacher_lesson_to_analytics",
+        "label": "Teacher lesson-to-analytics flow",
+        "steps": ["Teacher creates RPH", "RPH links to timetable", "Lesson is conducted", "PBD scores are keyed in", "Evidence is uploaded", "Analytics aggregates performance", "AI recommends intervention"],
+        "node_sequence": ["lesson-engine", "scheduling-system", "pbd-engine", "file-storage", "analytics-engine", "ai-analytics-insights", "ai-copilot-ui"]
+      },
+      {
+        "id": "ai_generation_flow",
+        "label": "AI generation flow",
+        "steps": ["User prompt", "Prompt builder", "Context injection", "Gemini/OpenAI provider", "Structured formatter", "Database save", "Dashboard render"],
+        "node_sequence": ["event-user-prompt", "prompt-builder", "context-injection", "ai-provider-abstraction", "structured-output-formatting", "db-lessonplans", "lesson-preview-component"]
+      },
+      {
+        "id": "admin_reporting_flow",
+        "label": "Admin reporting flow",
+        "steps": ["Admin reviews school analytics", "Filters teacher/class", "Exports reports", "Panel reviews performance", "Notifications sent"],
+        "node_sequence": ["admin-management", "analytics-engine", "reporting-export", "notification-system"]
+      }
+    ]
+  },
+  "agent_notes": {
+    "recommended_folder_structure": {
+      "frontend/src/features": "One folder per domain feature",
+      "frontend/src/shared": "Shared components, API client, utilities and hooks",
+      "backend/routes": "Thin route handlers only",
+      "backend/services": "Business logic, AI, exports, file parsing",
+      "backend/models": "Mongoose schema definitions",
+      "backend/jobs": "Future background jobs for AI and analytics",
+      "backend/policies": "Future auth, RBAC, data access policies"
+    },
+    "scaling_strategy": [
+      "Keep monolith until product flows stabilize",
+      "Extract AI generation into an async job service when generation load increases",
+      "Extract file processing into a worker service when uploads grow",
+      "Precompute analytics aggregates nightly and after assessment saves",
+      "Add tenant-aware indexes before onboarding multiple schools"
+    ],
+    "future_microservice_separation": {
+      "ai-service": "Prompt orchestration, provider adapters, response normalization",
+      "document-service": "DOCX/PDF generation and file extraction",
+      "analytics-service": "Aggregates, predictions, intervention recommendations",
+      "notification-service": "Parent/admin notifications and reminders",
+      "identity-service": "School tenancy, RBAC, SSO"
+    },
+    "caching_recommendations": [
+      "Cache lesson plan lists by teacherId and subject",
+      "Cache generated rubric templates by subject/year/skill",
+      "Cache analytics summaries by classId/period",
+      "Invalidate lesson cache after generation or update",
+      "Use CDN/object storage cache for materials"
+    ],
+    "ai_token_optimization": [
+      "Summarize PBD rows before sending to AI",
+      "Inject only relevant material excerpts",
+      "Use compact schemas in prompts",
+      "Store normalized generated results and reuse them",
+      "Prefer IDs and aggregate metrics over raw student profiles"
+    ],
+    "security_concerns": [
+      "Add authentication before real deployment",
+      "Enforce teacher can only access assigned classes",
+      "Protect student PII and guardian contact data",
+      "Validate uploads and restrict file types",
+      "Rate-limit AI routes",
+      "Audit admin exports and report downloads",
+      "Redact sensitive information before AI calls"
+    ],
+    "performance_bottlenecks": [
+      "AI generation latency",
+      "Large PBD tables with many students",
+      "Document export generation",
+      "File text extraction",
+      "Analytics aggregation on raw records",
+      "Over-fetching lesson generatedFields"
+    ],
+    "reusable_patterns": [
+      "PageHeader + Card layout",
+      "Feature-owned state with shared API clients",
+      "Normalize backend responses before UI rendering",
+      "Use status chips and action panels for teacher next steps",
+      "Use AI insight cards with route actions"
+    ],
+    "conventions": [
+      "Use English labels when product mode is English-only",
+      "Use KSSR/PBD terminology consistently in domain data",
+      "Keep route names resource-oriented",
+      "Use ObjectId references for cross-collection links",
+      "Prefer explicit skill fields for English analytics"
+    ]
+  }
+}

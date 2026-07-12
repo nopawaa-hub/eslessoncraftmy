@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LessonCraft MY | Evaluate Lesson</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body data-page="evaluate">
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="index.html"><span>✎</span><strong>LessonCraft <em>MY</em></strong></a>
+        <nav>
+          <a href="index.html">Dashboard</a><a href="generate.html">Generate Lesson</a><a href="analyze.html">Analyze Lesson</a><a href="improve.html">Improve Lesson</a><a href="simulate.html">Simulate Classroom</a><a class="active" href="evaluate.html">Evaluate Lesson</a><a href="history.html">History Vault</a><a href="schedule.html">Schedule</a><a href="assessment.html">Assessment</a>
+        </nav>
+        <div class="status-card"><small>Gemini AI</small><strong id="apiStatus">Checking...</strong></div>
+      </aside>
+      <main class="page">
+        <header class="page-header"><p class="eyebrow">Document feedback</p><h1>Evaluate Lesson</h1><p>Google Docs-style KSSR review with yellow and red highlights, rubric scores, and linked comments.</p></header>
+        <form class="panel eval-input eval-studio" id="evaluateForm">
+          <div class="card-title-row">
+            <h2>Highlight Engine</h2>
+            <div class="segmented-control" data-mode-group="evaluate">
+              <button type="button" class="active" data-mode-button="file">Upload Document</button>
+              <button type="button" data-mode-button="text">Paste Text</button>
+            </div>
+          </div>
+          <label class="mode-panel hidden" data-mode-panel="text">Lesson Plan Text<textarea id="lessonPlan" rows="7">CS: Understand simple sentences.
+LS: Read and answer questions.
+LO: Pupils understand the story.
+
+Teacher explains the story for 20 minutes. Pupils complete worksheet individually. Pupils answer recall questions. Teacher checks answers.</textarea></label>
+          <label class="upload-dropzone mode-panel" data-mode-panel="file">Upload .txt or .pdf
+            <input id="lessonFile" type="file" accept=".txt,.pdf" />
+            <span class="upload-icon">⇧</span>
+            <strong id="evaluateFileName">Drop your lesson plan PDF/TXT here</strong>
+            <small>PDF preview stays on the left while AI feedback appears on the right.</small>
+          </label>
+          <button class="primary-btn" type="submit">Start Evaluation</button>
+          <span class="spinner hidden" id="spinner"></span>
+        </form>
+        <section class="docs-layout">
+          <article class="document-panel" id="documentPanel"><div id="docOutput" class="document-page empty">Evaluation document appears here.</div></article>
+          <aside class="comments-panel">
+            <div class="feedback-tabs">
+              <button class="active" data-feedback-tab="rubrics">Score & Rubrics</button>
+              <button data-feedback-tab="comments">Inline Feedback</button>
+            </div>
+            <div id="rubricsOutput" class="rubrics-output comments-empty">Start Evaluation to see rubric scores.</div>
+            <div id="commentsOutput" class="comments-empty hidden">Start Evaluation to see comments.</div>
+          </aside>
+        </section>
+      </main>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>

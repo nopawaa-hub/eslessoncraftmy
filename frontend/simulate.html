@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LessonCraft MY | Simulate Classroom</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body data-page="simulate">
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="index.html"><span>✎</span><strong>LessonCraft <em>MY</em></strong></a>
+        <nav>
+          <a href="index.html">Dashboard</a><a href="generate.html">Generate Lesson</a><a href="analyze.html">Analyze Lesson</a><a href="improve.html">Improve Lesson</a><a class="active" href="simulate.html">Simulate Classroom</a><a href="evaluate.html">Evaluate Lesson</a><a href="history.html">History Vault</a><a href="schedule.html">Schedule</a><a href="assessment.html">Assessment</a>
+        </nav>
+        <div class="status-card"><small>Gemini AI</small><strong id="apiStatus">Checking...</strong></div>
+      </aside>
+      <main class="page">
+        <header class="page-header"><p class="eyebrow">Predict</p><h1>Simulate Classroom</h1><p>Preview engagement, pupil reactions, and teaching issues before teaching the lesson.</p></header>
+        <section class="two-column">
+          <form class="panel form-card" id="simulateForm">
+            <label>Lesson Plan Text<textarea id="lessonPlan" rows="15">Year 3 Science lesson. Teacher explains plant needs. Pupils draw a plant and label parts. Teacher asks pupils to answer questions orally.</textarea></label>
+            <button class="primary-btn" type="submit">Simulate Classroom</button>
+          </form>
+          <section class="panel output-card"><div class="output-head"><h2>Simulation</h2><span class="spinner hidden" id="spinner"></span></div><div id="output" class="output empty">Simulation appears here.</div></section>
+        </section>
+      </main>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>

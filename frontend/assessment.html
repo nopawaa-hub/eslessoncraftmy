@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LessonCraft MY | Assessment</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body data-page="assessment">
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="index.html"><span>✎</span><strong>LessonCraft <em>MY</em></strong></a>
+        <nav>
+          <a href="index.html">Dashboard</a>
+          <a href="generate.html">Generate Lesson</a>
+          <a href="analyze.html">Analyze Lesson</a>
+          <a href="improve.html">Improve Lesson</a>
+          <a href="simulate.html">Simulate Classroom</a>
+          <a href="evaluate.html">Evaluate Lesson</a>
+          <a href="history.html">History Vault</a>
+          <a href="schedule.html">Schedule</a>
+          <a class="active" href="assessment.html">Assessment</a>
+        </nav>
+        <div class="status-card"><small>Gemini AI</small><strong id="apiStatus">Checking...</strong></div>
+      </aside>
+      <main class="page">
+        <header class="page-header"><p class="eyebrow">PBD evidence</p><h1>Assessment & Records</h1><p>Create assessments and store pupil scores for quick evidence-based teaching decisions.</p></header>
+        <section class="assessment-layout">
+          <form class="panel form-card" id="assessmentForm">
+            <h2>Create Assessment</h2>
+            <label>Title<input id="assessmentTitle" placeholder="Year 4 Fractions Quiz" required /></label>
+            <div class="form-row">
+              <label>Year<select id="assessmentYear"><option>Year 1</option><option>Year 2</option><option>Year 3</option><option selected>Year 4</option><option>Year 5</option><option>Year 6</option></select></label>
+              <label>Subject<input id="assessmentSubject" value="Mathematics" required /></label>
+            </div>
+            <label>Questions<textarea id="assessmentQuestions" rows="5" placeholder="One question per line" required></textarea></label>
+            <button class="primary-btn" type="submit">Save Assessment</button>
+          </form>
+          <form class="panel form-card" id="studentRecordForm">
+            <h2>Add Student Record</h2>
+            <label>Student Name<input id="studentName" placeholder="Nur Aina" required /></label>
+            <label>Scores<textarea id="studentScores" rows="5" placeholder="Example: 80, 75, 90" required></textarea></label>
+            <button class="primary-btn" type="submit">Save Record</button>
+          </form>
+        </section>
+        <section class="assessment-layout">
+          <article class="panel"><div class="data-toolbar"><h2>Assessments</h2></div><div id="assessmentList" class="data-list"></div></article>
+          <article class="panel"><div class="data-toolbar"><h2>Student Records</h2></div><div id="studentRecordList" class="data-list"></div></article>
+        </section>
+      </main>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>

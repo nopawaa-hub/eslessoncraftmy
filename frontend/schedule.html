@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LessonCraft MY | Schedule</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body data-page="schedule">
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="index.html"><span>✎</span><strong>LessonCraft <em>MY</em></strong></a>
+        <nav>
+          <a href="index.html">Dashboard</a>
+          <a href="generate.html">Generate Lesson</a>
+          <a href="analyze.html">Analyze Lesson</a>
+          <a href="improve.html">Improve Lesson</a>
+          <a href="simulate.html">Simulate Classroom</a>
+          <a href="evaluate.html">Evaluate Lesson</a>
+          <a href="history.html">History Vault</a>
+          <a class="active" href="schedule.html">Schedule</a>
+          <a href="assessment.html">Assessment</a>
+        </nav>
+        <div class="status-card"><small>Gemini AI</small><strong id="apiStatus">Checking...</strong></div>
+      </aside>
+      <main class="page">
+        <header class="page-header"><p class="eyebrow">Planner</p><h1>Teaching Schedule</h1><p>Attach saved lesson plans to dates so your weekly teaching flow stays connected to the database.</p></header>
+        <section class="schedule-layout">
+          <form class="panel form-card" id="scheduleForm">
+            <label>Date<input id="scheduleDate" type="date" required /></label>
+            <label>Lesson Plan<select id="scheduleLesson" required></select></label>
+            <label>Notes<textarea id="scheduleNotes" rows="4" placeholder="Classroom notes, resources, or PBD focus"></textarea></label>
+            <button class="primary-btn" type="submit">Attach Lesson</button>
+          </form>
+          <section class="panel">
+            <div class="data-toolbar"><h2>Calendar</h2><button class="primary-btn compact-btn" id="refreshSchedule">Refresh</button></div>
+            <div id="scheduleCalendar" class="calendar-grid"></div>
+            <div id="scheduleList" class="data-list schedule-list"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>

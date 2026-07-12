@@ -1,0 +1,1880 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EduPilot Architecture Viewer</title>
+    <style>
+      :root {
+        --bg: #f7f5ef;
+        --bg-2: #eeebe3;
+        --panel: rgba(255, 255, 255, 0.74);
+        --panel-strong: #ffffff;
+        --ink: #191722;
+        --muted: #6f6b7b;
+        --line: rgba(35, 31, 48, 0.12);
+        --primary: #6454d6;
+        --primary-2: #9867f0;
+        --green: #18a47b;
+        --amber: #c98212;
+        --rose: #d85972;
+        --blue: #2b7bdc;
+        --shadow: 0 18px 60px rgba(32, 27, 46, 0.12);
+        --shadow-soft: 0 10px 30px rgba(32, 27, 46, 0.08);
+        --radius: 22px;
+        --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+        --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --serif: Georgia, ui-serif, serif;
+      }
+
+      [data-theme="dark"] {
+        --bg: #14131b;
+        --bg-2: #1e1b29;
+        --panel: rgba(34, 31, 45, 0.76);
+        --panel-strong: #242130;
+        --ink: #f4f1fa;
+        --muted: #a8a2b8;
+        --line: rgba(255, 255, 255, 0.11);
+        --shadow: 0 18px 70px rgba(0, 0, 0, 0.32);
+        --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.22);
+      }
+
+      * { box-sizing: border-box; }
+
+      html { scroll-behavior: smooth; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 15% 8%, rgba(100, 84, 214, 0.16), transparent 34rem),
+          radial-gradient(circle at 90% 16%, rgba(24, 164, 123, 0.12), transparent 28rem),
+          linear-gradient(135deg, var(--bg), var(--bg-2));
+        font-family: var(--sans);
+      }
+
+      button, input { font: inherit; }
+
+      button { cursor: pointer; }
+
+      .app {
+        display: grid;
+        grid-template-columns: 280px minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
+      .sidebar {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        border-right: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.32);
+        backdrop-filter: blur(22px) saturate(160%);
+        padding: 22px 16px;
+        z-index: 20;
+      }
+
+      [data-theme="dark"] .sidebar { background: rgba(20, 19, 27, 0.45); }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px;
+        margin-bottom: 22px;
+      }
+
+      .brand-mark {
+        display: grid;
+        width: 42px;
+        height: 42px;
+        place-items: center;
+        border-radius: 14px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-2));
+        color: white;
+        box-shadow: 0 18px 35px rgba(100, 84, 214, 0.28);
+      }
+
+      .brand h1 {
+        margin: 0;
+        font-family: var(--serif);
+        font-size: 21px;
+        font-weight: 500;
+        line-height: 1;
+      }
+
+      .brand p, .eyebrow {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .nav {
+        display: grid;
+        gap: 6px;
+      }
+
+      .nav a {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-radius: 13px;
+        color: var(--muted);
+        padding: 11px 12px;
+        text-decoration: none;
+        transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+      }
+
+      .nav a:hover, .nav a.active {
+        color: var(--ink);
+        background: var(--panel);
+        transform: translateX(2px);
+      }
+
+      .nav svg { width: 18px; height: 18px; }
+
+      .sidebar-footer {
+        position: absolute;
+        left: 16px;
+        right: 16px;
+        bottom: 16px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: var(--panel);
+        padding: 14px;
+        box-shadow: var(--shadow-soft);
+      }
+
+      .sidebar-footer strong { display: block; margin-bottom: 6px; }
+      .sidebar-footer span { color: var(--muted); font-size: 12px; line-height: 1.5; }
+
+      main {
+        min-width: 0;
+        padding: 28px;
+      }
+
+      section {
+        scroll-margin-top: 24px;
+        margin-bottom: 34px;
+      }
+
+      .hero {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 30px;
+        background:
+          linear-gradient(135deg, rgba(255,255,255,0.76), rgba(255,255,255,0.42)),
+          radial-gradient(circle at 80% 20%, rgba(100, 84, 214, 0.18), transparent 22rem);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(20px);
+        padding: 34px;
+      }
+
+      [data-theme="dark"] .hero {
+        background:
+          linear-gradient(135deg, rgba(34,31,45,0.86), rgba(34,31,45,0.52)),
+          radial-gradient(circle at 80% 20%, rgba(100, 84, 214, 0.18), transparent 22rem);
+      }
+
+      .hero-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+      }
+
+      .hero h2 {
+        max-width: 900px;
+        margin: 12px 0 0;
+        font-family: var(--serif);
+        font-size: clamp(42px, 6vw, 78px);
+        font-weight: 500;
+        letter-spacing: -0.04em;
+        line-height: 0.95;
+      }
+
+      .hero .desc {
+        max-width: 720px;
+        color: var(--muted);
+        font-size: 17px;
+        line-height: 1.7;
+      }
+
+      .theme-toggle {
+        align-self: start;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: var(--panel);
+        color: var(--ink);
+        padding: 10px 14px;
+      }
+
+      .badge-row, .status-grid, .grid, .module-grid, .roadmap-grid {
+        display: grid;
+        gap: 14px;
+      }
+
+      .badge-row {
+        grid-template-columns: repeat(auto-fit, minmax(130px, max-content));
+        margin-top: 24px;
+      }
+
+      .badge, .method, .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        width: fit-content;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: var(--panel);
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 12px;
+        padding: 7px 10px;
+      }
+
+      .status-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        margin-top: 26px;
+      }
+
+      .card, .module-card, .entity-card, .api-row, .flow-card, .roadmap-card {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--panel);
+        box-shadow: var(--shadow-soft);
+        backdrop-filter: blur(18px) saturate(160%);
+      }
+
+      .status-card {
+        padding: 18px;
+      }
+
+      .status-card span {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      .status-card strong {
+        display: block;
+        margin-top: 8px;
+        font-size: 20px;
+      }
+
+      .section-head {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 18px;
+      }
+
+      .section-head h2 {
+        margin: 0;
+        font-family: var(--serif);
+        font-size: clamp(32px, 4vw, 48px);
+        font-weight: 500;
+        letter-spacing: -0.03em;
+      }
+
+      .section-head p {
+        max-width: 680px;
+        margin: 8px 0 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .architecture-stack {
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(6, minmax(160px, 1fr));
+        gap: 16px;
+      }
+
+      .arch-block {
+        position: relative;
+        min-height: 260px;
+        padding: 18px;
+      }
+
+      .arch-block h3, .module-card h3, .entity-card h3, .flow-card h3, .roadmap-card h3 {
+        margin: 0;
+        font-size: 18px;
+      }
+
+      .arch-block p, .module-card p, .entity-card p, .flow-card p, .roadmap-card p {
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .arch-list {
+        display: grid;
+        gap: 8px;
+        padding: 0;
+        margin: 14px 0 0;
+        list-style: none;
+      }
+
+      .arch-list li {
+        border-radius: 10px;
+        background: rgba(100, 84, 214, 0.08);
+        color: var(--muted);
+        font-size: 12px;
+        padding: 8px;
+      }
+
+      .connector {
+        position: absolute;
+        top: 50%;
+        right: -18px;
+        width: 20px;
+        height: 2px;
+        background: linear-gradient(90deg, var(--primary), transparent);
+        animation: pulse-line 2.2s infinite;
+      }
+
+      @keyframes pulse-line {
+        0%, 100% { opacity: 0.35; transform: scaleX(0.8); }
+        50% { opacity: 1; transform: scaleX(1); }
+      }
+
+      .mindmap-shell {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 330px;
+        gap: 12px;
+        border: 1px solid rgba(245, 199, 90, 0.12);
+        border-radius: 24px;
+        background: #0c0d13;
+        box-shadow: 0 28px 90px rgba(0, 0, 0, 0.34);
+        padding: 12px;
+      }
+
+      .mindmap-board-head {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 18px;
+        border-bottom: 1px solid rgba(245, 199, 90, 0.10);
+        padding: 6px 8px 12px;
+      }
+
+      .mindmap-board-head h3 {
+        margin: 0;
+        color: #f7f0dc;
+        font-size: 18px;
+        line-height: 1.1;
+      }
+
+      .mindmap-board-head p {
+        max-width: 850px;
+        margin: 6px 0 0;
+        color: rgba(246, 240, 222, 0.54);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .board-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid rgba(245, 199, 90, 0.16);
+        border-radius: 999px;
+        background: rgba(255,255,255,0.04);
+        color: rgba(246, 240, 222, 0.72);
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 800;
+        padding: 7px 10px;
+        white-space: nowrap;
+      }
+
+      .board-status::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: #28d17c;
+        box-shadow: 0 0 14px rgba(40, 209, 124, 0.85);
+      }
+
+      .mindmap-toolbar {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        border: 1px solid rgba(245, 199, 90, 0.14);
+        border-radius: 14px;
+        background: linear-gradient(180deg, rgba(31, 33, 46, 0.96), rgba(17, 18, 27, 0.96));
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+        padding: 10px;
+      }
+
+      .mindmap-toolbar input {
+        min-width: min(480px, 100%);
+        flex: 1;
+        border: 1px solid rgba(245, 199, 90, 0.14);
+        border-radius: 10px;
+        background: rgba(6, 7, 11, 0.82);
+        color: #f6f0de;
+        outline: none;
+        padding: 11px 13px;
+      }
+
+      [data-theme="dark"] .mindmap-toolbar input { background: rgba(255,255,255,0.05); }
+
+      .mindmap-toolbar button {
+        border: 1px solid rgba(245, 199, 90, 0.22);
+        border-radius: 10px;
+        background: rgba(245, 199, 90, 0.08);
+        color: #f6d778;
+        font-weight: 800;
+        padding: 9px 10px;
+      }
+
+      .mindmap-toolbar button:hover {
+        background: rgba(245, 199, 90, 0.15);
+        border-color: rgba(245, 199, 90, 0.42);
+      }
+
+      .mindmap-legend {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .legend-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        border: 1px solid rgba(245, 199, 90, 0.14);
+        border-radius: 999px;
+        background: rgba(255,255,255,0.04);
+        color: rgba(246, 240, 222, 0.68);
+        font-size: 12px;
+        padding: 6px 10px;
+      }
+
+      .legend-chip i {
+        width: 9px;
+        height: 9px;
+        border-radius: 999px;
+      }
+
+      .mindmap-canvas {
+        position: relative;
+        height: 820px;
+        overflow: hidden;
+        border: 1px solid rgba(245, 199, 90, 0.12);
+        border-radius: 16px;
+        background:
+          linear-gradient(90deg, rgba(245, 199, 90, 0.04) 1px, transparent 1px),
+          linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255,255,255,0.035), transparent 22%, rgba(255,255,255,0.025) 22%, transparent 44%, rgba(255,255,255,0.025) 44%, transparent 66%, rgba(255,255,255,0.025) 66%, transparent),
+          radial-gradient(circle at 20% 18%, rgba(245, 199, 90, 0.10), transparent 18rem),
+          #11131d;
+        background-size: 280px 100%, 100% 84px, auto, auto, auto;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 18px 50px rgba(0,0,0,0.28);
+        cursor: grab;
+      }
+
+      .mindmap-canvas:active { cursor: grabbing; }
+
+      #mindmapSvg {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .mindmap-edge {
+        fill: none;
+        stroke: rgba(245, 199, 90, 0.58);
+        stroke-width: 2.2;
+        stroke-linecap: round;
+      }
+
+      .mindmap-cross-edge {
+        fill: none;
+        stroke: rgba(120, 201, 255, 0.36);
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        marker-end: url(#arrow);
+        opacity: 0.52;
+      }
+
+      .mindmap-edge.highlight,
+      .mindmap-cross-edge.highlight {
+        stroke-width: 3.4;
+        opacity: 1;
+        stroke: #ffe59a;
+      }
+
+      .mindmap-port {
+        fill: #f5c75a;
+        stroke: #11131d;
+        stroke-width: 3;
+        filter: drop-shadow(0 0 8px rgba(245,199,90,0.65));
+      }
+
+      .mindmap-lane-label {
+        fill: rgba(246, 240, 222, 0.22);
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+      }
+
+      .mindmap-node {
+        transition: opacity 180ms ease, filter 180ms ease, transform 180ms ease;
+      }
+
+      .mindmap-node rect {
+        stroke: rgba(245, 199, 90, 0.75);
+        stroke-width: 1.35;
+        filter: drop-shadow(0 10px 18px rgba(0,0,0,0.42));
+      }
+
+      .mindmap-node text {
+        pointer-events: none;
+        fill: #f7f0dc;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .mindmap-node .node-type {
+        fill: rgba(245, 199, 90, 0.88);
+        font-family: var(--mono);
+        font-size: 9px;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+      }
+
+      .mindmap-node.dim { opacity: 0.16; }
+      .mindmap-node.match rect { stroke: #fff1b8; stroke-width: 3; filter: url(#nodeGlow); }
+      .mindmap-node.selected rect { stroke: #fff1b8; stroke-width: 3.4; filter: url(#nodeGlow); }
+
+      .mindmap-tooltip {
+        position: absolute;
+        z-index: 5;
+        display: none;
+        max-width: 320px;
+        border: 1px solid rgba(245, 199, 90, 0.20);
+        border-radius: 14px;
+        background: rgba(15, 16, 24, 0.96);
+        color: #f7f0dc;
+        box-shadow: 0 18px 50px rgba(0,0,0,0.36);
+        padding: 12px;
+        pointer-events: none;
+      }
+
+      .mindmap-tooltip strong { display: block; margin-bottom: 6px; }
+      .mindmap-tooltip span { color: rgba(246, 240, 222, 0.68); font-size: 12px; line-height: 1.45; }
+
+      .mindmap-inspector {
+        border: 1px solid rgba(245, 199, 90, 0.14);
+        border-radius: 16px;
+        background: linear-gradient(180deg, rgba(31,33,46,0.96), rgba(14,15,22,0.96));
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+        padding: 14px;
+        min-height: 260px;
+        color: #f7f0dc;
+      }
+
+      .mindmap-inspector h3 {
+        margin: 10px 0 8px;
+        font-size: 20px;
+        font-weight: 800;
+        line-height: 1.12;
+      }
+
+      .panel-section {
+        margin-top: 14px;
+      }
+
+      .panel-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 9px;
+        color: #f6d778;
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .flow-card {
+        border: 1px solid rgba(245, 199, 90, 0.14);
+        border-radius: 10px;
+        background: rgba(255,255,255,0.045);
+        padding: 10px;
+      }
+
+      .flow-card + .flow-card {
+        margin-top: 8px;
+      }
+
+      .flow-card b {
+        display: block;
+        color: #f7f0dc;
+        font-size: 12px;
+        margin-bottom: 4px;
+      }
+
+      .flow-card span {
+        display: block;
+        color: rgba(246, 240, 222, 0.58);
+        font-size: 11px;
+        line-height: 1.45;
+      }
+
+      .mindmap-inspector p {
+        color: rgba(246, 240, 222, 0.66);
+        line-height: 1.55;
+      }
+
+      .inspector-list {
+        display: grid;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .inspector-list div {
+        border: 1px solid rgba(245, 199, 90, 0.12);
+        border-radius: 10px;
+        background: rgba(255,255,255,0.045);
+        padding: 10px;
+      }
+
+      [data-theme="dark"] .inspector-list div { background: rgba(255,255,255,0.04); }
+
+      .inspector-list b {
+        display: block;
+        margin-bottom: 5px;
+        color: #f6d778;
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+
+      .inspector-list span {
+        color: rgba(246, 240, 222, 0.68);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      .flow-step {
+        position: relative;
+        padding-left: 34px !important;
+      }
+
+      .flow-step::before {
+        content: attr(data-step);
+        position: absolute;
+        left: 10px;
+        top: 10px;
+        display: grid;
+        place-items: center;
+        width: 16px;
+        height: 16px;
+        border-radius: 999px;
+        background: #f5c75a;
+        color: #101018;
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 900;
+      }
+
+      .module-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .module-card {
+        overflow: hidden;
+      }
+
+      .module-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        border: 0;
+        background: transparent;
+        color: var(--ink);
+        padding: 20px;
+        text-align: left;
+      }
+
+      .module-toggle div { display: grid; gap: 7px; }
+      .module-toggle small { color: var(--muted); line-height: 1.5; }
+
+      .module-detail {
+        display: none;
+        border-top: 1px solid var(--line);
+        padding: 0 20px 20px;
+      }
+
+      .module-card.open .module-detail { display: block; animation: reveal 220ms ease; }
+
+      @keyframes reveal {
+        from { opacity: 0; transform: translateY(-4px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .detail-box {
+        border: 1px solid var(--line);
+        border-radius: 15px;
+        background: rgba(255,255,255,0.28);
+        padding: 13px;
+      }
+
+      [data-theme="dark"] .detail-box { background: rgba(255,255,255,0.04); }
+
+      .detail-box strong {
+        display: block;
+        margin-bottom: 7px;
+        font-size: 12px;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .detail-box ul {
+        display: grid;
+        gap: 6px;
+        margin: 0;
+        padding-left: 17px;
+        color: var(--ink);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .flow-grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .flow-card {
+        padding: 20px;
+      }
+
+      .timeline {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .timeline-step {
+        position: relative;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: rgba(100, 84, 214, 0.08);
+        padding: 14px;
+        min-height: 88px;
+      }
+
+      .timeline-step:after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        right: -12px;
+        width: 12px;
+        height: 2px;
+        background: var(--primary);
+      }
+
+      .timeline-step:last-child:after { display: none; }
+
+      .timeline-step span {
+        display: block;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 11px;
+      }
+
+      .timeline-step strong {
+        display: block;
+        margin-top: 8px;
+        line-height: 1.3;
+      }
+
+      .erd-wrap {
+        position: relative;
+        overflow: hidden;
+        border-radius: var(--radius);
+      }
+
+      .erd-lines {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        opacity: 0.42;
+      }
+
+      .entity-grid {
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        z-index: 2;
+      }
+
+      .entity-card {
+        padding: 16px;
+      }
+
+      .entity-card h3 {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .entity-card code {
+        color: var(--primary);
+        font-family: var(--mono);
+        font-size: 11px;
+      }
+
+      .field-list {
+        display: grid;
+        gap: 6px;
+        margin-top: 12px;
+      }
+
+      .field-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        border-bottom: 1px dashed var(--line);
+        color: var(--muted);
+        font-size: 12px;
+        padding-bottom: 6px;
+      }
+
+      .field-row b { color: var(--ink); font-weight: 700; }
+
+      .api-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+
+      .api-toolbar input {
+        min-width: min(420px, 100%);
+        flex: 1;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--panel);
+        color: var(--ink);
+        outline: none;
+        padding: 12px 14px;
+      }
+
+      .api-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .api-row {
+        display: grid;
+        grid-template-columns: 84px 1fr auto;
+        align-items: center;
+        gap: 12px;
+        padding: 13px;
+      }
+
+      .method {
+        justify-content: center;
+        color: white;
+        font-weight: 900;
+        border: 0;
+      }
+
+      .GET { background: var(--blue); }
+      .POST { background: var(--green); }
+      .PUT, .PATCH { background: var(--amber); }
+      .DELETE { background: var(--rose); }
+
+      .api-path {
+        font-family: var(--mono);
+        font-size: 13px;
+      }
+
+      .auth {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .ai-grid {
+        display: grid;
+        grid-template-columns: 1.05fr 0.95fr;
+        gap: 16px;
+      }
+
+      .pipeline {
+        display: grid;
+        gap: 10px;
+      }
+
+      .pipeline-step {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border: 1px solid var(--line);
+        border-radius: 15px;
+        background: rgba(100,84,214,0.08);
+        padding: 12px;
+      }
+
+      .pipeline-step span {
+        display: grid;
+        width: 28px;
+        height: 28px;
+        place-items: center;
+        border-radius: 999px;
+        background: var(--primary);
+        color: white;
+        font-family: var(--mono);
+        font-size: 12px;
+      }
+
+      .roadmap-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .roadmap-card {
+        padding: 18px;
+      }
+
+      .roadmap-card .phase {
+        color: var(--primary);
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .roadmap-card ul {
+        display: grid;
+        gap: 8px;
+        margin: 14px 0 0;
+        padding-left: 18px;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      .svg-panel {
+        min-height: 320px;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      .svg-panel svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+        min-height: 320px;
+      }
+
+      .agent-card {
+        padding: 20px;
+      }
+
+      .agent-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .agent-card h3 { margin-top: 0; }
+      .agent-card ul { color: var(--muted); line-height: 1.55; padding-left: 18px; }
+
+      @media (max-width: 1180px) {
+        .app { grid-template-columns: 1fr; }
+        .sidebar {
+          position: static;
+          height: auto;
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+        .sidebar-footer { position: static; margin-top: 14px; }
+        .nav { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+        main { padding: 18px; }
+        .architecture-stack, .roadmap-grid, .status-grid, .agent-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .mindmap-shell { grid-template-columns: 1fr; }
+        .mindmap-canvas { height: 780px; }
+        .entity-grid, .ai-grid { grid-template-columns: 1fr; }
+      }
+
+      @media (max-width: 760px) {
+        .hero, .card, .flow-card { border-radius: 20px; }
+        .hero { padding: 24px; }
+        .hero-top, .section-head { flex-direction: column; align-items: stretch; }
+        .architecture-stack, .module-grid, .detail-grid, .roadmap-grid, .status-grid, .agent-grid { grid-template-columns: 1fr; }
+        .connector, .timeline-step:after { display: none; }
+        .api-row { grid-template-columns: 1fr; align-items: start; }
+        .entity-grid { grid-template-columns: 1fr; }
+        .mindmap-canvas { height: 720px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 7.5 12 3l8 4.5-8 4.5L4 7.5Z" stroke="currentColor" stroke-width="1.8"/><path d="M6.5 10.2v4.3c0 1.5 2.5 3.2 5.5 3.2s5.5-1.7 5.5-3.2v-4.3" stroke="currentColor" stroke-width="1.8"/></svg>
+          </div>
+          <div>
+            <h1>Architecture</h1>
+            <p>Agent-ready map</p>
+          </div>
+        </div>
+        <nav class="nav" id="nav">
+          <a href="#overview" class="active">Overview</a>
+          <a href="#system">System</a>
+          <a href="#mindmap">Mindmap</a>
+          <a href="#modules">Modules</a>
+          <a href="#workflows">Workflows</a>
+          <a href="#database">Database</a>
+          <a href="#apis">APIs</a>
+          <a href="#ai">AI Architecture</a>
+          <a href="#roadmap">Roadmap</a>
+          <a href="#agent">Agent Notes</a>
+        </nav>
+        <div class="sidebar-footer">
+          <strong>For future AI agents</strong>
+          <span>This viewer is generated from architecture-map.json. Treat that JSON as the source of truth for onboarding.</span>
+        </div>
+      </aside>
+
+      <main>
+        <section id="overview" class="hero">
+          <div class="hero-top">
+            <div>
+              <p class="eyebrow" id="version">Architecture version</p>
+              <h2 id="projectName">EduPilot Teacher Management Dashboard</h2>
+              <p class="desc" id="projectDesc">Loading architecture map...</p>
+            </div>
+            <button class="theme-toggle" id="themeToggle">Toggle theme</button>
+          </div>
+          <div class="badge-row" id="stackBadges"></div>
+          <div class="status-grid" id="statusGrid"></div>
+        </section>
+
+        <section id="system">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">System Overview</p>
+              <h2>End-to-end platform layers</h2>
+              <p>Frontend, API, AI services, database, storage and analytics operate as connected layers. Each layer has a clear responsibility and future separation path.</p>
+            </div>
+          </div>
+          <div class="architecture-stack" id="architectureStack"></div>
+        </section>
+
+        <section id="mindmap">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Comprehensive System Mindmap</p>
+              <h2>Visual engineering intelligence map</h2>
+              <p>Zoom, pan, search, collapse branches and click nodes to trace dependencies across frontend, backend, AI, database, security, storage, analytics and future systems.</p>
+            </div>
+          </div>
+          <div class="mindmap-shell">
+            <div class="mindmap-board-head">
+              <div>
+                <h3>AI Teacher Platform - Architecture & Flows</h3>
+                <p>Every package and workflow route is mapped as a readable engineering flow, from teacher actions through AI orchestration, database writes, analytics and reporting.</p>
+              </div>
+              <span class="board-status">LIVE BLUEPRINT</span>
+            </div>
+            <div class="mindmap-toolbar">
+              <input id="mindmapSearch" type="search" placeholder="Search nodes, APIs, database tables, services, flows..." />
+              <button id="zoomIn" type="button">Zoom +</button>
+              <button id="zoomOut" type="button">Zoom -</button>
+              <button id="resetMindmap" type="button">Reset</button>
+              <button id="expandSelectedMindmap" type="button">Expand selected</button>
+              <button id="collapseSelectedMindmap" type="button">Collapse selected</button>
+              <button id="collapseAllMindmap" type="button">Collapse all</button>
+            </div>
+            <div class="mindmap-legend" id="mindmapLegend"></div>
+            <div class="mindmap-canvas" id="mindmapCanvas">
+              <svg id="mindmapSvg" viewBox="0 0 2300 1500" role="img" aria-label="Enterprise architecture mindmap">
+                <defs>
+                  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#78c9ff"></path>
+                  </marker>
+                  <filter id="nodeGlow">
+                    <feGaussianBlur stdDeviation="5" result="blur"></feGaussianBlur>
+                    <feMerge><feMergeNode in="blur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+                  </filter>
+                </defs>
+                <g id="mindmapViewport">
+                  <g id="mindmapLanes"></g>
+                  <g id="mindmapEdges"></g>
+                  <g id="mindmapCrossEdges"></g>
+                  <g id="mindmapNodes"></g>
+                </g>
+              </svg>
+              <div class="mindmap-tooltip" id="mindmapTooltip"></div>
+            </div>
+            <aside class="mindmap-inspector" id="mindmapInspector">
+              <p class="eyebrow">Selected Node</p>
+              <h3>AI Teacher Management Platform</h3>
+              <p>Click any node to inspect relationships. Double-click nodes or use the toolbar to expand only what you need.</p>
+              <div class="panel-section">
+                <div class="panel-title">Flows</div>
+                <div class="flow-card"><b>Lesson to insights</b><span>Timetable slot -> RPH generation -> PBD evidence -> analytics -> AI recommendation.</span></div>
+                <div class="flow-card"><b>Admin oversight</b><span>Teacher records -> class performance -> exports -> panel review.</span></div>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section id="modules">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Feature Modules</p>
+              <h2>Interactive product capability map</h2>
+              <p>Each module card expands into inputs, outputs, routes, database dependencies, AI usage and extension points.</p>
+            </div>
+          </div>
+          <div class="module-grid" id="moduleGrid"></div>
+        </section>
+
+        <section id="workflows">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">User Flow Visualization</p>
+              <h2>How humans and AI move through the system</h2>
+              <p>These workflows show the operational path for teachers, admins and the AI pipeline.</p>
+            </div>
+          </div>
+          <div class="flow-grid" id="flowGrid"></div>
+        </section>
+
+        <section id="database">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Database Relationship View</p>
+              <h2>Human-readable ERD</h2>
+              <p>Entity cards list primary fields, foreign keys, relationships and scalability notes. Lines show conceptual relationship flow.</p>
+            </div>
+          </div>
+          <div class="erd-wrap">
+            <svg class="erd-lines" viewBox="0 0 1200 760" preserveAspectRatio="none" aria-hidden="true">
+              <path d="M170 120 C350 60, 490 180, 650 115 S960 85, 1080 170" fill="none" stroke="url(#g)" stroke-width="3" stroke-dasharray="9 10">
+                <animate attributeName="stroke-dashoffset" from="0" to="-80" dur="7s" repeatCount="indefinite" />
+              </path>
+              <path d="M220 360 C410 280, 520 480, 720 390 S940 310, 1060 520" fill="none" stroke="url(#g)" stroke-width="3" stroke-dasharray="9 10">
+                <animate attributeName="stroke-dashoffset" from="0" to="-80" dur="8s" repeatCount="indefinite" />
+              </path>
+              <path d="M140 630 C360 520, 520 660, 710 590 S980 600, 1120 430" fill="none" stroke="url(#g)" stroke-width="3" stroke-dasharray="9 10">
+                <animate attributeName="stroke-dashoffset" from="0" to="-80" dur="9s" repeatCount="indefinite" />
+              </path>
+              <defs>
+                <linearGradient id="g" x1="0" x2="1">
+                  <stop stop-color="#6454d6" />
+                  <stop offset="1" stop-color="#18a47b" />
+                </linearGradient>
+              </defs>
+            </svg>
+            <div class="entity-grid" id="entityGrid"></div>
+          </div>
+        </section>
+
+        <section id="apis">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">API Architecture</p>
+              <h2>REST route groups and contracts</h2>
+              <p>Filter endpoints by route, method or feature. Each row is intentionally machine-readable and human-scannable.</p>
+            </div>
+          </div>
+          <div class="api-toolbar">
+            <input id="apiSearch" type="search" placeholder="Filter endpoints, methods, AI routes, uploads, analytics..." />
+            <span class="chip">Auth flow: user session -> RBAC middleware -> route policy -> handler</span>
+          </div>
+          <div class="api-list" id="apiList"></div>
+        </section>
+
+        <section id="ai">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">AI Integration</p>
+              <h2>Prompt pipeline and provider strategy</h2>
+              <p>Gemini/OpenAI sit behind a backend provider adapter. The app never renders raw AI output without normalization.</p>
+            </div>
+          </div>
+          <div class="ai-grid">
+            <div class="card agent-card">
+              <h3>Prompt engineering pipeline</h3>
+              <div class="pipeline" id="pipeline"></div>
+            </div>
+            <div class="card svg-panel">
+              <svg viewBox="0 0 620 360" role="img" aria-label="AI integration diagram">
+                <defs>
+                  <linearGradient id="aiGradient" x1="0" x2="1">
+                    <stop stop-color="#6454d6" />
+                    <stop offset="1" stop-color="#9867f0" />
+                  </linearGradient>
+                  <filter id="glow">
+                    <feGaussianBlur stdDeviation="4" result="blur" />
+                    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                  </filter>
+                </defs>
+                <rect x="28" y="38" width="150" height="78" rx="18" fill="rgba(100,84,214,.16)" stroke="#6454d6" />
+                <text x="103" y="74" text-anchor="middle" fill="currentColor" font-size="14" font-weight="700">Teacher Context</text>
+                <text x="103" y="95" text-anchor="middle" fill="currentColor" opacity=".65" font-size="11">RPH, PBD, class</text>
+                <rect x="238" y="38" width="150" height="78" rx="18" fill="rgba(24,164,123,.14)" stroke="#18a47b" />
+                <text x="313" y="74" text-anchor="middle" fill="currentColor" font-size="14" font-weight="700">Prompt Engine</text>
+                <text x="313" y="95" text-anchor="middle" fill="currentColor" opacity=".65" font-size="11">KSSR + schema</text>
+                <rect x="448" y="38" width="150" height="78" rx="18" fill="rgba(152,103,240,.15)" stroke="#9867f0" />
+                <text x="523" y="74" text-anchor="middle" fill="currentColor" font-size="14" font-weight="700">Gemini/OpenAI</text>
+                <text x="523" y="95" text-anchor="middle" fill="currentColor" opacity=".65" font-size="11">Provider adapter</text>
+                <path d="M178 77 H238" stroke="url(#aiGradient)" stroke-width="3" stroke-dasharray="8 8"><animate attributeName="stroke-dashoffset" from="0" to="-80" dur="5s" repeatCount="indefinite"/></path>
+                <path d="M388 77 H448" stroke="url(#aiGradient)" stroke-width="3" stroke-dasharray="8 8"><animate attributeName="stroke-dashoffset" from="0" to="-80" dur="5s" repeatCount="indefinite"/></path>
+                <rect x="115" y="218" width="170" height="82" rx="18" fill="rgba(43,123,220,.14)" stroke="#2b7bdc" />
+                <text x="200" y="254" text-anchor="middle" fill="currentColor" font-size="14" font-weight="700">Formatter</text>
+                <text x="200" y="275" text-anchor="middle" fill="currentColor" opacity=".65" font-size="11">JSON normalization</text>
+                <rect x="335" y="218" width="170" height="82" rx="18" fill="rgba(216,89,114,.12)" stroke="#d85972" />
+                <text x="420" y="254" text-anchor="middle" fill="currentColor" font-size="14" font-weight="700">Dashboard</text>
+                <text x="420" y="275" text-anchor="middle" fill="currentColor" opacity=".65" font-size="11">Persist + render</text>
+                <path d="M523 116 C520 175 430 172 420 218" stroke="url(#aiGradient)" stroke-width="3" fill="none" stroke-dasharray="8 8"><animate attributeName="stroke-dashoffset" from="0" to="-80" dur="5s" repeatCount="indefinite"/></path>
+                <path d="M335 260 H285" stroke="url(#aiGradient)" stroke-width="3" stroke-dasharray="8 8"><animate attributeName="stroke-dashoffset" from="0" to="-80" dur="5s" repeatCount="indefinite"/></path>
+              </svg>
+            </div>
+          </div>
+        </section>
+
+        <section id="roadmap">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Future Scalability</p>
+              <h2>Roadmap by platform maturity</h2>
+              <p>Each phase adds capability without losing the current teacher workflow foundation.</p>
+            </div>
+          </div>
+          <div class="roadmap-grid" id="roadmapGrid"></div>
+        </section>
+
+        <section id="agent">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Agent Notes</p>
+              <h2>Zero-onboarding continuation guide</h2>
+              <p>Future agents should read this before changing architecture, data flow, AI prompts or deployment boundaries.</p>
+            </div>
+          </div>
+          <div class="agent-grid" id="agentGrid"></div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const layerData = [
+        {
+          title: "Frontend",
+          description: "Teacher-facing dashboard shell, feature pages, forms, charts and AI copilot.",
+          responsibilities: ["Navigation", "Forms", "Preview", "State", "Exports"],
+          technologies: ["React", "Vite", "Lucide", "CSS"]
+        },
+        {
+          title: "API Layer",
+          description: "Express REST boundary for persistence, validation, exports and AI orchestration.",
+          responsibilities: ["Routes", "Validation", "RBAC", "Responses"],
+          technologies: ["Express", "Mongoose", "REST"]
+        },
+        {
+          title: "AI Services",
+          description: "Provider adapter, prompt engine, KSSR context injection and JSON normalization.",
+          responsibilities: ["Prompts", "Gemini", "OpenAI", "Normalize"],
+          technologies: ["Gemini", "OpenAI", "Prompt schemas"]
+        },
+        {
+          title: "Database",
+          description: "Persistent records for users, classes, lesson plans, assessments and analytics.",
+          responsibilities: ["Models", "Indexes", "Relations", "Queries"],
+          technologies: ["MongoDB", "Mongoose"]
+        },
+        {
+          title: "Storage",
+          description: "Teaching materials, evidence uploads, generated documents and extracted text.",
+          responsibilities: ["Uploads", "Evidence", "DOCX", "PDF"],
+          technologies: ["Local now", "S3/R2 later"]
+        },
+        {
+          title: "Analytics",
+          description: "Aggregates assessment records into skill insights, risk signals and reports.",
+          responsibilities: ["Metrics", "Heatmaps", "Reports", "Predictions"],
+          technologies: ["Aggregations", "Jobs", "AI summaries"]
+        }
+      ];
+
+      const $ = (selector) => document.querySelector(selector);
+      const el = (tag, className, html) => {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (html !== undefined) node.innerHTML = html;
+        return node;
+      };
+      const safe = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[char]));
+      const list = (items) => `<ul>${(items || []).map((item) => `<li>${safe(item)}</li>`).join("")}</ul>`;
+
+      async function loadMap() {
+        const response = await fetch(`architecture-map.json?v=${Date.now()}`);
+        if (!response.ok) throw new Error("Unable to load architecture-map.json");
+        return response.json();
+      }
+
+      function renderHero(map) {
+        $("#projectName").textContent = map.project.name;
+        $("#projectDesc").textContent = map.project.mission;
+        $("#version").textContent = `Architecture version ${map.project.architecture_version}`;
+
+        const badges = $("#stackBadges");
+        Object.entries(map.project.stack_overview).forEach(([key, value]) => {
+          badges.appendChild(el("span", "badge", `<b>${safe(key)}</b> ${safe(value).split(" ").slice(0, 5).join(" ")}`));
+        });
+
+        const status = $("#statusGrid");
+        Object.entries(map.project.status).forEach(([key, value]) => {
+          status.appendChild(el("div", "card status-card", `<span>${safe(key.replaceAll("_", " "))}</span><strong>${safe(value)}</strong>`));
+        });
+      }
+
+      function renderSystem() {
+        const root = $("#architectureStack");
+        layerData.forEach((layer, index) => {
+          const card = el("article", "card arch-block");
+          card.innerHTML = `
+            <h3>${safe(layer.title)}</h3>
+            <p>${safe(layer.description)}</p>
+            <ul class="arch-list">${layer.responsibilities.map((item) => `<li>${safe(item)}</li>`).join("")}</ul>
+            <div class="badge-row">${layer.technologies.map((item) => `<span class="badge">${safe(item)}</span>`).join("")}</div>
+            ${index < layerData.length - 1 ? '<span class="connector"></span>' : ''}
+          `;
+          root.appendChild(card);
+        });
+      }
+
+      function renderMindmap(map) {
+        const svgNs = "http://www.w3.org/2000/svg";
+        let nodes = [...map.mindmap.nodes];
+        const explicitIds = new Set(nodes.map((node) => node.id));
+        const virtualNodes = [];
+        nodes.forEach((node) => {
+          (node.children || []).forEach((childId) => {
+            if (explicitIds.has(childId)) return;
+            explicitIds.add(childId);
+            virtualNodes.push({
+              id: childId,
+              label: childId.replaceAll("-", " ").replace(/\b\w/g, (char) => char.toUpperCase()),
+              type: node.type === "ai" ? "ai_service" : node.type === "database" ? "database_table" : node.type === "backend" ? "backend_service" : node.type === "frontend" ? "frontend_component" : node.type,
+              description: `Detailed sub-node under ${node.label}. This represents a concrete component, utility, validation step, event, API concern or extension point in the enterprise mindmap.`,
+              parent: node.id,
+              children: [],
+              related_nodes: [],
+              feature_links: node.feature_links || [],
+              api_links: node.api_links || [],
+              database_links: node.database_links || []
+            });
+          });
+        });
+        nodes = nodes.concat(virtualNodes);
+        const nodeById = new Map(nodes.map((node) => [node.id, node]));
+        const edges = map.mindmap.edges || [];
+        const collapsed = new Set();
+        const positions = new Map();
+        let selectedId = "platform";
+        let scale = 0.74;
+        let pan = { x: 48, y: 46 };
+        let isDragging = false;
+        let dragStart = null;
+        let searchTerm = "";
+
+        const colorByType = {
+          root: "#191722",
+          frontend: "#6454d6",
+          frontend_component: "#7367f0",
+          backend: "#2b7bdc",
+          backend_service: "#1f8ad7",
+          api: "#0f9abf",
+          database: "#18a47b",
+          database_table: "#10a36f",
+          ai: "#9867f0",
+          ai_service: "#a855f7",
+          auth: "#d85972",
+          storage: "#c98212",
+          analytics_pipeline: "#0f9abf",
+          state: "#71717a",
+          shared_utility: "#52525b",
+          scheduled_job: "#d97706",
+          feature: "#6454d6",
+          future_system: "#71717a",
+          event_flow: "#18a47b"
+        };
+
+        const legendRoot = $("#mindmapLegend");
+        const legendTypes = [
+          ["Frontend Components", "frontend_component"],
+          ["Backend Services", "backend_service"],
+          ["Database Tables", "database_table"],
+          ["AI Services", "ai_service"],
+          ["APIs", "api"],
+          ["Auth", "auth"],
+          ["Storage", "storage"],
+          ["Analytics", "analytics_pipeline"],
+          ["Jobs", "scheduled_job"],
+          ["Future", "future_system"]
+        ];
+        legendRoot.innerHTML = legendTypes.map(([label, type]) => `<span class="legend-chip"><i style="background:${colorByType[type]}"></i>${safe(label)}</span>`).join("");
+
+        const viewport = $("#mindmapViewport");
+        const laneLayer = $("#mindmapLanes");
+        const edgeLayer = $("#mindmapEdges");
+        const crossLayer = $("#mindmapCrossEdges");
+        const nodeLayer = $("#mindmapNodes");
+        const tooltip = $("#mindmapTooltip");
+        const inspector = $("#mindmapInspector");
+        const canvas = $("#mindmapCanvas");
+
+        const existingChildren = (node) => (node.children || []).filter((id) => nodeById.has(id));
+        const visibleChildren = (node) => collapsed.has(node.id) ? [] : existingChildren(node);
+        const collapseForOverview = () => {
+          collapsed.clear();
+          nodes.forEach((node) => {
+            if (node.id !== "platform" && existingChildren(node).length) collapsed.add(node.id);
+          });
+        };
+        const visibleIds = () => {
+          const ids = [];
+          const visit = (id) => {
+            const node = nodeById.get(id);
+            if (!node) return;
+            ids.push(id);
+            visibleChildren(node).forEach(visit);
+          };
+          visit("platform");
+          return new Set(ids);
+        };
+
+        const nodeSize = (id) => ({
+          width: id === "platform" ? 255 : 190,
+          height: id === "platform" ? 66 : 54
+        });
+
+        function computeLayout() {
+          positions.clear();
+          const levels = new Map();
+          const visit = (id, depth) => {
+            if (!levels.has(depth)) levels.set(depth, []);
+            levels.get(depth).push(id);
+            visibleChildren(nodeById.get(id)).forEach((childId) => visit(childId, depth + 1));
+          };
+          visit("platform", 0);
+
+          const maxDepth = Math.max(...levels.keys());
+          for (let depth = 0; depth <= maxDepth; depth += 1) {
+            const levelNodes = levels.get(depth) || [];
+            const x = 165 + depth * 340;
+            const step = levelNodes.length <= 1 ? 0 : Math.min(104, 1280 / (levelNodes.length - 1));
+            const totalHeight = step * Math.max(0, levelNodes.length - 1);
+            const startY = Math.max(110, 750 - totalHeight / 2);
+            levelNodes.forEach((id, index) => {
+              positions.set(id, { x, y: levelNodes.length === 1 ? 750 : startY + index * step, depth });
+            });
+          }
+        }
+
+        function makeSvg(tag, attrs = {}) {
+          const node = document.createElementNS(svgNs, tag);
+          Object.entries(attrs).forEach(([key, value]) => node.setAttribute(key, value));
+          return node;
+        }
+
+        function connectedTo(id) {
+          const node = nodeById.get(id);
+          const related = new Set([id, ...(node?.related_nodes || []), ...(node?.children || []), node?.parent].filter(Boolean));
+          edges.forEach((edge) => {
+            if (edge.from === id) related.add(edge.to);
+            if (edge.to === id) related.add(edge.from);
+          });
+          return related;
+        }
+
+        function updateInspector(id) {
+          const node = nodeById.get(id);
+          if (!node) return;
+          const childLabels = existingChildren(node).slice(0, 4).map((childId) => nodeById.get(childId)?.label || childId);
+          const relatedLabels = (node.related_nodes || []).slice(0, 4).map((relatedId) => nodeById.get(relatedId)?.label || relatedId);
+          const flowCards = [
+            ["Lesson to insights", "Timetable slot -> RPH generation -> PBD evidence -> analytics -> AI recommendation."],
+            ["AI content pipeline", "Prompt builder -> context injection -> provider call -> structured formatter -> saved output."],
+            ["Evidence loop", "Upload -> metadata validation -> storage mapping -> assessment link -> performance history."]
+          ];
+          inspector.innerHTML = `
+            <p class="eyebrow">${safe(node.type.replaceAll("_", " "))}</p>
+            <h3>${safe(node.label)}</h3>
+            <p>${safe(node.description)}</p>
+            <div class="panel-section">
+              <div class="panel-title">Flows</div>
+              ${flowCards.map(([title, text]) => `<div class="flow-card"><b>${safe(title)}</b><span>${safe(text)}</span></div>`).join("")}
+            </div>
+            <div class="panel-section">
+              <div class="panel-title">Steps</div>
+            </div>
+            <div class="inspector-list">
+              <div class="flow-step" data-step="1"><b>Feature lane</b><span>${safe((node.feature_links || []).join(", ") || "Architecture control point")}</span></div>
+              <div class="flow-step" data-step="2"><b>APIs</b><span>${safe((node.api_links || []).join(", ") || "No direct route")}</span></div>
+              <div class="flow-step" data-step="3"><b>Database</b><span>${safe((node.database_links || []).join(", ") || "No direct table")}</span></div>
+              <div><b>Next branches</b><span>${safe(childLabels.join(" -> ") || "Leaf node")}</span></div>
+              <div><b>Cross-links</b><span>${safe(relatedLabels.join(" -> ") || "No cross-system link")}</span></div>
+            </div>
+          `;
+        }
+
+        function applyTransform() {
+          viewport.setAttribute("transform", `translate(${pan.x} ${pan.y}) scale(${scale})`);
+        }
+
+        function render() {
+          computeLayout();
+          const visible = visibleIds();
+          const selectedSet = connectedTo(selectedId);
+          laneLayer.innerHTML = "";
+          edgeLayer.innerHTML = "";
+          crossLayer.innerHTML = "";
+          nodeLayer.innerHTML = "";
+
+          const maxDepth = Math.max(...[...positions.values()].map((pos) => pos.depth));
+          const laneNames = ["ENTRY", "SYSTEMS", "SERVICES", "LOGIC", "DATA", "OUTPUTS", "SCALE"];
+          for (let depth = 0; depth <= maxDepth; depth += 1) {
+            const label = makeSvg("text", {
+              class: "mindmap-lane-label",
+              x: 68 + depth * 340,
+              y: 54
+            });
+            label.textContent = laneNames[depth] || `LEVEL ${depth}`;
+            laneLayer.appendChild(label);
+          }
+
+          visible.forEach((id) => {
+            const node = nodeById.get(id);
+            const from = positions.get(id);
+            const fromSize = nodeSize(id);
+            visibleChildren(node).forEach((childId) => {
+              if (!visible.has(childId)) return;
+              const to = positions.get(childId);
+              const toSize = nodeSize(childId);
+              const startX = from.x + fromSize.width / 2;
+              const startY = from.y;
+              const endX = to.x - toSize.width / 2;
+              const endY = to.y;
+              const midX = startX + Math.max(72, (endX - startX) * 0.46);
+              const path = makeSvg("path", {
+                class: `mindmap-edge ${selectedSet.has(id) && selectedSet.has(childId) ? "highlight" : ""}`,
+                d: `M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}`
+              });
+              edgeLayer.appendChild(path);
+              edgeLayer.appendChild(makeSvg("circle", { class: "mindmap-port", cx: startX, cy: startY, r: 5 }));
+              edgeLayer.appendChild(makeSvg("circle", { class: "mindmap-port", cx: endX, cy: endY, r: 5 }));
+            });
+          });
+
+          edges.forEach((edge) => {
+            if (!visible.has(edge.from) || !visible.has(edge.to)) return;
+            const from = positions.get(edge.from);
+            const to = positions.get(edge.to);
+            const fromSize = nodeSize(edge.from);
+            const toSize = nodeSize(edge.to);
+            const startX = from.x + fromSize.width / 2;
+            const endX = to.x - toSize.width / 2;
+            const path = makeSvg("path", {
+              class: `mindmap-cross-edge ${edge.from === selectedId || edge.to === selectedId ? "highlight" : ""}`,
+              d: `M ${startX} ${from.y} Q ${(from.x + to.x) / 2} ${(from.y + to.y) / 2 - 70}, ${endX} ${to.y}`
+            });
+            crossLayer.appendChild(path);
+          });
+
+          visible.forEach((id) => {
+            const node = nodeById.get(id);
+            const pos = positions.get(id);
+            const color = colorByType[node.type] || "#6454d6";
+            const { width, height } = nodeSize(id);
+            const matches = searchTerm && (`${node.label} ${node.description} ${(node.api_links || []).join(" ")} ${(node.database_links || []).join(" ")}`).toLowerCase().includes(searchTerm);
+            const shouldDim = searchTerm && !matches && !selectedSet.has(id);
+            const g = makeSvg("g", {
+              class: `mindmap-node ${id === selectedId ? "selected" : ""} ${matches ? "match" : ""} ${shouldDim ? "dim" : ""}`,
+              transform: `translate(${pos.x - width / 2} ${pos.y - height / 2})`,
+              tabindex: "0"
+            });
+            g.dataset.nodeId = id;
+            g.innerHTML = `
+              <rect width="${width}" height="${height}" rx="7" fill="rgba(18,20,31,0.94)"></rect>
+              <rect width="${width}" height="3" rx="1.5" fill="${color}"></rect>
+              <text x="14" y="${height / 2 - 2}">${safe(node.label.length > 24 ? node.label.slice(0, 22) + "..." : node.label)}</text>
+              <text class="node-type" x="14" y="${height / 2 + 16}">${safe(node.type.replaceAll("_", " "))}${existingChildren(node).length ? (collapsed.has(id) ? " · + expand" : " · - collapse") : ""}</text>
+            `;
+            g.addEventListener("click", () => {
+              selectedId = id;
+              updateInspector(id);
+              render();
+            });
+            g.addEventListener("dblclick", () => {
+              if (collapsed.has(id)) collapsed.delete(id);
+              else collapsed.add(id);
+              selectedId = id;
+              updateInspector(id);
+              render();
+            });
+            g.addEventListener("mouseenter", (event) => {
+              tooltip.style.display = "block";
+              tooltip.innerHTML = `<strong>${safe(node.label)}</strong><span>${safe(node.description)}</span>`;
+            });
+            g.addEventListener("mousemove", (event) => {
+              const rect = canvas.getBoundingClientRect();
+              tooltip.style.left = `${event.clientX - rect.left + 14}px`;
+              tooltip.style.top = `${event.clientY - rect.top + 14}px`;
+            });
+            g.addEventListener("mouseleave", () => {
+              tooltip.style.display = "none";
+            });
+            nodeLayer.appendChild(g);
+          });
+
+          applyTransform();
+        }
+
+        $("#mindmapSearch").addEventListener("input", (event) => {
+          searchTerm = event.target.value.trim().toLowerCase();
+          render();
+        });
+        $("#zoomIn").addEventListener("click", () => { scale = Math.min(1.8, scale + 0.12); applyTransform(); });
+        $("#zoomOut").addEventListener("click", () => { scale = Math.max(0.32, scale - 0.12); applyTransform(); });
+        $("#resetMindmap").addEventListener("click", () => {
+          scale = 0.74;
+          pan = { x: 48, y: 46 };
+          searchTerm = "";
+          $("#mindmapSearch").value = "";
+          collapseForOverview();
+          selectedId = "platform";
+          updateInspector(selectedId);
+          render();
+        });
+        $("#expandSelectedMindmap").addEventListener("click", () => {
+          collapsed.delete(selectedId);
+          render();
+        });
+        $("#collapseSelectedMindmap").addEventListener("click", () => {
+          if (selectedId !== "platform" && existingChildren(nodeById.get(selectedId) || {}).length) collapsed.add(selectedId);
+          render();
+        });
+        $("#collapseAllMindmap").addEventListener("click", () => {
+          collapseForOverview();
+          selectedId = "platform";
+          updateInspector(selectedId);
+          render();
+        });
+
+        canvas.addEventListener("pointerdown", (event) => {
+          if (event.target.closest(".mindmap-node")) return;
+          isDragging = true;
+          dragStart = { x: event.clientX, y: event.clientY, panX: pan.x, panY: pan.y };
+          canvas.setPointerCapture(event.pointerId);
+        });
+        canvas.addEventListener("pointermove", (event) => {
+          if (!isDragging) return;
+          pan = { x: dragStart.panX + event.clientX - dragStart.x, y: dragStart.panY + event.clientY - dragStart.y };
+          applyTransform();
+        });
+        canvas.addEventListener("pointerup", () => { isDragging = false; });
+        canvas.addEventListener("wheel", (event) => {
+          event.preventDefault();
+          const delta = event.deltaY > 0 ? -0.06 : 0.06;
+          scale = Math.max(0.32, Math.min(1.8, scale + delta));
+          applyTransform();
+        }, { passive: false });
+
+        collapseForOverview();
+        updateInspector(selectedId);
+        render();
+      }
+
+      function renderModules(map) {
+        const root = $("#moduleGrid");
+        map.features.forEach((feature, index) => {
+          const card = el("article", `module-card ${index === 0 ? "open" : ""}`);
+          card.innerHTML = `
+            <button class="module-toggle" type="button">
+              <div>
+                <h3>${safe(feature.name)}</h3>
+                <small>${safe(feature.purpose)}</small>
+              </div>
+              <span class="chip">expand</span>
+            </button>
+            <div class="module-detail">
+              <div class="detail-grid">
+                <div class="detail-box"><strong>Components</strong>${list(feature.components_used)}</div>
+                <div class="detail-box"><strong>Database</strong>${list(feature.database_tables)}</div>
+                <div class="detail-box"><strong>API routes</strong>${list(feature.api_routes)}</div>
+                <div class="detail-box"><strong>AI usage</strong>${list(feature.ai_dependencies)}</div>
+                <div class="detail-box"><strong>User flow</strong>${list(feature.user_flow)}</div>
+                <div class="detail-box"><strong>Future scale</strong>${list(feature.future_extensions)}</div>
+              </div>
+            </div>
+          `;
+          card.querySelector(".module-toggle").addEventListener("click", () => card.classList.toggle("open"));
+          root.appendChild(card);
+        });
+      }
+
+      function renderWorkflows(map) {
+        const root = $("#flowGrid");
+        map.workflows.forEach((flow) => {
+          const card = el("article", "flow-card");
+          card.innerHTML = `
+            <h3>${safe(flow.name)}</h3>
+            <p>${safe(flow.success_metric)}</p>
+            <div class="timeline">
+              ${flow.steps.map((step, index) => `<div class="timeline-step"><span>Step ${index + 1}</span><strong>${safe(step)}</strong></div>`).join("")}
+            </div>
+          `;
+          root.appendChild(card);
+        });
+      }
+
+      function renderDatabase(map) {
+        const root = $("#entityGrid");
+        map.database.tables.forEach((table) => {
+          const fields = Object.entries(table.fields).slice(0, 6).map(([name, type]) => `<div class="field-row"><b>${safe(name)}</b><span>${safe(type)}</span></div>`).join("");
+          const card = el("article", "entity-card");
+          card.innerHTML = `
+            <h3>${safe(table.name)} <code>${safe(table.primary_key)}</code></h3>
+            <div class="field-list">${fields}</div>
+            <p><b>FK:</b> ${safe((table.foreign_keys || []).join(", ") || "none")}</p>
+            <p><b>Relations:</b> ${safe((table.relationships || []).slice(0, 3).join("; "))}</p>
+          `;
+          root.appendChild(card);
+        });
+      }
+
+      function renderApis(map) {
+        const root = $("#apiList");
+        const input = $("#apiSearch");
+        const paint = () => {
+          const query = input.value.toLowerCase();
+          root.innerHTML = "";
+          map.routes
+            .filter((route) => `${route.method} ${route.endpoint}`.toLowerCase().includes(query))
+            .forEach((route) => {
+              root.appendChild(el("article", "api-row", `
+                <span class="method ${safe(route.method)}">${safe(route.method)}</span>
+                <span class="api-path">${safe(route.endpoint)}</span>
+                <span class="auth">${route.auth_required ? "auth required" : "public"}</span>
+              `));
+            });
+        };
+        input.addEventListener("input", paint);
+        paint();
+      }
+
+      function renderAi(map) {
+        const root = $("#pipeline");
+        map.ai_system.pipeline.forEach((step, index) => {
+          root.appendChild(el("div", "pipeline-step", `<span>${index + 1}</span><strong>${safe(step)}</strong>`));
+        });
+      }
+
+      function renderRoadmap(map) {
+        const root = $("#roadmapGrid");
+        map.future_scalability.forEach((phase) => {
+          root.appendChild(el("article", "roadmap-card", `
+            <span class="phase">${safe(phase.phase)}</span>
+            <h3>${safe(phase.title)}</h3>
+            ${list(phase.items)}
+          `));
+        });
+      }
+
+      function renderAgentNotes(map) {
+        const notes = map.agent_notes;
+        const root = $("#agentGrid");
+        const sections = [
+          ["Scaling strategy", notes.scaling_strategy],
+          ["Microservice separation", Object.entries(notes.future_microservice_separation).map(([key, value]) => `${key}: ${value}`)],
+          ["Caching", notes.caching_recommendations],
+          ["AI token optimization", notes.ai_token_optimization],
+          ["Security", notes.security_concerns],
+          ["Performance bottlenecks", notes.performance_bottlenecks],
+          ["Reusable patterns", notes.reusable_patterns],
+          ["Conventions", notes.conventions],
+          ["Folder structure", Object.entries(notes.recommended_folder_structure).map(([key, value]) => `${key}: ${value}`)]
+        ];
+        sections.forEach(([title, items]) => {
+          root.appendChild(el("article", "card agent-card", `<h3>${safe(title)}</h3>${list(items)}`));
+        });
+      }
+
+      function setupNav() {
+        const links = [...document.querySelectorAll(".nav a")];
+        const sections = links.map((link) => document.querySelector(link.getAttribute("href")));
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            links.forEach((link) => link.classList.toggle("active", link.getAttribute("href") === `#${entry.target.id}`));
+          });
+        }, { rootMargin: "-30% 0px -60% 0px" });
+        sections.filter(Boolean).forEach((section) => observer.observe(section));
+      }
+
+      function setupTheme() {
+        const saved = localStorage.getItem("architecture-theme");
+        if (saved) document.documentElement.dataset.theme = saved;
+        $("#themeToggle").addEventListener("click", () => {
+          const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+          document.documentElement.dataset.theme = next;
+          localStorage.setItem("architecture-theme", next);
+        });
+      }
+
+      loadMap()
+        .then((map) => {
+          renderHero(map);
+          renderSystem(map);
+          renderMindmap(map);
+          renderModules(map);
+          renderWorkflows(map);
+          renderDatabase(map);
+          renderApis(map);
+          renderAi(map);
+          renderRoadmap(map);
+          renderAgentNotes(map);
+          setupNav();
+          setupTheme();
+        })
+        .catch((error) => {
+          $("#projectDesc").textContent = error.message;
+        });
+    </script>
+  </body>
+</html>

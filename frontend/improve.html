@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LessonCraft MY | Improve Lesson</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body data-page="improve">
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="index.html"><span>✎</span><strong>LessonCraft <em>MY</em></strong></a>
+        <nav>
+          <a href="index.html">Dashboard</a><a href="generate.html">Generate Lesson</a><a href="analyze.html">Analyze Lesson</a><a class="active" href="improve.html">Improve Lesson</a><a href="simulate.html">Simulate Classroom</a><a href="evaluate.html">Evaluate Lesson</a><a href="history.html">History Vault</a><a href="schedule.html">Schedule</a><a href="assessment.html">Assessment</a>
+        </nav>
+        <div class="status-card"><small>Gemini AI</small><strong id="apiStatus">Checking...</strong></div>
+      </aside>
+      <main class="page">
+        <header class="page-header"><p class="eyebrow">Upgrade</p><h1>Improve Lesson</h1><p>Rewrite lesson plans into child-friendly, activity-based KSSR lessons with differentiation.</p></header>
+        <section class="two-column">
+          <form class="panel form-card" id="improveForm">
+            <label>Lesson Plan Text<textarea id="lessonPlan" rows="15">Teacher explains the topic for 25 minutes. Pupils copy notes and answer ten questions individually. Fast pupils finish early. Weak pupils wait for answers.</textarea></label>
+            <button class="primary-btn" type="submit">Improve Lesson</button>
+          </form>
+          <section class="panel output-card"><div class="output-head"><h2>Improved Lesson</h2><span class="spinner hidden" id="spinner"></span></div><div id="output" class="output empty">Improved lesson appears here.</div></section>
+        </section>
+      </main>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>
