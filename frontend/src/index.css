@@ -4277,8 +4277,7 @@ a:focus-visible,
   background: var(--primary) !important;
 }
 
-.radial-gauge,
-.donut-chart {
+.radial-gauge {
   background: conic-gradient(var(--emerald) calc(var(--value, 78) * 1%), #d1fae5 0) !important;
 }
 
@@ -4908,10 +4907,12 @@ html body #root .hero-panel {
   background: linear-gradient(90deg, #a78bfa, #7c3aed) !important;
 }
 
-.radial-gauge,
-.donut-chart {
+.radial-gauge {
   box-shadow: var(--clay-card) !important;
   background: conic-gradient(#10b981 calc(var(--value, 78) * 1%), #e9e3f2 0) !important;
+}
+.donut-chart {
+  box-shadow: var(--clay-card) !important;
 }
 
 .radial-gauge strong,

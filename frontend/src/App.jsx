@@ -2509,29 +2509,6 @@ function AnalyticsPage({ lessons = [], classes = [], students = [], liveMode, se
           />
         </div>
       </div>
-
-      {/* Bottom Level: Equalizer Soundwave, Sparklines, and Summary Badge */}
-      <div className="photo-bottom-row">
-        <div className="photo-chart-card">
-          <PhotoEqualizerChart categories={["READING", "WRITING", "SPEAKING", "GRAMMAR"]} />
-        </div>
-        <div className="photo-chart-card">
-          <PhotoStepSparklines
-            rows={[
-              { number: "86% Quiz Avg Score", wave: [12, 18, 14, 22, 16, 25, 20] },
-              { number: "92% Oral Proficiency", wave: [20, 15, 24, 18, 28, 22, 30] },
-              { number: "78% Written Accuracy", wave: [10, 14, 12, 18, 15, 20, 16] },
-            ]}
-          />
-        </div>
-        <div className="photo-chart-card">
-          <PhotoSummaryBadge
-            bigNumber={liveMode && avgTP ? `TP ${avgTP} / 6.0` : "TP 4.8 / 6.0"}
-            subStat={liveMode && totalStudentsCount ? `${totalStudentsCount} Pupils Tracked` : "32 Pupils Tracked"}
-            pillLabel="KSSR PBD ALIGNED"
-          />
-        </div>
-      </div>
     </div>
   );
 
@@ -3166,14 +3143,64 @@ function Treemap({ data }) {
 }
 
 function DonutChart({ data }) {
-  const colors = ["#6d4fd7", "#13a579", "#d89414", "#df5a72"];
+  const colors = ["#8b5cf6", "#10b981", "#f59e0b", "#ef4444", "#06b6d4", "#ec4899"];
+  const total = data.reduce((sum, item) => sum + Number(item.value || 0), 0) || 1;
   let current = 0;
   const gradient = data.map((item, index) => {
+    const pct = (Number(item.value || 0) / total) * 100;
     const start = current;
-    current += item.value;
-    return `${colors[index]} ${start}% ${current}%`;
+    current += pct;
+    return `${colors[index % colors.length]} ${start.toFixed(2)}% ${current.toFixed(2)}%`;
   }).join(", ");
-  return <div className="donut-wrap"><div className="donut-chart" style={{ background: `conic-gradient(${gradient})` }}><strong>100%</strong></div><div>{data.map((item, index) => <span key={item.label}><i style={{ background: colors[index] }} />{item.label} {item.value}%</span>)}</div></div>;
+
+  return (
+    <div className="donut-wrap" style={{ display: "flex", gap: "20px", alignItems: "center" }}>
+      <div
+        className="donut-chart"
+        style={{
+          background: `conic-gradient(${gradient})`,
+          width: "140px",
+          height: "140px",
+          borderRadius: "50%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          boxShadow: "var(--clay-card)",
+          position: "relative",
+          flexShrink: 0
+        }}
+      >
+        <div
+          style={{
+            width: "88px",
+            height: "88px",
+            borderRadius: "50%",
+            background: "var(--card)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexDirection: "column",
+            boxShadow: "inset 0 2px 4px rgba(0,0,0,0.06)"
+          }}
+        >
+          <strong style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--foreground)" }}>100%</strong>
+          <span style={{ fontSize: "0.65rem", color: "var(--muted)", fontWeight: 600 }}>EVIDENCE</span>
+        </div>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px", flex: 1 }}>
+        {data.map((item, index) => {
+          const pct = Math.round((Number(item.value || 0) / total) * 100);
+          return (
+            <span key={item.label} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.85rem", fontWeight: 600, color: "var(--foreground)" }}>
+              <i style={{ width: "10px", height: "10px", borderRadius: "50%", background: colors[index % colors.length], display: "inline-block", flexShrink: 0 }} />
+              <span style={{ flex: 1 }}>{item.label}</span>
+              <b style={{ fontWeight: 800 }}>{pct}%</b>
+            </span>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 function VerticalBars({ data }) {
@@ -4084,37 +4111,61 @@ function PhotoDonutChart({ segments = [], totalAmount = "84.5% KSSR", activeTerm
   }).join(", ");
 
   return (
-    <div className="donut-card-layout">
-      <div className="donut-top-split">
-        <div className="donut-chart-container">
+    <div className="donut-card-layout" style={{ width: "100%", overflow: "visible" }}>
+      <div style={{ marginBottom: "14px" }}>
+        <h4 style={{ margin: 0, fontSize: "1rem", fontWeight: 800, color: "var(--foreground)" }}>PBD Skill Mastery Breakdown</h4>
+        <p style={{ margin: "4px 0 0 0", fontSize: "0.78rem", color: "var(--muted)", lineHeight: 1.3 }}>
+          Percentage of pupils achieving TP4–TP6 competency across the 6 core English KSSR assessment domains.
+        </p>
+      </div>
+      <div className="donut-top-split" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "20px", overflow: "visible" }}>
+        <div className="donut-chart-container" style={{ position: "relative", width: "150px", height: "150px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "visible" }}>
           <div
             className="donut-svg-ring"
             style={{
               background: `conic-gradient(${gradientStops})`,
               borderRadius: "50%",
-              width: "172px",
-              height: "172px",
+              width: "150px",
+              height: "150px",
+              flexShrink: 0,
               mask: "radial-gradient(circle at center, transparent 58%, black 59%)",
               WebkitMask: "radial-gradient(circle at center, transparent 58%, black 59%)",
             }}
           />
-          <button type="button" className="donut-center-selector" onClick={onSelectTerm}>
-            <span>&lt; {activeTerm} &gt;</span>
-          </button>
+          <div
+            className="donut-center-badge"
+            style={{
+              position: "absolute",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "8px",
+              background: "var(--card)",
+              borderRadius: "50%",
+              width: "78px",
+              height: "78px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              pointerEvents: "none"
+            }}
+          >
+            <strong style={{ fontSize: "1rem", fontWeight: 800, color: "var(--foreground)", lineHeight: 1.1 }}>84.5%</strong>
+            <span style={{ fontSize: "0.6rem", fontWeight: 700, color: "var(--muted)" }}>Mastery</span>
+          </div>
         </div>
-        <div className="donut-legend-list">
+        <div className="donut-legend-list" style={{ flex: 1, minWidth: 0 }}>
           {list.map((item, idx) => (
-            <div key={idx} className="donut-legend-item">
-              <span className="donut-legend-dot" style={{ background: item.color }} />
-              <span style={{ flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.label}</span>
-              <strong>{typeof item.value === "number" ? `${Math.round(item.value)}%` : item.value}</strong>
+            <div key={idx} className="donut-legend-item" style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+              <span className="donut-legend-dot" style={{ width: "10px", height: "10px", borderRadius: "50%", background: item.color, flexShrink: 0 }} />
+              <span style={{ flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: "0.85rem", color: "var(--foreground)", fontWeight: 600 }}>{item.label}</span>
+              <strong style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--foreground)" }}>{typeof item.value === "number" ? `${Math.round(item.value)}%` : item.value}</strong>
             </div>
           ))}
         </div>
       </div>
-      <div className="donut-bottom-badge">
-        <span className="donut-total-stat">{totalAmount}</span>
-        <span className="donut-total-tag">▲ KSSR BENCHMARK MET · 6 CORE ENGLISH SKILLS EVALUATED</span>
+      <div className="donut-bottom-badge" style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span className="donut-total-stat" style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--primary)" }}>{totalAmount}</span>
+        <span className="donut-total-tag" style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--muted)" }}>▲ KSSR BENCHMARK MET</span>
       </div>
     </div>
   );
