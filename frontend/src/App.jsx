@@ -2467,9 +2467,9 @@ function AnalyticsPage({ lessons = [], classes = [], students = [], liveMode, se
         <div className="photo-chart-card">
           <PhotoSegmentedProgress
             tracks={[
-              { title: "TP4+ Mastery Rate", value: Math.round(avgTP * 17) || 82, statLabel: "↑ +12% vs Term 1", trend: "up", color: "emerald" },
-              { title: "Evidence Collection Rate", value: evidenceCompletion || 65, statLabel: "↑ +18 PBD Logged", trend: "up", color: "indigo" },
-              { title: "Student Engagement Index", value: Math.min(98, evidenceCompletion + 12) || 94, statLabel: "↑ 94% Active Rate", trend: "up", color: "cyan" },
+              { title: "TP4+ Mastery Rate", value: Math.round(avgTP * 17) || 82, statLabel: "+12% vs Term 1", trend: "up", color: "emerald" },
+              { title: "Evidence Collection Rate", value: evidenceCompletion || 65, statLabel: "+18 PBD Logged", trend: "up", color: "indigo" },
+              { title: "Student Engagement Index", value: Math.min(98, evidenceCompletion + 12) || 94, statLabel: "94% Active Rate", trend: "up", color: "cyan" },
             ]}
           />
         </div>
@@ -4037,9 +4037,9 @@ function PhotoRadialRings({ rings = [] }) {
 
 function PhotoSegmentedProgress({ tracks = [] }) {
   const defaultTracks = [
-    { title: "TP4+ Mastery Rate", value: 82, statLabel: "↑ 12 983", trend: "up", color: "emerald" },
-    { title: "Evidence Collection Rate", value: 65, statLabel: "↓ 9 478", trend: "down", color: "indigo" },
-    { title: "Student Engagement Index", value: 94, statLabel: "↑ 15 323", trend: "up", color: "cyan" },
+    { title: "TP4+ Mastery Rate", value: 82, statLabel: "+12% vs Term 1", trend: "up", color: "emerald" },
+    { title: "Evidence Collection Rate", value: 65, statLabel: "+18 PBD Logged", trend: "up", color: "indigo" },
+    { title: "Student Engagement Index", value: 94, statLabel: "94% Active Rate", trend: "up", color: "cyan" },
   ];
   const list = tracks.length ? tracks : defaultTracks;
   return (
