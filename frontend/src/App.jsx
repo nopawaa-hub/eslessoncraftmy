@@ -698,17 +698,17 @@ function Dashboard({ setActivePage, setCopilotOpen, lessons = [], classes = [], 
   const firstName = (currentUser?.name || "Teacher").split(" ")[0];
 
   const statCards = liveMode ? [
-    { label: "Saved lessons", value: String(lessons.length), hint: lessons.length ? "Ready to export" : "Create first RPH", tone: "indigo" },
-    { label: "Active classes", value: String(classes.length), hint: classes.length ? `${classes.reduce((sum, c) => sum + Number(c.studentCount || 0), 0)} pupils enrolled` : "Add class roster", tone: "emerald" },
-    { label: "PBD templates", value: String(classes.length ? classes.length * 2 : 0), hint: classes.length ? "Ready for evaluation" : "Create class to unlock", tone: "amber" },
-    { label: "Schedule only", value: String(classes.length), hint: classes.length ? `${classes.length} classes scheduled` : "Open timetable to add", tone: "rose" },
+    { label: "Saved lessons", value: String(lessons.length), hint: lessons.length ? "Ready to export" : "Nothing to show, start creating lesson plans", tone: "indigo" },
+    { label: "Active classes", value: String(classes.length), hint: classes.length ? `${classes.reduce((sum, c) => sum + Number(c.studentCount || 0), 0)} pupils enrolled` : "Nothing to show, start creating classes", tone: "emerald" },
+    { label: "PBD templates", value: String(classes.length ? classes.length * 2 : 0), hint: classes.length ? "Ready for evaluation" : "Nothing to show, create a class to start", tone: "amber" },
+    { label: "Schedule only", value: String(classes.length), hint: classes.length ? `${classes.length} classes scheduled` : "Nothing to show, open timetable to add", tone: "rose" },
   ] : summaryStats;
 
   const dynamicAnalytics = liveMode ? [
-    { title: "Reading Comprehension", value: lessons.length ? "82%" : "0%", note: lessons.length ? "Computed from active RPH objectives" : "Generate a reading RPH to track", tone: "emerald" },
-    { title: "Writing Accuracy", value: lessons.length ? "74%" : "0%", note: lessons.length ? "Writing skills aligned to KSSR" : "Generate a writing RPH to track", tone: "amber" },
-    { title: "Speaking Confidence", value: classes.length ? "78%" : "0%", note: classes.length ? "Based on oral PBD observations" : "Add class roster to track", tone: "indigo" },
-    { title: "Pupils at Risk", value: classes.length ? "0" : "0", note: classes.length ? "No pupils flagged in current classes" : "Add class roster to evaluate", tone: "rose" },
+    { title: "Reading Comprehension", value: lessons.length ? "82%" : "0%", note: lessons.length ? "Computed from active RPH objectives" : "Nothing to show, you can start create your class/lesson plan/ etc", tone: "emerald" },
+    { title: "Writing Accuracy", value: lessons.length ? "74%" : "0%", note: lessons.length ? "Writing skills aligned to KSSR" : "Nothing to show, you can start create your class/lesson plan/ etc", tone: "amber" },
+    { title: "Speaking Confidence", value: classes.length ? "78%" : "0%", note: classes.length ? "Based on oral PBD observations" : "Nothing to show, you can start create your class/lesson plan/ etc", tone: "indigo" },
+    { title: "Pupils at Risk", value: classes.length ? "0" : "0", note: classes.length ? "No pupils flagged in current classes" : "Nothing to show, you can start create your class/lesson plan/ etc", tone: "rose" },
   ] : analyticsCards;
 
   const rphCount = lessons.length;
@@ -744,13 +744,13 @@ function Dashboard({ setActivePage, setCopilotOpen, lessons = [], classes = [], 
         <Card className="span-2" title="Today’s English schedule" subtitle={liveMode ? (classes.length ? `${classes.length} classes scheduled across your workspace` : "0 classes · 0 teaching hours") : "5 classes · 5 teaching hours"} action="Open full schedule" onAction={() => setActivePage("timetable")}>
           <div className="class-list">
             {todayItems.map((item) => <ClassRow key={item.id} item={item} onClick={() => setActivePage("timetable")} />)}
-            {!todayItems.length && <p className="body-copy">No live schedule blocks yet. Open Timetable to create your first block.</p>}
+            {!todayItems.length && <p className="body-copy">Nothing to show, you can start create your class/lesson plan/ etc.</p>}
           </div>
         </Card>
         <Card title="AI Insights" subtitle={liveMode ? (lessons.length ? "Recommendations based on your RPH" : "No recommendations yet") : "English-only recommendations · 4 baru"}>
           <div className="insight-list">
             {(liveMode ? [] : aiInsights).map((item) => <Insight key={item.title} item={item} onClick={() => item.action.includes("Generate") ? setActivePage("lesson-planner") : item.action.includes("analytics") ? setActivePage("analytics") : setActivePage("pbd")} />)}
-            {liveMode && <p className="body-copy">AI suggestions will appear after you create live class, lesson and PBD data.</p>}
+            {liveMode && <p className="body-copy">Nothing to show, you can start create your class/lesson plan/ etc.</p>}
           </div>
         </Card>
       </section>
@@ -763,14 +763,14 @@ function Dashboard({ setActivePage, setCopilotOpen, lessons = [], classes = [], 
         <Card className="span-2" title="Recent English materials and RPH" subtitle="Upload, reuse and generate follow-up tasks with AI" action="Upload" onAction={() => setActivePage("materials")}>
           <div className="material-grid">
             {recent.map((item) => <MaterialTile key={item.title || item.name} item={item} />)}
-            {!recent.length && <p className="body-copy">No live lessons yet. Generate and save one from Lesson Planner AI.</p>}
+            {!recent.length && <p className="body-copy">Nothing to show, you can start create your class/lesson plan/ etc.</p>}
           </div>
         </Card>
         <Card title="This week’s English goals">
-          <Goal label="RPH completed" value={rphPercent} hint={liveMode ? `${rphCount} / ${rphTarget}` : "8 / 11"} />
-          <Goal label="PBD recorded" value={pbdPercent} hint={liveMode ? `${classCount ? classCount * 5 : 0} / ${pbdTarget}` : "28 / 40"} />
-          <Goal label="Materials prepared" value={matPercent} hint={liveMode ? `${rphCount} / ${matTarget}` : "6 / 8"} />
-          <button className="ai-note" onClick={() => setCopilotOpen(true)}><Sparkles /> {liveMode ? (classes.length ? `Follow-up: Complete PBD evidence for ${classes[0]?.name || "your class"} before Friday.` : "Follow-up: Create your first class roster to unlock AI tracking.") : "Follow-up: complete 5 Bestari English PBD evidence before Friday."}</button>
+          <Goal label="RPH completed" value={rphPercent} hint={liveMode && !rphCount ? "0 / 5 · Nothing to show, start creating lesson plans" : (liveMode ? `${rphCount} / ${rphTarget}` : "8 / 11")} />
+          <Goal label="PBD recorded" value={pbdPercent} hint={liveMode && !classCount ? "0 / 20 · Nothing to show, start recording PBD" : (liveMode ? `${classCount ? classCount * 5 : 0} / ${pbdTarget}` : "28 / 40")} />
+          <Goal label="Materials prepared" value={matPercent} hint={liveMode && !rphCount ? "0 / 4 · Nothing to show, start preparing materials" : (liveMode ? `${rphCount} / ${matTarget}` : "6 / 8")} />
+          <button className="ai-note" onClick={() => setCopilotOpen(true)}><Sparkles /> {liveMode ? (classes.length ? `Follow-up: Complete PBD evidence for ${classes[0]?.name || "your class"} before Friday.` : "Nothing to show, you can start create your class/lesson plan/ etc.") : "Follow-up: complete 5 Bestari English PBD evidence before Friday."}</button>
         </Card>
       </section>
     </div>
@@ -1097,7 +1097,7 @@ function ClassesPage({ classes = [], refreshClasses, setSelectedClassId, setActi
                 <em>Open class database</em>
               </button>
             ))}
-            {!classes.length && <p className="body-copy">No classes yet. Create your first class to unlock class-owned lesson planning.</p>}
+            {!classes.length && <p className="body-copy">Nothing to show, you can start create your class/lesson plan/ etc.</p>}
           </div>
         </Card>
         {!showClassForm && notice && <div className="success-note span-2"><CheckCircle2 /> {notice}</div>}
@@ -1348,7 +1348,7 @@ function PBDPage({ classes = [], liveMode }) {
                     <td><input className="comment-input" value={record.remarks || ""} onChange={(event) => updateRecord(index, "remarks", event.target.value)} /></td>
                   </tr>
                 ))}
-                {!records.length && <tr><td colSpan="5">Select a class with students and a saved template.</td></tr>}
+                {!records.length && <tr><td colSpan="5" style={{ textAlign: "center", padding: 24, color: "var(--muted)" }}>Nothing to show, you can start create your class/lesson plan/ etc.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -1356,12 +1356,27 @@ function PBDPage({ classes = [], liveMode }) {
         </Card>
       )}
 
-      {tab === "analytics" && <PBDOverview />}
+      {tab === "analytics" && <PBDOverview liveMode={liveMode} classes={classes} />}
     </div>
   );
 }
 
-function PBDOverview() {
+function PBDOverview({ liveMode, classes = [] }) {
+  if (liveMode && !classes.length) {
+    return (
+      <div className="page-stack">
+        <section className="stat-grid three">
+          <Metric title="Avg English TP" value="0" note="Nothing to show, you can start create your class/lesson plan/ etc." tone="indigo" />
+          <Metric title="Evidence Completion" value="0%" note="Nothing to show, you can start create your class/lesson plan/ etc." tone="emerald" />
+          <Metric title="Vocabulary Risk" value="0" note="Nothing to show, you can start create your class/lesson plan/ etc." tone="rose" />
+        </section>
+        <section className="dashboard-grid">
+          <Card className="span-2" title="English TP Distribution"><p className="body-copy">Nothing to show, you can start create your class/lesson plan/ etc.</p></Card>
+          <Card title="AI Insight"><p className="body-copy">Nothing to show, you can start create your class/lesson plan/ etc.</p></Card>
+        </section>
+      </div>
+    );
+  }
   return (
     <div className="page-stack">
       <section className="stat-grid three">
@@ -2072,7 +2087,7 @@ function MaterialsPage({ liveMode }) {
         <button className="primary-btn" onClick={() => uploadRef.current?.click()}><Upload /> Upload</button>
       </section>
       {notice && <div className="success-note"><CheckCircle2 /> {notice}</div>}
-      <section className="material-grid wide">{items.map((item) => <MaterialTile key={item.name} item={item} />)}{!items.length && <p className="body-copy">No live materials yet. Upload a file to start the library.</p>}</section>
+      <section className="material-grid wide">{items.map((item) => <MaterialTile key={item.name} item={item} />)}{!items.length && <p className="body-copy">Nothing to show, you can start create your class/lesson plan/ etc.</p>}</section>
     </div>
   );
 }
@@ -2083,7 +2098,7 @@ function AnalyticsPage({ lessons = [], classes = [], liveMode }) {
       <div className="page-stack">
         <PageHeader eyebrow="Analytics & Insights" title="Pedagogy & Student Analytics" subtitle="AI-driven classroom analytics and PBD mastery tracking." />
         <Card title="No Analytics Data Yet" subtitle="Create your first class roster and lesson plan to generate live analytics.">
-          <p className="body-copy">Your analytics dashboard dynamically calculates pupil progress, TP distribution, and skill gaps from your real class data. Once you add classes and record PBD evidence, your interactive charts and AI recommendations will appear here.</p>
+          <p className="body-copy">Nothing to show, you can start create your class/lesson plan/ etc.</p>
         </Card>
       </div>
     );
@@ -2734,7 +2749,7 @@ function ReportsPage({ lessons = [], classes = [], compact = false, liveMode = f
             {classes.map((schoolClass) => <option key={schoolClass._id} value={schoolClass._id}>{schoolClass.name} · {schoolClass.year}</option>)}
           </select>
         </label>
-        <div className="material-grid">{(visibleLessons.length ? visibleLessons : liveMode ? [] : materials.slice(0, 4)).map((item) => <MaterialTile key={item._id || item.name} item={{ name: item.title || item.name, subject: item.classId?.name || item.className || item.subject || "RPH", size: item.year || item.type, updated: String(item.createdAt || item.updated || "Ready").slice(0, 10) }} />)}{!visibleLessons.length && liveMode && <p className="body-copy">No live lesson reports yet.</p>}</div>
+        <div className="material-grid">{(visibleLessons.length ? visibleLessons : liveMode ? [] : materials.slice(0, 4)).map((item) => <MaterialTile key={item._id || item.name} item={{ name: item.title || item.name, subject: item.classId?.name || item.className || item.subject || "RPH", size: item.year || item.type, updated: String(item.createdAt || item.updated || "Ready").slice(0, 10) }} />)}{!visibleLessons.length && liveMode && <p className="body-copy">Nothing to show, you can start create your class/lesson plan/ etc.</p>}</div>
       </Card>}
     </div>
   );
@@ -2815,9 +2830,9 @@ Procedure:
 Assessment:
 Teacher checks the completed worksheet for accuracy.`;
 
-function EvaluatePage({ lessons = [] }) {
+function EvaluatePage({ lessons = [], liveMode = false }) {
   const [mode, setMode] = useState("text");
-  const [textInput, setTextInput] = useState(SAMPLE_EVAL_LESSON);
+  const [textInput, setTextInput] = useState(liveMode && !lessons.length ? "" : SAMPLE_EVAL_LESSON);
   const [fileInput, setFileInput] = useState(null);
   const [selectedLessonId, setSelectedLessonId] = useState(lessons[0]?._id || "");
   const [loading, setLoading] = useState(false);
@@ -2938,7 +2953,7 @@ function EvaluatePage({ lessons = [] }) {
             </div>
 
             {mode === "text" && (
-              <label>
+              <label className="field">
                 <span>Lesson Plan Text</span>
                 <textarea
                   rows={12}
@@ -2966,7 +2981,7 @@ function EvaluatePage({ lessons = [] }) {
             )}
 
             {mode === "saved" && (
-              <label>
+              <label className="field">
                 <span>Select from your Saved Lessons</span>
                 {lessons.length > 0 ? (
                   <select value={selectedLessonId} onChange={(e) => setSelectedLessonId(e.target.value)}>
@@ -2978,7 +2993,7 @@ function EvaluatePage({ lessons = [] }) {
                   </select>
                 ) : (
                   <p className="muted" style={{ padding: 12, border: "1px solid var(--border)", borderRadius: 10 }}>
-                    No saved lessons found. Switch to Text or Upload tab to evaluate right away.
+                    Nothing to show, you can start create your class/lesson plan/ etc.
                   </p>
                 )}
               </label>
@@ -3349,7 +3364,17 @@ function Tabs({ tabs, active, setActive }) {
 }
 
 function Metric({ title, value, note, tone }) {
-  return <div className="metric"><span className={`tone-icon ${tone}`}><BarChart3 /></span><p>{title}</p><strong>{value}</strong><small>{note}</small><Progress value={tone === "rose" ? 35 : 76} /></div>;
+  const isZero = String(value) === "0%" || String(value) === "0" || Number(value) === 0;
+  const barValue = isZero ? 0 : (typeof value === "number" ? Math.min(100, Math.max(0, value)) : (parseInt(String(value), 10) || (tone === "rose" ? 35 : 76)));
+  return (
+    <div className="metric">
+      <span className={`tone-icon ${tone}`}><BarChart3 /></span>
+      <p>{title}</p>
+      <strong>{value}</strong>
+      <small>{note}</small>
+      <Progress value={barValue} />
+    </div>
+  );
 }
 
 function BarSet({ data }) {
