@@ -9,6 +9,7 @@ router.post("/", requireDatabase, async (req, res, next) => {
     const record = await StudentRecord.create({
       studentName: req.body.studentName,
       scores: Array.isArray(req.body.scores) ? req.body.scores.map(Number).filter(Number.isFinite) : [],
+      teacherId: req.user._id,
     });
     res.status(201).json(record);
   } catch (error) {
@@ -16,9 +17,9 @@ router.post("/", requireDatabase, async (req, res, next) => {
   }
 });
 
-router.get("/", requireDatabase, async (_req, res, next) => {
+router.get("/", requireDatabase, async (req, res, next) => {
   try {
-    const records = await StudentRecord.find().sort({ updatedAt: -1 });
+    const records = await StudentRecord.find({ teacherId: req.user._id }).sort({ updatedAt: -1 });
     res.json(records);
   } catch (error) {
     next(error);

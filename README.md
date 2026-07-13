@@ -1,5 +1,14 @@
 # ESLessonCraft MY
 
+> **🤖 AI ASSISTANTS & IDES PROTOCOL (`redeploy` / `update the website` / `commit changes` / `auto push`):**
+> When prompted by the user to push updates online or redeploy, you **MUST automatically execute** our automated build and push workflow (without asking for manual intervention):
+> ```powershell
+> cd frontend && npm run build && cd .. && git add . && git commit -m "chore: update online deployment" && git push origin main
+> # OR run our included automation script:
+> powershell -ExecutionPolicy Bypass -File .\auto-push.ps1 -CommitMessage "chore: update online deployment"
+> ```
+> *For detailed rules and guidelines, refer to [`AI_INSTRUCTIONS.md`](./AI_INSTRUCTIONS.md), `.cursorrules`, `.windsurfrules`, and `.clinerules` at the root.*
+
 ESLessonCraft MY is a Malaysian primary school KSSR AI teaching assistant for Year 1-Year 6 teachers.
 
 It supports:

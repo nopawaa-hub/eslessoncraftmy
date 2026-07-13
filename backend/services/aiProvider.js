@@ -8,8 +8,23 @@ const GEMINI_MODEL_FALLBACKS = [
   "gemini-2.5-flash",
 ].filter((model, index, models) => model && models.indexOf(model) === index);
 
+// NeuralWatt / GLM provider config (OpenAI-compatible API).
+// When NEURALWATT_API_KEY is set, the system round-robins between Gemini and
+// NeuralWatt on each AI call to distribute load and avoid rate limits.
+const NEURALWATT_BASE_URL = process.env.NEURALWATT_BASE_URL || "https://api.neuralwatt.com";
+const NEURALWATT_MODEL = process.env.NEURALWATT_MODEL || "glm-4-flash";
+const NEURALWATT_API_KEY = process.env.NEURALWATT_API_KEY || "";
+
+// Round-robin counter — alternates between providers so neither hits its rate
+// limit. When the selected provider fails, the other is tried as a fallback.
+let roundRobinCounter = 0;
+
+function isNeuralWattConfigured() {
+  return Boolean(NEURALWATT_API_KEY);
+}
+
 export function getConfiguredProvider() {
-  return "gemini";
+  return isNeuralWattConfigured() ? "gemini+neuralwatt (round-robin)" : "gemini";
 }
 
 export function safeParseJson(rawText) {
@@ -38,7 +53,9 @@ export function safeParseJson(rawText) {
   }
 }
 
-export async function callAI(systemPrompt, userPrompt) {
+// Shared Gemini call loop. Returns the raw response object so callers can
+// decide whether to parse JSON (callAI) or return plain text (callAIText).
+async function callGemini(systemPrompt, userPrompt) {
   const startedAt = Date.now();
 
   try {
@@ -80,7 +97,7 @@ export async function callAI(systemPrompt, userPrompt) {
       );
 
       return {
-        data: safeParseJson(text),
+        text,
         provider: "gemini",
         model,
         responseTimeMs,
@@ -96,11 +113,132 @@ export async function callAI(systemPrompt, userPrompt) {
     );
 
     return {
-      data: null,
+      text: null,
       provider: "gemini",
       responseTimeMs,
       fallbackTriggered: true,
       error: error.message,
     };
   }
+}
+
+// NeuralWatt / GLM call using the OpenAI-compatible Chat Completions API.
+// Returns the same shape as callGemini so the dispatcher and callers are agnostic.
+async function callNeuralWatt(systemPrompt, userPrompt) {
+  const startedAt = Date.now();
+
+  try {
+    if (!NEURALWATT_API_KEY) {
+      throw new Error("NEURALWATT_API_KEY is not configured.");
+    }
+
+    const baseUrl = NEURALWATT_BASE_URL.replace(/\/+$/, "");
+    const url = `${baseUrl}/v1/chat/completions`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${NEURALWATT_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: NEURALWATT_MODEL,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        temperature: 0.7,
+      }),
+    });
+
+    if (!response.ok) {
+      const details = await response.text();
+      throw new Error(`NeuralWatt request failed for ${NEURALWATT_MODEL}: ${details}`);
+    }
+
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content;
+    const responseTimeMs = Date.now() - startedAt;
+    console.log(
+      `[AI] provider=neuralwatt model=${NEURALWATT_MODEL} responseTimeMs=${responseTimeMs} fallbackTriggered=false`,
+    );
+
+    return {
+      text,
+      provider: "neuralwatt",
+      model: NEURALWATT_MODEL,
+      responseTimeMs,
+      fallbackTriggered: false,
+    };
+  } catch (error) {
+    const responseTimeMs = Date.now() - startedAt;
+    console.warn(
+      `[AI] provider=neuralwatt model=${NEURALWATT_MODEL} responseTimeMs=${responseTimeMs} fallbackTriggered=true error="${error.message}"`,
+    );
+
+    return {
+      text: null,
+      provider: "neuralwatt",
+      model: NEURALWATT_MODEL,
+      responseTimeMs,
+      fallbackTriggered: true,
+      error: error.message,
+    };
+  }
+}
+
+// Round-robin dispatcher: alternates between Gemini and NeuralWatt on each call.
+// If the selected provider fails, the other is tried as a fallback before
+// giving up. When only one provider is configured, it's used exclusively.
+async function callAIWithRoundRobin(systemPrompt, userPrompt) {
+  const useNeuralWatt = isNeuralWattConfigured();
+
+  // When only one provider is configured, skip round-robin.
+  if (!useNeuralWatt) {
+    return callGemini(systemPrompt, userPrompt);
+  }
+
+  // Pick the provider for this call (alternating).
+  const pickNeuralWattFirst = roundRobinCounter % 2 === 1;
+  roundRobinCounter += 1;
+
+  const primary = pickNeuralWattFirst
+    ? () => callNeuralWatt(systemPrompt, userPrompt)
+    : () => callGemini(systemPrompt, userPrompt);
+  const secondary = pickNeuralWattFirst
+    ? () => callGemini(systemPrompt, userPrompt)
+    : () => callNeuralWatt(systemPrompt, userPrompt);
+
+  const primaryResult = await primary();
+  if (!primaryResult.fallbackTriggered && primaryResult.text) {
+    return primaryResult;
+  }
+
+  // Primary failed — try the other provider before giving up.
+  console.log(`[AI] ${primaryResult.provider} failed, falling back to the other provider…`);
+  const secondaryResult = await secondary();
+  if (!secondaryResult.fallbackTriggered && secondaryResult.text) {
+    return secondaryResult;
+  }
+
+  // Both failed — return the primary's failure (it was the intended provider).
+  return primaryResult;
+}
+
+export async function callAI(systemPrompt, userPrompt) {
+  const result = await callAIWithRoundRobin(systemPrompt, userPrompt);
+  return { ...result, data: result.fallbackTriggered ? null : safeParseJson(result.text) };
+}
+
+// Free-text AI call for conversational responses (copilot). Returns raw text
+// instead of trying to parse JSON, so the model can answer naturally.
+export async function callAIText(systemPrompt, userPrompt) {
+  const result = await callAIWithRoundRobin(systemPrompt, userPrompt);
+  return {
+    text: result.text || "",
+    provider: result.provider,
+    model: result.model,
+    responseTimeMs: result.responseTimeMs,
+    fallbackTriggered: result.fallbackTriggered,
+    error: result.error || null,
+  };
 }

@@ -21,6 +21,7 @@ import authRouter from "./routes/auth.js";
 import classesRouter from "./routes/classes.js";
 import studentsRouter from "./routes/students.js";
 import materialsRouter from "./routes/materials.js";
+import copilotRouter from "./routes/copilot.js";
 import { getConfiguredProvider } from "./services/aiProvider.js";
 import { requireAuth } from "./services/auth.js";
 import { connectDatabase } from "./services/db.js";
@@ -69,6 +70,7 @@ app.use("/users", usersRouter);
 app.use("/classes", classesRouter);
 app.use("/students", studentsRouter);
 app.use("/materials", materialsRouter);
+app.use("/copilot", copilotRouter);
 
 if (fs.existsSync(frontendDistPath)) {
   app.use(express.static(frontendDistPath));

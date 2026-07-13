@@ -11,6 +11,14 @@ const periodSchema = new mongoose.Schema(
     year: { type: String, default: "Year 4" },
     recurring: { type: Boolean, default: true },
     notes: { type: String, default: "" },
+    // Display-only fields carried through from the timetable UI.
+    tone: { type: String, default: "" },
+    skill: { type: String, default: "" },
+    topic: { type: String, default: "" },
+    status: { type: String, default: "" },
+    material: { type: String, default: "" },
+    assessment: { type: String, default: "" },
+    lessonPlan: { type: String, default: "" },
   },
   { timestamps: true },
 );

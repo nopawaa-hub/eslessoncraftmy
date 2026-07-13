@@ -5,6 +5,7 @@ const studentRecordSchema = new mongoose.Schema(
     studentName: { type: String, required: true, trim: true },
     scores: { type: [Number], default: [] },
     average: { type: Number, default: 0 },
+    teacherId: { type: mongoose.Schema.Types.ObjectId, ref: "User", index: true },
   },
   { timestamps: { createdAt: true, updatedAt: true } },
 );

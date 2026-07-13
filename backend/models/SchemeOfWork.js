@@ -9,6 +9,7 @@ const schemeOfWorkSchema = new mongoose.Schema(
     text: { type: String, required: true },
     year: { type: String, default: "" },
     subject: { type: String, default: "English" },
+    teacherId: { type: mongoose.Schema.Types.ObjectId, ref: "User", index: true },
   },
   { timestamps: true },
 );

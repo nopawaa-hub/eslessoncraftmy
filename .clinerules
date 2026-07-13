@@ -1,0 +1,25 @@
+# AUTO-DEPLOYMENT & SYSTEM INSTRUCTIONS FOR CLINE / ROO CODE / KILO / ANTIGRAVITY
+# Project: LessonCraft MY (Malaysian KSSR AI Teaching Assistant)
+
+# -----------------------------------------------------------------------------
+# 1. AUTO-DEPLOYMENT TRIGGER WORKFLOW
+# -----------------------------------------------------------------------------
+# When the user prompts "redeploy", "update the website", "push online", "auto push", or "commit changes",
+# you MUST automatically execute the following commands via terminal without asking the user to do it manually:
+
+# PowerShell / Windows Command:
+#   cd c:\Users\neofa\Downloads\product-concept-pedagogy-os-malaysia-edition\lessoncraft-my\frontend
+#   npm run build
+#   cd ..
+#   git add .
+#   git commit -m "chore: automated build and online sync"
+#   git push origin main
+# Or simply run the included root automation script:
+#   powershell -ExecutionPolicy Bypass -File .\auto-push.ps1 -CommitMessage "chore: update website online"
+
+# -----------------------------------------------------------------------------
+# 2. CORE RULES
+# -----------------------------------------------------------------------------
+# - ALWAYS run `npm run build` inside `./frontend` before committing to ensure `frontend/dist/` assets are updated.
+# - Push directly to `origin main`.
+# - Refer to `AI_INSTRUCTIONS.md` at the root for detailed architecture, KSSR pedagogy rules, and code structure.

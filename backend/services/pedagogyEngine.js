@@ -1,4 +1,4 @@
-import { callAI } from "./aiProvider.js";
+import { callAI, callAIText } from "./aiProvider.js";
 import { analyzeKssrAlignment, buildKssrPromptRequirement, calculateKssrCheck } from "./kssrAnalyzer.js";
 import { buildSowInstruction } from "./sowLibrary.js";
 
@@ -16,6 +16,17 @@ export function validateLessonPlan(req, res, next) {
 
   req.lessonPlan = lessonPlan.trim();
   return next();
+}
+
+// Stamp the AI provenance (real vs fallback) onto every engine result so the
+// client can show a "demo content" notice when the model could not be reached.
+export function buildAiSource(ai) {
+  return {
+    fallbackTriggered: Boolean(ai?.fallbackTriggered),
+    provider: ai?.provider || "gemini",
+    model: ai?.model || null,
+    error: ai?.error || null,
+  };
 }
 
 function hasAny(text, keywords) {
@@ -754,7 +765,7 @@ Use the teacher-entered overview as the backbone, but expand each stage with eno
 Generate the document-ready fields for Content Standard (CS), Learning Standard (LS), Learning Outcome (LO), Knowledge, Skill, Value, Learning Objectives, Success Criteria, Classroom Based Assessment, Instruments, Thinking Skills, Habits of Mind, HOTS, CCE, ICT, T&LM, Arts in Education, Soft Skills, Teaching Strategies, 21stCPP, Differentiation Strategy, and all five lesson stages.`;
 
   const ai = await callAI(buildSystemPrompt("generate a KSSR primary lesson plan"), userPrompt);
-  return normalizeGenerateResponse(ai.data, {
+  return { ...normalizeGenerateResponse(ai.data, {
     topic,
     year: safeYear,
     subject,
@@ -775,7 +786,7 @@ Generate the document-ready fields for Content Standard (CS), Learning Standard 
     classroomEnvironment,
     teachingNotes,
     sowSource,
-  });
+  }), aiSource: buildAiSource(ai) };
 }
 
 export async function analyzeLesson(lessonPlan) {
@@ -806,7 +817,7 @@ Lesson plan:
 ${lessonPlan}`;
 
   const ai = await callAI(buildSystemPrompt("KSSR-aligned lesson analysis"), userPrompt);
-  return normalizeAnalyzeResponse(ai.data, lessonPlan);
+  return { ...normalizeAnalyzeResponse(ai.data, lessonPlan), aiSource: buildAiSource(ai) };
 }
 
 export async function simulateLesson(lessonPlan) {
@@ -823,7 +834,7 @@ Lesson plan:
 ${lessonPlan}`;
 
   const ai = await callAI(buildSystemPrompt("Malaysian classroom simulation"), userPrompt);
-  return normalizeSimulationResponse(ai.data, lessonPlan);
+  return { ...normalizeSimulationResponse(ai.data, lessonPlan), aiSource: buildAiSource(ai) };
 }
 
 export async function improveLesson(lessonPlan) {
@@ -840,7 +851,7 @@ Lesson plan:
 ${lessonPlan}`;
 
   const ai = await callAI(buildSystemPrompt("lesson improvement"), userPrompt);
-  return normalizeImproveResponse(ai.data);
+  return { ...normalizeImproveResponse(ai.data), aiSource: buildAiSource(ai) };
 }
 
 export async function checkKssrAlignment(lessonPlan) {
@@ -857,7 +868,7 @@ Lesson plan:
 ${lessonPlan}`;
 
   const ai = await callAI(buildSystemPrompt("KSSR alignment checking"), userPrompt);
-  return normalizeKssrCheckResponse(ai.data, lessonPlan);
+  return { ...normalizeKssrCheckResponse(ai.data, lessonPlan), aiSource: buildAiSource(ai) };
 }
 
 function mockEvaluate(lessonPlan) {
@@ -958,5 +969,184 @@ Lesson plan:
 ${lessonPlan}`;
 
   const ai = await callAI(buildSystemPrompt("evaluate a KSSR lesson document with highlight comments"), userPrompt);
-  return normalizeEvaluateResponse(ai.data, lessonPlan, classData);
+  return { ...normalizeEvaluateResponse(ai.data, lessonPlan, classData), aiSource: buildAiSource(ai) };
+}
+
+// ---------------------------------------------------------------------------
+// AI COPILOT — context-aware conversational assistant
+// The copilot knows what happened in the teacher's workspace because the route
+// gathers real lesson plans, classes, students, assessments, and schedule
+// periods and passes them here as a structured context summary.
+// ---------------------------------------------------------------------------
+
+// Turn the teacher's real workspace data into a compact text block the model
+// can reason about. Stays under a reasonable token budget by truncating lists.
+export function buildCopilotContext({ teacher, classes = [], students = [], lessons = [], assessments = [], schedule = [] } = {}) {
+  const lines = [];
+  lines.push("=== TEACHER WORKSPACE CONTEXT ===");
+  lines.push(`Teacher: ${teacher?.name || "Unknown"} — School: ${teacher?.school || "Unknown"}`);
+
+  lines.push(`\n--- CLASSES (${classes.length}) ---`);
+  if (classes.length) {
+    classes.slice(0, 12).forEach((c) => {
+      lines.push(`• ${c.name} · ${c.year} · ${c.subject || "English"} · ${c.studentCount || 0} pupils · ${c.studentProficiency || "Mixed ability"} · ${c.status || "active"}`);
+    });
+  } else {
+    lines.push("(no classes created yet)");
+  }
+
+  lines.push(`\n--- STUDENTS (${students.length}) ---`);
+  if (students.length) {
+    // Group by proficiency band for the model
+    const byProf = {};
+    students.slice(0, 30).forEach((s) => {
+      const band = String(s.proficiency || "Mixed ability").trim();
+      (byProf[band] = byProf[band] || []).push(s.studentName);
+    });
+    Object.entries(byProf).forEach(([band, names]) => {
+      lines.push(`• ${band} (${names.length}): ${names.slice(0, 6).join(", ")}${names.length > 6 ? "…" : ""}`);
+    });
+  } else {
+    lines.push("(no student rosters yet)");
+  }
+
+  lines.push(`\n--- LESSON PLANS (${lessons.length}) ---`);
+  if (lessons.length) {
+    lessons.slice(0, 12).forEach((l) => {
+      const objCount = (l.objectives || []).length;
+      lines.push(`• "${l.title || "Untitled"}" · ${l.year} · ${l.skill || "?"} · ${l.subject || "English"} · ${objCount} objectives · ${l.status || "draft"}${l.className ? ` · ${l.className}` : ""}`);
+    });
+  } else {
+    lines.push("(no lesson plans generated yet)");
+  }
+
+  lines.push(`\n--- ASSESSMENTS / PBD (${assessments.length}) ---`);
+  if (assessments.length) {
+    assessments.slice(0, 10).forEach((a) => {
+      const recordCount = (a.records || []).length;
+      const tps = (a.records || []).map((r) => r.tp).filter(Number.isFinite);
+      const avgTp = tps.length ? (tps.reduce((t, n) => t + n, 0) / tps.length).toFixed(1) : "—";
+      lines.push(`• ${a.title} · ${a.year} · ${a.assessmentType || "PBD"} · ${recordCount} assessed · avg TP ${avgTp}`);
+    });
+  } else {
+    lines.push("(no PBD assessments recorded yet)");
+  }
+
+  lines.push(`\n--- SCHEDULE PERIODS (${schedule.length}) ---`);
+  if (schedule.length) {
+    schedule.slice(0, 10).forEach((p) => {
+      lines.push(`• ${p.day} ${p.startTime}-${p.endTime} · ${p.className || "—"} · ${p.subject || "English"} · ${p.topic || "—"}`);
+    });
+  } else {
+    lines.push("(no timetable periods yet)");
+  }
+
+  lines.push("\n=== END CONTEXT ===");
+  return lines.join("\n");
+}
+
+// Heuristic local response when the AI model is unreachable. Parses the question
+// for keywords and gives a workspace-aware answer from the structured context.
+// Each response may append [action:pageId] tags so the frontend can render
+// shortcut buttons that jump the teacher to the relevant page.
+function copilotHeuristicResponse(question, contextText) {
+  const q = String(question || "").toLowerCase();
+  const has = (kw) => q.includes(kw);
+
+  // Extract counts from context text
+  const classCount = (contextText.match(/--- CLASSES \((\d+)\)/) || [])[1] || 0;
+  const studentCount = (contextText.match(/--- STUDENTS \((\d+)\)/) || [])[1] || 0;
+  const lessonCount = (contextText.match(/--- LESSON PLANS \((\d+)\)/) || [])[1] || 0;
+  const assessmentCount = (contextText.match(/--- ASSESSMENTS \/ PBD \((\d+)\)/) || [])[1] || 0;
+  const scheduleCount = (contextText.match(/--- SCHEDULE PERIODS \((\d+)\)/) || [])[1] || 0;
+
+  if (has("class") || has("roster")) {
+    return `You have ${classCount} class(es) registered. ${Number(classCount) ? "Open the Classes page to add students or create a new class. For a new English class, pick a Year (1–6), set the proficiency level, and the system will track pupil counts automatically." : "Start by creating your first class from the Classes page — choose a Year, subject, and proficiency mix."}\n[action:classes]`;
+  }
+  if (has("student") || has("pupil")) {
+    return `You have ${studentCount} student(s) across all classes. ${Number(studentCount) ? "You can record PBD proficiency (TP1–TP6) for each pupil on the PBD & Assessment page." : "Add students by opening a class on the Classes page and using the roster editor."}\n[action:classes]`;
+  }
+  if (has("lesson") || has("rph") || has("plan")) {
+    return `You have ${lessonCount} saved lesson plan(s). ${Number(lessonCount) ? "Open the Lesson Planner to generate a new RPH or review existing ones. Each lesson covers a KSSR skill (Reading, Writing, Speaking, Listening, Grammar, or Phonics)." : "Generate your first lesson plan from the Lesson Planner — enter a topic, year, and skill, and the AI will build a complete KSSR-aligned RPH."}\n[action:lesson-planner]`;
+  }
+  if (has("pbd") || has("assess") || has("tp")) {
+    return `You have ${assessmentCount} PBD assessment(s) recorded. ${Number(assessmentCount) ? "Each assessment captures TP1–TP6 proficiency per pupil. Check the PBD & Assessment page to create a template and record evidence." : "Create a PBD assessment template on the PBD page first, then assess pupils with TP scores for each criterion."}\n[action:pbd]`;
+  }
+  if (has("schedule") || has("timetable") || has("period")) {
+    return `You have ${scheduleCount} timetable period(s) saved. ${Number(scheduleCount) ? "The Timetable page lets you drag, resize, and edit recurring English periods. Changes persist to your weekly schedule." : "Add periods on the Timetable page — click 'New slot' to place a recurring English block in your weekly grid."}\n[action:timetable]`;
+  }
+  if (has("help") || has("what can") || has("how")) {
+    return `I'm your ESLessonCraft teaching assistant. I can see your workspace: ${classCount} classes, ${studentCount} students, ${lessonCount} lesson plans, ${assessmentCount} assessments, and ${scheduleCount} schedule periods. Ask me about lesson planning, PBD assessment, student interventions, or classroom strategies — I'll tailor my answer to your actual data.`;
+  }
+  return `Based on your workspace (${classCount} classes, ${studentCount} students, ${lessonCount} lessons, ${assessmentCount} assessments), I can help with lesson planning, PBD recording, student interventions, or scheduling. Could you give me a bit more detail about what you need?`;
+}
+
+// Available shortcut actions the copilot can suggest. Each maps a page id
+// (used in [action:pageId] tags) to a human-readable label + icon name.
+const COPILOT_ACTIONS = {
+  "lesson-planner": { label: "Generate Lesson Plan", icon: "Sparkles" },
+  classes: { label: "Manage Classes", icon: "Users" },
+  pbd: { label: "Record PBD", icon: "ClipboardCheck" },
+  timetable: { label: "Open Timetable", icon: "CalendarDays" },
+  analytics: { label: "View Analytics", icon: "BarChart3" },
+  evaluate: { label: "Evaluate Lesson", icon: "FileCheck" },
+  materials: { label: "Upload Materials", icon: "FolderOpen" },
+};
+
+// Parse [action:pageId] tags from a copilot reply. Returns the cleaned text
+// and a list of action objects the frontend can render as shortcut buttons.
+export function parseCopilotActions(reply) {
+  const text = String(reply || "");
+  const actions = [];
+  const seen = new Set();
+  const cleaned = text.replace(/\[action:([a-z-]+)\]/gi, (match, pageId) => {
+    const action = COPILOT_ACTIONS[pageId.toLowerCase()];
+    if (action && !seen.has(pageId.toLowerCase())) {
+      seen.add(pageId.toLowerCase());
+      actions.push({ pageId: pageId.toLowerCase(), label: action.label, icon: action.icon });
+    }
+    return "";
+  }).replace(/\n{3,}/g, "\n\n").trim();
+  return { reply: cleaned, actions };
+}
+
+export async function askCopilot(question, context) {
+  const contextText = buildCopilotContext(context);
+  const trimmedQuestion = String(question || "").trim();
+  if (!trimmedQuestion) {
+    return { reply: "Please type a question and I'll help.", actions: [], aiSource: buildAiSource({ fallbackTriggered: false }) };
+  }
+
+  const systemPrompt = `You are LessonCraft Copilot, an AI teaching assistant embedded in ESLessonCraft MY — a Malaysian KSSR primary school English teaching platform.
+You can see the teacher's actual workspace data below. Use it to give specific, relevant answers.
+${MALAYSIAN_CONTEXT}
+Answer in a friendly, practical, 2-4 sentence reply unless the teacher asks for something detailed.
+When you reference data (e.g. number of classes, student proficiency, lesson topics), use the real data from the context.
+If the context shows little data, suggest what the teacher should create next.
+Prefer actionable teaching advice over generic platitudes. Mention specific pupils, classes, or lessons from the context when relevant.
+
+IMPORTANT — ACTION BUTTONS:
+When you suggest the teacher do something (e.g. create a class, generate a lesson, record PBD, open the timetable, check analytics), append one or more action tags on a new line at the end of your reply in this exact format: [action:PAGE_ID]
+Valid page IDs and when to use them:
+- [action:lesson-planner] — when suggesting the teacher generate or review a lesson plan
+- [action:classes] — when suggesting the teacher create a class or add students to a roster
+- [action:pbd] — when suggesting the teacher record PBD assessments or check pupil proficiency
+- [action:timetable] — when suggesting the teacher set up their weekly schedule
+- [action:analytics] — when suggesting the teacher review analytics or mastery data
+- [action:evaluate] — when suggesting the teacher evaluate a lesson plan
+- [action:materials] — when suggesting the teacher upload teaching materials
+Only suggest actions that are genuinely relevant to the teacher's question. Do not add more than 2 action tags per reply.
+
+${contextText}`;
+
+  const ai = await callAIText(systemPrompt, `Teacher's question: ${trimmedQuestion}`);
+
+  if (ai.fallbackTriggered || !ai.text) {
+    const heuristic = copilotHeuristicResponse(trimmedQuestion, contextText);
+    const parsed = parseCopilotActions(heuristic);
+    return { reply: parsed.reply, actions: parsed.actions, aiSource: buildAiSource(ai) };
+  }
+
+  const parsed = parseCopilotActions(ai.text);
+  return { reply: parsed.reply, actions: parsed.actions, aiSource: buildAiSource(ai) };
 }

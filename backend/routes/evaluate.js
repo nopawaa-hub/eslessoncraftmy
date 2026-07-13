@@ -32,7 +32,7 @@ function summarizeClassData(records = []) {
 router.post("/", requireDatabase, upload.single("file"), async (req, res, next) => {
   try {
     const lessonText = requireLessonText(await resolveLessonText(req));
-    const studentRecords = await StudentRecord.find().sort({ updatedAt: -1 }).limit(50);
+    const studentRecords = await StudentRecord.find({ teacherId: req.user._id }).sort({ updatedAt: -1 }).limit(50);
     const classData = String(req.body?.classData || "").trim() || summarizeClassData(studentRecords);
     const result = await evaluateLesson(lessonText, classData);
     let lessonPlanId = req.body?.lessonPlanId;
@@ -48,6 +48,7 @@ router.post("/", requireDatabase, upload.single("file"), async (req, res, next) 
         learningStandard: "",
         objectives: [],
         steps: lessonText.split(/\n+/).filter(Boolean).slice(0, 12),
+        userId: req.user._id,
       });
       lessonPlanId = lessonPlan._id;
     }

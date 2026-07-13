@@ -31,6 +31,7 @@ import {
   RefreshCw,
   Save,
   Search,
+  Send,
   Settings,
   Sparkles,
   Sun,
@@ -353,6 +354,246 @@ function lessonToText(result) {
   return lines.join("\n");
 }
 
+// ===========================================================================
+// KPM RPH DOCUMENT VIEWER — renders the lesson plan as a structured table
+// matching the official Malaysian KPM lesson plan template, with annotation
+// highlights and hover comment popovers overlaid on the document.
+// ===========================================================================
+
+// Split text into segments alternating between annotated ranges and plain text.
+function buildAnnotatedSegments(text, annotations) {
+  if (!text || !annotations || !annotations.length) return [{ type: "text", content: text }];
+
+  const ranges = [];
+  const lowerText = String(text).toLowerCase();
+  annotations.forEach((ann, index) => {
+    if (!ann.text || typeof ann.text !== "string") return;
+    const lowerQuery = ann.text.toLowerCase();
+    let pos = 0;
+    while ((pos = lowerText.indexOf(lowerQuery, pos)) !== -1) {
+      const start = pos;
+      const end = pos + ann.text.length;
+      const overlaps = ranges.some((r) => !(end <= r.start || start >= r.end));
+      if (!overlaps) { ranges.push({ start, end, ann, index }); break; }
+      pos = end;
+    }
+  });
+  if (!ranges.length) return [{ type: "text", content: text }];
+  ranges.sort((a, b) => a.start - b.start);
+
+  const segments = [];
+  let lastIndex = 0;
+  ranges.forEach((range) => {
+    if (range.start > lastIndex) segments.push({ type: "text", content: text.slice(lastIndex, range.start) });
+    segments.push({ type: "mark", content: text.slice(range.start, range.end), ann: range.ann, index: range.index });
+    lastIndex = range.end;
+  });
+  if (lastIndex < text.length) segments.push({ type: "text", content: text.slice(lastIndex) });
+  return segments;
+}
+
+// Render a text string with annotation highlights + hover comment popovers interspersed.
+function AnnotatedText({ text, annotations, activeIndex, setActiveIndex }) {
+  const segments = buildAnnotatedSegments(text, annotations);
+
+  // Check if the text itself contains a highlight phrase (inline match).
+  const hasInlineMatch = segments.some((s) => s.type === "mark");
+  if (!hasInlineMatch) {
+    // The text doesn't contain any of the annotation phrases — render as plain text.
+    return <span>{text}</span>;
+  }
+
+  return (
+    <span>
+      {segments.map((seg, i) => {
+        if (seg.type === "text") {
+          return <span key={`seg-${i}`}>{seg.content}</span>;
+        }
+
+        return (
+          <HoverComment
+            key={`ann-${i}`}
+            ann={seg.ann}
+            index={seg.index}
+            active={seg.index === activeIndex}
+            onClick={() => setActiveIndex(seg.index === activeIndex ? null : seg.index)}
+          >
+            {seg.content}
+          </HoverComment>
+        );
+      })}
+    </span>
+  );
+}
+
+// The official KPM RPH table structured document viewer.
+// Renders the lesson plan result as a two-column table form that mirrors the
+// DOCX template, with annotation highlights overlaid on matching text.
+function KpmLessonDocument({ result, annotations = [], activeIndex, setActiveIndex }) {
+  // The fields from the lesson result, matching the KPM template structure.
+  const d = result?.lessonDetails || {};
+  const objectives = result?.objectives || [];
+  const successCriteria = result?.successCriteria || [];
+  const procedure = result?.procedure || [];
+  const steps = result?.steps || [];
+  const assessment = result?.assessment || [];
+  const differentiation = result?.differentiation || [];
+
+  const anns = annotations;
+  // Helper: find annotations whose text appears in a given value.
+  const findAnns = (value) => {
+    if (!value || !anns.length) return [];
+    const matches = anns.filter((a) => a.text && String(value).toLowerCase().includes(a.text.toLowerCase()));
+    return matches;
+  };
+
+  // Check if any annotation text appears in a given string field.
+  const hasAnns = (value) => findAnns(value).length > 0;
+
+  // Determine the big RPH fields to render.
+  const fullText = [
+    d.subject, d.year, d.topic, d.skill, result?.title,
+    ...objectives, ...successCriteria, ...steps, ...assessment, ...differentiation,
+    ...(procedure.map(p => [p.teacherActivities, p.pupilActivities, p.lessonContent]).flat()),
+  ].filter(Boolean).join(" ");
+
+  const tableCellStyle = { padding: "8px 12px", borderBottom: "1px solid #e2e8f0", fontSize: "0.86rem", lineHeight: 1.5 };
+  const labelStyle = { ...tableCellStyle, fontWeight: 700, color: "var(--foreground)", background: "rgba(0,0,0,0.02)", whiteSpace: "nowrap", verticalAlign: "top" };
+  const headerStyle = { ...tableCellStyle, fontWeight: 800, textTransform: "uppercase", fontSize: "0.72rem", letterSpacing: "0.05em", background: "rgba(0,0,0,0.04)", textAlign: "center" };
+  const stageHeaderStyle = { ...tableCellStyle, fontWeight: 700, background: "color-mix(in srgb, var(--primary) 6%, transparent)", color: "var(--primary)", textTransform: "uppercase", fontSize: "0.76rem", letterSpacing: "0.04em" };
+
+  return (
+    <div className="rph-document">
+      {/* Document header */}
+      <div className="rph-doc-header" style={{ textAlign: "center", marginBottom: 20, paddingBottom: 16, borderBottom: "2px solid #2d2d34" }}>
+        <h1 style={{ fontSize: "1.1rem", fontWeight: 800, margin: 0 }}>{result?.title || "English RPH"}</h1>
+        <p style={{ fontSize: "0.78rem", color: "var(--muted)", marginTop: 4 }}>{d.subject || "English"} · {d.year || ""} · {d.className || ""}</p>
+      </div>
+
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <tbody>
+          {/* === LESSON DETAILS SECTION === */}
+          <tr><td colSpan={2} style={headerStyle}>Lesson Details</td></tr>
+          <tr><td style={labelStyle}>Subject</td><td style={tableCellStyle}><AnnotatedText text={d.subject || "English"} annotations={anns} activeIndex={activeIndex} setActiveIndex={setActiveIndex} /></td></tr>
+          <tr><td style={labelStyle}>Year</td><td style={tableCellStyle}>{d.year || "—"}</td></tr>
+          <tr><td style={labelStyle}>Num. of Students</td><td style={tableCellStyle}>{d.numberOfStudents || "—"}</td></tr>
+          <tr><td style={labelStyle}>Date</td><td style={tableCellStyle}>{d.date || "—"}</td></tr>
+          <tr><td style={labelStyle}>Time</td><td style={tableCellStyle}>{d.startTime || "—"} {d.endTime ? `- ${d.endTime}` : ""}</td></tr>
+          <tr><td style={labelStyle}>Theme & Topic</td><td style={tableCellStyle}><AnnotatedText text={d.topic || "—"} annotations={anns} activeIndex={activeIndex} setActiveIndex={setActiveIndex} /></td></tr>
+          <tr><td style={labelStyle}>Skill / Focus</td><td style={tableCellStyle}>{d.skill || "—"}</td></tr>
+          <tr><td style={labelStyle}>Prior Knowledge</td><td style={tableCellStyle}>{d.priorKnowledge || "—"}</td></tr>
+
+          {/* === STANDARDS SECTION === */}
+          <tr><td colSpan={2} style={headerStyle}>Content Standard (CS) · Learning Standard (LS) · Learning Outcome (LO)</td></tr>
+          <tr>
+            <td style={labelStyle}>Content Standard</td>
+            <td style={tableCellStyle}><AnnotatedText text={result?.kssrAlignment?.contentStandard || "—"} annotations={anns} activeIndex={activeIndex} setActiveIndex={setActiveIndex} /></td>
+          </tr>
+          <tr>
+            <td style={labelStyle}>Learning Standard</td>
+            <td style={tableCellStyle}><AnnotatedText text={result?.kssrAlignment?.learningStandard || "—"} annotations={anns} activeIndex={activeIndex} setActiveIndex={setActiveIndex} /></td>
+          </tr>
+          <tr>
+            <td style={labelStyle}>Learning Outcome</td>
+            <td style={tableCellStyle}><AnnotatedText text={result?.kssrAlignment?.learningOutcomes || result?.skillOutcome || "—"} annotations={anns} activeIndex={activeIndex} setActiveIndex={setActiveIndex} /></td>
+          </tr>
+
+          {/* === LEARNING OBJECTIVES === */}
+          <tr><td colSpan={2} style={headerStyle}>Learning Objectives</td></tr>
+          <tr><td colSpan={2} style={tableCellStyle}>
+            <p style={{ marginBottom: 6, fontStyle: "italic", color: "var(--muted)", fontSize: "0.8rem" }}>By the end of the lesson, pupils should be able to:</p>
+            <ol style={{ margin: 0, paddingLeft: 18 }}>
+              {objectives.map((obj, i) => <li key={i} style={{ marginBottom: 4 }}><AnnotatedText text={obj} annotations={anns} activeIndex={activeIndex} setActiveIndex={setActiveIndex} /></li>)}
+            </ol>
+          </td></tr>
+
+          {/* === SUCCESS CRITERIA === */}
+          {successCriteria.length > 0 && (
+            <>
+              <tr><td colSpan={2} style={headerStyle}>Success Criteria (SC)</td></tr>
+              <tr><td colSpan={2} style={tableCellStyle}>
+                <p style={{ marginBottom: 6, fontStyle: "italic", color: "var(--muted)", fontSize: "0.8rem" }}>I can:</p>
+                <ol style={{ margin: 0, paddingLeft: 18 }}>
+                  {successCriteria.map((sc, i) => <li key={i} style={{ marginBottom: 4 }}><AnnotatedText text={sc} annotations={anns} activeIndex={activeIndex} setActiveIndex={setActiveIndex} /></li>)}
+                </ol>
+              </td></tr>
+            </>
+          )}
+
+          {/* === CBA & PEDAGOGY ELEMENTS === */}
+          <tr><td colSpan={2} style={headerStyle}>Classroom Based Assessment & Pedagogy Elements</td></tr>
+          <tr><td style={labelStyle}>CBA</td><td style={tableCellStyle}><AnnotatedText text={result?.classroomBasedAssessment || (assessment.join ? assessment.join("; ") : "—")} annotations={anns} activeIndex={activeIndex} setActiveIndex={setActiveIndex} /></td></tr>
+          <tr><td style={labelStyle}>Instruments</td><td style={tableCellStyle}>{result?.instruments || "—"}</td></tr>
+          <tr><td style={labelStyle}>Thinking Skills (TS)</td><td style={tableCellStyle}>{result?.thinkingSkills || "—"}</td></tr>
+          <tr><td style={labelStyle}>Habits of Mind</td><td style={tableCellStyle}>{result?.habitsOfMind || "—"}</td></tr>
+          <tr><td style={labelStyle}>HOTS</td><td style={tableCellStyle}>{result?.hots || "—"}</td></tr>
+          <tr><td style={labelStyle}>Cross-Curricular (CCE)</td><td style={tableCellStyle}>{result?.crossCurricularElements || "—"}</td></tr>
+          <tr><td style={labelStyle}>ICT</td><td style={tableCellStyle}>{result?.ict || "—"}</td></tr>
+          <tr><td style={labelStyle}>T&LM</td><td style={tableCellStyle}>{d.materials || result?.instruments || "—"}</td></tr>
+          <tr><td style={labelStyle}>Soft Skills (SS)</td><td style={tableCellStyle}>{result?.softSkills || "—"}</td></tr>
+          <tr><td style={labelStyle}>21stCPP</td><td style={tableCellStyle}>{result?.twentyFirstCentury || "—"}</td></tr>
+          <tr><td style={labelStyle}>Differentiation (DS)</td><td style={tableCellStyle}><AnnotatedText text={(differentiation.join ? differentiation.join("; ") : differentiation) || "—"} annotations={anns} activeIndex={activeIndex} setActiveIndex={setActiveIndex} /></td></tr>
+
+          {/* === LESSON PROCEDURE TABLE === */}
+          <tr><td colSpan={2} style={headerStyle}>Teaching & Learning Activities</td></tr>
+          <tr>
+            <td colSpan={2} style={{ padding: 0 }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    <th style={{ ...stageHeaderStyle, width: "18%", textAlign: "left" }}>Steps & Minutes</th>
+                    <th style={{ ...stageHeaderStyle, width: "30%", textAlign: "left" }}>Lesson Content</th>
+                    <th style={{ ...stageHeaderStyle, width: "52%", textAlign: "left" }}>Teaching & Learning Activities</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {procedure.map((stage, i) => (
+                    <tr key={i}>
+                      <td style={{ ...tableCellStyle, verticalAlign: "top", fontWeight: 700 }}>
+                        {stage.stage}<br /><span style={{ fontSize: "0.76rem", fontWeight: 400, color: "var(--muted)" }}>({stage.minutes || "—"} min)</span>
+                      </td>
+                      <td style={{ ...tableCellStyle, verticalAlign: "top" }}>
+                        <AnnotatedText text={stage.lessonContent || "—"} annotations={anns} activeIndex={activeIndex} setActiveIndex={setActiveIndex} />
+                        {stage.remarks && <div style={{ marginTop: 6, padding: "6px 8px", background: "rgba(0,0,0,0.02)", borderRadius: 6, fontSize: "0.76rem", color: "var(--muted)" }}>{StringifyRemarks(stage.remarks)}</div>}
+                      </td>
+                      <td style={{ ...tableCellStyle, verticalAlign: "top" }}>
+                        <div style={{ marginBottom: 4 }}><strong style={{ fontSize: "0.76rem", color: "var(--primary)" }}>Teacher:</strong> <AnnotatedText text={stage.teacherActivities || "—"} annotations={anns} activeIndex={activeIndex} setActiveIndex={setActiveIndex} /></div>
+                        <div><strong style={{ fontSize: "0.76rem", color: "var(--emerald)" }}>Pupils:</strong> <AnnotatedText text={stage.pupilActivities || "—"} annotations={anns} activeIndex={activeIndex} setActiveIndex={setActiveIndex} /></div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      {/* Reflection section (always present in the template) */}
+      <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 16 }}>
+        <tbody>
+          <tr><td colSpan={2} style={headerStyle}>Teacher's Reflection</td></tr>
+          <tr><td style={labelStyle}>Strength</td><td style={{ ...tableCellStyle, minHeight: 40 }}></td></tr>
+          <tr><td style={labelStyle}>Weakness</td><td style={{ ...tableCellStyle, minHeight: 40 }}></td></tr>
+          <tr><td style={labelStyle}>Suggestion</td><td style={{ ...tableCellStyle, minHeight: 40 }}></td></tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// Flatten remarks object to a readable string for display.
+function StringifyRemarks(remarks) {
+  if (!remarks) return "";
+  if (typeof remarks === "string") return remarks;
+  if (typeof remarks === "object") {
+    const entries = Object.entries(remarks).filter(([, v]) => v);
+    return entries.map(([k, v]) => `${k.toUpperCase()}: ${v}`).join(" · ");
+  }
+
+  return String(remarks);
+}
+
 function App() {
   const [activePage, setActivePage] = useState("dashboard");
   const [collapsed, setCollapsed] = useState(false);
@@ -366,6 +607,7 @@ function App() {
   const [classes, setClasses] = useState([]);
   const [materials, setMaterials] = useState([]);
   const [students, setStudents] = useState([]);
+  const [assessments, setAssessments] = useState([]);
   const [selectedClassId, setSelectedClassId] = useState("");
   const isDemoUser = currentUser?.email === "demo@test.com" || currentUser?.role === "demo" || String(currentUser?._id) === "000000000000000000000001";
   const liveMode = typeof window !== "undefined" && (window.location.pathname.startsWith("/testing") || window.location.search.includes("live=1") || (currentUser && !isDemoUser));
@@ -406,6 +648,15 @@ function App() {
     }
   };
 
+  const refreshAssessments = async () => {
+    try {
+      const data = await apiRequest("/assessment");
+      setAssessments(data);
+    } catch {
+      setAssessments([]);
+    }
+  };
+
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
     localStorage.setItem("lessoncraft-theme", theme);
@@ -436,6 +687,7 @@ function App() {
     refreshClasses();
     refreshMaterials();
     refreshStudents();
+    refreshAssessments();
   }, [currentUser]);
 
   const handleLogin = ({ token, user }) => {
@@ -455,6 +707,7 @@ function App() {
     setClasses([]);
     setMaterials([]);
     setStudents([]);
+    setAssessments([]);
     setActivePage("dashboard");
   };
 
@@ -470,6 +723,8 @@ function App() {
     refreshMaterials,
     students,
     refreshStudents,
+    assessments,
+    refreshAssessments,
     selectedClassId,
     setSelectedClassId,
     backendStatus,
@@ -502,14 +757,48 @@ function App() {
       <Sidebar activePage={activePage} setActivePage={setActivePage} collapsed={collapsed} setCollapsed={setCollapsed} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
       <div className="main-column">
         <TopBar setMobileOpen={setMobileOpen} setActivePage={setActivePage} backendStatus={backendStatus} theme={theme} setTheme={setTheme} currentUser={currentUser} onLogout={handleLogout} />
-        <main className="page-wrap">{renderPage(context)}</main>
+        <main className="page-wrap"><ErrorBoundary key={activePage} onGoHome={() => setActivePage("dashboard")}>{renderPage(context)}</ErrorBoundary></main>
       </div>
-      <button className="copilot-fab" onClick={() => setCopilotOpen((open) => !open)} aria-label="Toggle AI copilot">
+      <button className={`copilot-fab ${copilotOpen ? "hidden" : ""}`} onClick={() => setCopilotOpen((open) => !open)} aria-label="Toggle AI copilot">
         {copilotOpen ? <X /> : <Sparkles />}
       </button>
       <AICopilot open={copilotOpen} setOpen={setCopilotOpen} setActivePage={setActivePage} />
     </div>
   );
+}
+
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+
+  componentDidCatch(error, info) {
+    console.error("Page crashed:", error, info);
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="page-stack">
+          <Card title="Something went wrong" subtitle="This screen hit an unexpected error. Other parts of the app still work.">
+            <div className="empty-state-box" style={{ padding: "24px 16px", textAlign: "center" }}>
+              <p className="body-copy" style={{ marginBottom: 16 }}>{String(this.state.error?.message || "Unknown error.")}</p>
+              <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+                <button type="button" className="primary-btn" onClick={() => this.setState({ error: null })}><RefreshCw /> Try again</button>
+                <button type="button" className="secondary-btn" onClick={() => this.props.onGoHome?.()}><LayoutDashboard /> Back to Dashboard</button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
 
 function renderPage(context) {
@@ -527,7 +816,7 @@ function renderPage(context) {
     case "materials":
       return <MaterialsPage materials={context.materials} refreshMaterials={context.refreshMaterials} liveMode={context.liveMode} setActivePage={context.setActivePage} />;
     case "analytics":
-      return <AnalyticsPage lessons={context.lessons} classes={context.classes} students={context.students} liveMode={context.liveMode} setActivePage={context.setActivePage} />;
+      return <AnalyticsPage lessons={context.lessons} classes={context.classes} students={context.students} assessments={context.assessments} liveMode={context.liveMode} setActivePage={context.setActivePage} />;
     case "reports":
       return <ReportsPage lessons={context.lessons} classes={context.classes} students={context.students} liveMode={context.liveMode} setActivePage={context.setActivePage} />;
     case "settings":
@@ -978,7 +1267,7 @@ function LessonPlanner({ refreshLessons, setActivePage, classes = [], selectedCl
             </div>
           )}
           {loading && <SkeletonList />}
-          {!loading && result && <LessonPreview result={result} />}
+          {!loading && result && <LessonPreview result={result} onRegenerate={generate} />}
         </Card>
       </section>
     </div>
@@ -1258,7 +1547,7 @@ function ClassesPage({ classes = [], refreshClasses, setSelectedClassId, setActi
   );
 }
 
-function PBDPage({ classes = [], liveMode }) {
+function PBDPage({ classes = [], liveMode, setActivePage }) {
   const [tab, setTab] = useState("templates");
   const [templates, setTemplates] = useState([]);
   const [selectedClassId, setSelectedClassId] = useState(classes[0]?._id || "");
@@ -1540,6 +1829,93 @@ function TimetablePage({ setActivePage, liveMode, classes: savedClasses = [], le
   const resizeStepPixels = hourRowHeight / (60 / resizeStepMinutes);
   const [classes, setClasses] = useState(liveMode ? [] : weekClasses);
   const [notice, setNotice] = useState("");
+  const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+  // Map a backend Period to the local schedule-block shape the grid renders.
+  const periodToBlock = (period, slotIndex) => {
+    const dayIndex = dayNames.indexOf(period.day);
+    const startTime = period.startTime || "08:00";
+    const startMinutes = timeToMinutes(startTime);
+    return {
+      id: String(period._id),
+      _id: period._id,
+      subject: period.subject || "English",
+      className: period.className || "",
+      year: period.year || "Year 5",
+      skill: period.skill || "Reading",
+      time: startTime,
+      durationMinutes: Math.max(15, timeToMinutes(period.endTime || "09:00") - startMinutes) || 60,
+      topic: period.topic || "English RPH",
+      tone: period.tone || "indigo",
+      day: dayIndex >= 0 ? dayIndex : 0,
+      slot: slotIndex ?? slotForMinutes(startMinutes),
+      status: period.status || "Needs RPH",
+      lessonPlan: period.lessonPlan || "",
+      lessonPlanId: period.link?.lessonPlanId?._id || period.link?.lessonPlanId || "",
+      material: period.material || "",
+      assessment: period.assessment || "",
+      notes: period.notes || "",
+    };
+  };
+  // Inverse: local block -> backend period payload (day as name, start/end times).
+  const blockToPeriodPayload = (block) => ({
+    day: dayNames[Number(block.day)] || "Monday",
+    startTime: block.time || slots[block.slot] || "08:00",
+    endTime: addMinutesToTime(block.time || slots[block.slot] || "08:00", Number(block.durationMinutes || 60)),
+    className: block.className || "General",
+    subject: block.subject || "English",
+    year: block.year || "Year 4",
+    recurring: true,
+    notes: block.notes || "",
+    tone: block.tone || "indigo",
+    skill: block.skill || "",
+    topic: block.topic || "",
+    status: block.status || "",
+    material: block.material || "",
+    assessment: block.assessment || "",
+    lessonPlan: block.lessonPlan || "",
+  });
+  const loadSchedule = async () => {
+    if (!liveMode) return;
+    try {
+      const data = await apiRequest("/schedule/overview");
+      const blocks = (data.periods || []).map((period) => periodToBlock(period));
+      setClasses(blocks);
+    } catch {
+      setClasses([]);
+    }
+  };
+  const persistNewPeriod = async (block) => {
+    if (!liveMode) return block;
+    try {
+      const saved = await apiPost("/schedule/periods", blockToPeriodPayload(block));
+      return periodToBlock(saved);
+    } catch (err) {
+      setNotice(err.message || "Could not save schedule block.");
+      return block;
+    }
+  };
+  const persistUpdatedPeriod = async (block) => {
+    if (!liveMode || !block._id) return block;
+    try {
+      const saved = await apiPut(`/schedule/periods/${block._id}`, blockToPeriodPayload(block));
+      return periodToBlock(saved);
+    } catch (err) {
+      setNotice(err.message || "Could not update schedule block.");
+      return block;
+    }
+  };
+  const deletePeriodRemote = async (periodId) => {
+    if (!liveMode || !periodId) return;
+    try {
+      await apiDelete(`/schedule/periods/${periodId}`);
+    } catch (err) {
+      setNotice(err.message || "Could not delete schedule block.");
+    }
+  };
+  useEffect(() => {
+    loadSchedule();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveMode]);
   const [selectedPeriod, setSelectedPeriod] = useState(null);
   const [periodForm, setPeriodForm] = useState(null);
   const [resizeModeId, setResizeModeId] = useState("");
@@ -1746,15 +2122,22 @@ function TimetablePage({ setActivePage, liveMode, classes: savedClasses = [], le
     if (materialImageRef.current) materialImageRef.current.value = "";
   };
   const savePeriod = () => {
-    setClasses((items) => items.map((item) => item.id === selectedPeriod.id ? { ...item, ...periodForm } : item));
-    setNotice("Schedule block updated.");
+    const nextBlock = { ...selectedPeriod, ...periodForm };
+    setClasses((items) => items.map((item) => item.id === selectedPeriod.id ? nextBlock : item));
     setSelectedPeriod(null);
+    setNotice("Schedule block updated.");
+    persistUpdatedPeriod(nextBlock).then((saved) => {
+      setClasses((items) => items.map((item) => item.id === selectedPeriod.id ? { ...nextBlock, ...saved } : item));
+    });
   };
   const duplicatePeriod = () => {
-    const copy = { ...periodForm, id: `copy-${Date.now()}`, slot: Math.min((Number(periodForm.slot) || 0) + 1, slots.length - 1), status: "Needs RPH" };
+    const copy = { ...periodForm, _id: undefined, id: `copy-${Date.now()}`, slot: Math.min((Number(periodForm.slot) || 0) + 1, slots.length - 1), status: "Needs RPH" };
     setClasses((items) => [...items, copy]);
     setNotice("Schedule block duplicated.");
     setSelectedPeriod(null);
+    persistNewPeriod(copy).then((saved) => {
+      setClasses((items) => items.map((item) => item.id === copy.id ? { ...copy, ...saved } : item));
+    });
   };
   const deletePeriod = () => {
     setPendingDelete(selectedPeriod);
@@ -1769,11 +2152,13 @@ function TimetablePage({ setActivePage, liveMode, classes: savedClasses = [], le
   const deleteSeries = () => {
     const id = pendingDelete?.id;
     if (!id) return;
+    const remoteId = pendingDelete._id;
     setClasses((items) => items.filter((item) => item.id !== id));
     setDeletedOccurrences((items) => items.filter((key) => !key.startsWith(`${id}:`)));
     setNotice("All recurring schedule blocks deleted.");
     setPendingDelete(null);
     if (selectedPeriod?.id === id) setSelectedPeriod(null);
+    deletePeriodRemote(remoteId);
   };
   const deleteSingleOccurrence = () => {
     if (!pendingDelete?.id || !pendingDelete.occurrenceDateKey) return;
@@ -1816,6 +2201,9 @@ function TimetablePage({ setActivePage, liveMode, classes: savedClasses = [], le
     setClasses((items) => [...items, newItem]);
     openPeriod(newItem);
     setNotice("New English slot added. Complete the block details in the modal.");
+    persistNewPeriod(newItem).then((saved) => {
+      setClasses((items) => items.map((item) => item.id === newItem.id ? { ...newItem, ...saved } : item));
+    });
   };
   const startResize = (item, event) => {
     event.preventDefault();
@@ -1839,6 +2227,11 @@ function TimetablePage({ setActivePage, liveMode, classes: savedClasses = [], le
       setResizeModeId("");
       setTimeout(() => setResizePrompt(""), 2600);
       setTimeout(() => setResizePreview(null), 1000);
+      setClasses((items) => {
+        const updated = items.find((current) => current.id === item.id);
+        if (updated) persistUpdatedPeriod(updated);
+        return items;
+      });
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
@@ -1870,6 +2263,11 @@ function TimetablePage({ setActivePage, liveMode, classes: savedClasses = [], le
       setResizeModeId("");
       setTimeout(() => setResizePrompt(""), 2600);
       setTimeout(() => setResizePreview(null), 1000);
+      setClasses((items) => {
+        const updated = items.find((current) => current.id === item.id);
+        if (updated) persistUpdatedPeriod(updated);
+        return items;
+      });
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
@@ -1922,6 +2320,11 @@ function TimetablePage({ setActivePage, liveMode, classes: savedClasses = [], le
         return;
       }
       setNotice(`Schedule block moved to ${days[lastSnap.day]} ${lastSnap.time}.`);
+      setClasses((items) => {
+        const updated = items.find((current) => current.id === item.id);
+        if (updated) persistUpdatedPeriod(updated);
+        return items;
+      });
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
@@ -2339,8 +2742,11 @@ function MaterialsPage({ materials = [], refreshMaterials, liveMode, setActivePa
   );
 }
 
-function AnalyticsPage({ lessons = [], classes = [], students = [], liveMode, setActivePage }) {
-  if (liveMode && !classes.length && !lessons.length && !students.length) {
+function AnalyticsPage({ lessons = [], classes = [], students = [], assessments = [], liveMode, setActivePage }) {
+  const [activeTab, setActiveTab] = useState("Overview");
+  const analyticsTabs = ["Overview", "Students", "Classes", "Topics", "Assessments", "Predictions", "AI Insights"];
+
+  if (liveMode && !classes.length && !lessons.length && !students.length && !assessments.length) {
     return (
       <div className="page-stack">
         <PageHeader eyebrow="Analytics & Insights" title="Pedagogy & Student Analytics" subtitle="AI-driven classroom analytics and PBD mastery tracking." />
@@ -2356,99 +2762,182 @@ function AnalyticsPage({ lessons = [], classes = [], students = [], liveMode, se
       </div>
     );
   }
-  const [activeTab, setActiveTab] = useState("Overview");
-  const analyticsTabs = ["Overview", "Students", "Classes", "Topics", "Assessments", "Predictions", "AI Insights"];
 
-  const totalStudentsCount = students.length ? students.length : classes.reduce((sum, c) => sum + Number(c.studentCount || 0), 0);
+  // ---------------------------------------------------------------------------
+  // REAL DATA COMPUTATIONS — no fabricated percentages. Every metric below is
+  // derived from the teacher's actual workspace data (lessons, students,
+  // assessments, classes). When a data source is missing, the metric is 0
+  // or an empty array, not a plausible-looking fake number.
+  // ---------------------------------------------------------------------------
+
+  const totalStudentsCount = students.length || classes.reduce((sum, c) => sum + Number(c.studentCount || 0), 0);
+
+  // Collect every real TP value from assessment records (the authoritative
+  // PBD data source). Fall back to student proficiency text only if no
+  // assessment records exist — and even then only use parseable values.
+  const assessmentTPs = (assessments || []).flatMap((a) => (a.records || [])
+    .map((r) => Number(r.tp))
+    .filter((n) => Number.isFinite(n) && n >= 1 && n <= 6));
   const studentTPs = students.map((s) => {
     const match = String(s.proficiency || "").match(/\d+/);
-    return match ? Number(match[0]) : 4;
+    const n = match ? Number(match[0]) : NaN;
+    return Number.isFinite(n) && n >= 1 && n <= 6 ? n : null;
+  }).filter((n) => n !== null);
+
+  // Use assessment TPs (real PBD evidence) when available; fall back to
+  // student proficiency labels only when no PBD has been recorded yet.
+  const tpSource = assessmentTPs.length ? assessmentTPs : studentTPs;
+  const avgTP = tpSource.length ? Number((tpSource.reduce((a, b) => a + b, 0) / tpSource.length).toFixed(2)) : 0;
+
+  // Real TP distribution from actual records.
+  const tpBuckets = [1, 2, 3, 4, 5, 6].map((band) => ({
+    label: `TP${band}`,
+    value: tpSource.filter((tp) => tp === band).length,
+  }));
+
+  // Count lessons by their real `skill` enum field (the model enforces this).
+  const SKILLS = ["Reading", "Writing", "Speaking", "Listening", "Grammar", "Phonics"];
+  const skillCounts = SKILLS.map((skill) => ({
+    skill,
+    count: lessons.filter((l) => l.skill === skill).length,
+  }));
+  const totalLessons = lessons.length || 1;
+
+  // Skill coverage as a percentage of the lesson library. This is real
+  // distribution data, not a mastery percentage dressed up as insight.
+  const skillCoverage = SKILLS.map((skill) => {
+    const count = lessons.filter((l) => l.skill === skill).length;
+    return { label: skill, value: Math.round((count / totalLessons) * 100) };
   });
-  const avgTP = studentTPs.length ? Number((studentTPs.reduce((a, b) => a + b, 0) / studentTPs.length).toFixed(2)) : classes.length ? 4.2 : 0;
-  const tpTrend = liveMode && (classes.length || lessons.length || students.length)
-    ? [Number(Math.max(1, avgTP - 0.5).toFixed(2)), Number(Math.max(1, avgTP - 0.35).toFixed(2)), Number(Math.max(1, avgTP - 0.2).toFixed(2)), Number(Math.max(1, avgTP - 0.08).toFixed(2)), avgTP || 4.2]
-    : [4.2, 4.35, 4.5, 4.6, 4.8];
 
-  const weakCount = students.filter((s) => {
-    const prof = String(s.proficiency || "").toUpperCase();
-    return prof.includes("TP1") || prof.includes("TP2") || prof.includes("TP3") || (s.notes || "").toLowerCase().includes("weak") || (s.notes || "").toLowerCase().includes("support");
-  }).length || (classes.length ? Math.max(0, Math.round(totalStudentsCount * 0.18)) : 0);
-  const weakTrend = liveMode && (classes.length || lessons.length || students.length)
-    ? [weakCount + 4, weakCount + 3, weakCount + 2, weakCount + 1, weakCount]
-    : [9, 8, 7, 5, 5];
+  // Pupils needing support: TP1–TP3 in assessment records, or proficiency
+  // text containing TP1/TP2/TP3 / "support" / "weak" as a fallback.
+  const weakCount = assessmentTPs.length
+    ? assessmentTPs.filter((tp) => tp <= 3).length
+    : students.filter((s) => {
+        const prof = String(s.proficiency || "").toUpperCase();
+        return prof.includes("TP1") || prof.includes("TP2") || prof.includes("TP3") || (s.notes || "").toLowerCase().includes("weak") || (s.notes || "").toLowerCase().includes("support");
+      }).length;
 
-  const studentProgress = liveMode && students.length > 0
-    ? students.slice(0, 4).map((s) => {
-        const tp = Number(String(s.proficiency || "").match(/\d+/)?.[0] || 4);
-        return { label: String(s.studentName || "Pupil").split(" ")[0], values: [Math.max(1, tp - 2), Math.max(1, tp - 1), Math.max(1, tp - 1), tp, tp] };
-      })
-    : liveMode && classes.length
-      ? [
-          { label: "Student A", values: [2, 3, 3, 4, 4] },
-          { label: "Student B", values: [1, 2, 2, 3, 3] },
-          { label: "Student C", values: [3, 4, 4, 4, 5] },
-        ]
-      : [{ label: "Aishah", values: [2, 3, 3, 4, 4] }, { label: "Danish", values: [1, 2, 2, 2, 3] }, { label: "Nurul", values: [4, 4, 5, 5, 5] }];
-
-  const totalL = lessons.length || 1;
-  const readingL = lessons.filter((l) => (l.topic || l.title || l.skill || "").toLowerCase().includes("read") || (l.objectives || []).some((o) => o.toLowerCase().includes("read"))).length;
-  const writingL = lessons.filter((l) => (l.topic || l.title || l.skill || "").toLowerCase().includes("writ") || (l.objectives || []).some((o) => o.toLowerCase().includes("writ"))).length;
-  const speakingL = lessons.filter((l) => (l.topic || l.title || l.skill || "").toLowerCase().includes("speak") || (l.topic || l.title || l.skill || "").toLowerCase().includes("commun") || (l.objectives || []).some((o) => o.toLowerCase().includes("speak"))).length;
-  const listeningL = lessons.filter((l) => (l.topic || l.title || l.skill || "").toLowerCase().includes("listen") || (l.objectives || []).some((o) => o.toLowerCase().includes("listen"))).length;
-  const grammarL = lessons.filter((l) => (l.topic || l.title || l.skill || "").toLowerCase().includes("gramm") || (l.topic || l.title || l.skill || "").toLowerCase().includes("tense") || (l.objectives || []).some((o) => o.toLowerCase().includes("gramm"))).length;
-
-  const radar = liveMode && (lessons.length || classes.length || students.length)
-    ? [
-        { label: "Grammar", value: Math.min(100, Math.round((grammarL / totalL) * 35 + 60)) },
-        { label: "Writing", value: Math.min(100, Math.round((writingL / totalL) * 35 + 58)) },
-        { label: "Reading", value: Math.min(100, Math.round((readingL / totalL) * 35 + 75)) },
-        { label: "Communication", value: Math.min(100, Math.round((speakingL / totalL) * 35 + 70)) },
-        { label: "Listening", value: Math.min(100, Math.round((listeningL / totalL) * 35 + 72)) },
-        { label: "Critical KBAT", value: Math.min(100, Math.round(65 + classes.length * 3)) },
-      ]
-    : [{ label: "Grammar", value: 62 }, { label: "Writing", value: 58 }, { label: "Reading", value: 82 }, { label: "Communication", value: 74 }, { label: "Listening", value: 81 }, { label: "Critical", value: 66 }];
-
+  // Students per class — real roster counts.
   const classCompare = liveMode && classes.length > 0
-    ? classes.map((c) => ({ label: c.name || "Class", value: Math.min(100, Math.max(50, Math.round(70 + (Number(c.studentCount || 10) * 3) % 24))) }))
-    : [{ label: "2 Cemerlang", value: 76 }, { label: "5 Maju", value: 68 }, { label: "6 Amanah", value: 72 }, { label: "4 Bestari", value: 81 }];
+    ? classes.map((c) => ({ label: c.name || "Class", value: Number(c.studentCount || 0) }))
+    : [];
 
-  const topicMastery = liveMode && lessons.length > 0
-    ? lessons.slice(0, 6).map((l) => ({ label: (l.topic || l.title || l.subject || "Topic").slice(0, 18), value: Math.min(96, Math.max(55, Math.round(65 + (Number(l.durationMinutes || 60) % 28)))) }))
-    : liveMode && classes.length
-      ? [{ label: "Unit 1 Vocabulary", value: 78 }, { label: "Reading Comprehension", value: 84 }, { label: "Guided Writing", value: 66 }]
-      : [{ label: "Main idea", value: 86 }, { label: "Past tense", value: 58 }, { label: "Email writing", value: 55 }, { label: "Phonics", value: 74 }, { label: "Opinion", value: 69 }];
+  // Actual lesson topics from saved lesson plans (not fabricated mastery scores).
+  const topicList = liveMode && lessons.length > 0
+    ? lessons.slice(0, 8).map((l) => ({
+        label: String(l.topic || l.title || "Untitled").slice(0, 24),
+        skill: l.skill || "—",
+        year: l.year || "—",
+        objectives: (l.objectives || []).length,
+        status: l.status || "draft",
+      }))
+    : [];
 
-  const assessments = liveMode && (lessons.length || classes.length || students.length)
-    ? [
-        { label: "Quiz", value: Math.max(1, Math.round((lessons.length + 2) * 8)) },
-        { label: "Observation", value: Math.max(1, Math.round((classes.length + 3) * 6)) },
-        { label: "Project", value: Math.max(1, Math.round((classes.length + 1) * 4)) },
-        { label: "Oral", value: Math.max(1, Math.round((lessons.length + 1) * 5)) },
-      ]
-    : [{ label: "Quiz", value: 40 }, { label: "Observation", value: 24 }, { label: "Project", value: 22 }, { label: "Oral", value: 14 }];
-
-  const scores = liveMode && (lessons.length || classes.length || students.length)
-    ? [
-        { label: "Quiz 1", value: Math.min(95, Math.max(60, Math.round((avgTP / 6) * 100 - 5))) },
-        { label: "Speaking", value: Math.min(95, Math.max(60, Math.round((avgTP / 6) * 100 - 2))) },
-        { label: "Writing", value: Math.min(95, Math.max(55, Math.round((avgTP / 6) * 100 - 12))) },
-        { label: "Project", value: Math.min(98, Math.max(65, Math.round((avgTP / 6) * 100 + 4))) },
-      ]
-    : [{ label: "Quiz 1", value: 72 }, { label: "Speaking", value: 68 }, { label: "Writing", value: 61 }, { label: "Project", value: 78 }];
-
-  const scatter = liveMode && students.length > 0
-    ? students.slice(0, 8).map((s, i) => {
-        const tp = Number(String(s.proficiency || "").match(/\d+/)?.[0] || 4);
-        return { x: Math.min(100, Math.max(60, Math.round(70 + tp * 5 + (i % 3) * 4))), y: tp + (i % 2 ? 0.2 : -0.1) };
+  // Real assessment breakdown from saved PBD templates.
+  const assessmentBreakdown = liveMode && (assessments || []).length > 0
+    ? assessments.map((a) => {
+        const tps = (a.records || []).map((r) => Number(r.tp)).filter(Number.isFinite);
+        const avg = tps.length ? Number((tps.reduce((t, n) => t + n, 0) / tps.length).toFixed(1)) : 0;
+        return {
+          label: String(a.title || "Untitled assessment").slice(0, 24),
+          value: (a.records || []).length,
+          avgTp: avg,
+          type: a.assessmentType || "PBD",
+          scaleType: a.scaleType || "tp",
+        };
       })
-    : [{ x: 96, y: 5.2 }, { x: 88, y: 4.4 }, { x: 74, y: 3.3 }, { x: 66, y: 2.7 }, { x: 92, y: 4.8 }, { x: 81, y: 3.9 }];
+    : [];
 
-  const evidenceCompletion = liveMode && (classes.length || lessons.length) ? Math.min(100, Math.round(((lessons.length * 4 + classes.length * 10) / Math.max(20, totalStudentsCount * 2 || 20)) * 100)) : 87;
+  // Evidence completion: what fraction of enrolled students have at least one
+  // PBD assessment record? Real ratio, not a heuristic formula.
+  const assessedStudentIds = new Set(
+    (assessments || []).flatMap((a) => (a.records || []).map((r) => String(r.studentId || "")))
+      .filter(Boolean),
+  );
+  const evidenceCompletion = totalStudentsCount > 0
+    ? Math.min(100, Math.round((assessedStudentIds.size / totalStudentsCount) * 100))
+    : 0;
 
-  const readingPercent = Math.min(98, Math.max(62, Math.round((readingL / totalL) * 35 + 66)));
-  const writingPercent = Math.min(96, Math.max(58, Math.round((writingL / totalL) * 35 + 78)));
-  const speakingPercent = Math.min(95, Math.max(55, Math.round((speakingL / totalL) * 35 + 58)));
-  const grammarPercent = Math.min(99, Math.max(68, Math.round((grammarL / totalL) * 35 + 94)));
+  // Student progress: for pupils with assessment records, show their latest TP.
+  const studentProgress = liveMode && (assessments || []).length > 0
+    ? assessments.flatMap((a) => (a.records || []).filter((r) => r.studentName).map((r) => ({
+        label: String(r.studentName).split(" ")[0],
+        tp: Number(r.tp) || 0,
+      }))).reduce((acc, curr) => {
+        // Keep the highest TP per student (most recent/highest achievement).
+        const existing = acc.find((item) => item.label === curr.label);
+        if (!existing) acc.push(curr);
+        else if (curr.tp > existing.tp) existing.tp = curr.tp;
+        return acc;
+      }, []).slice(0, 6).map((s) => ({
+        label: s.label,
+        values: [s.tp],  // single point — a real TP, not a fabricated trend
+      }))
+    : liveMode && students.length > 0
+      ? students.slice(0, 4).map((s) => {
+          const match = String(s.proficiency || "").match(/\d+/);
+          const tp = match ? Number(match[0]) : 0;
+          return { label: String(s.studentName || "Pupil").split(" ")[0], values: [tp] };
+        })
+      : [];
+
+  // Tables and chart data use the real computed values above.
+  const radar = liveMode && lessons.length > 0
+    ? skillCoverage.map((s) => ({ label: s.label, value: s.value }))
+    : [];
+
+  const tpTrend = assessmentTPs.length >= 3
+    ? (() => {
+        // Split assessment TPs into chronological buckets (by assessment creation order)
+        // to show a rough progression. Each bucket averages a slice of records.
+        const chunkSize = Math.ceil(assessmentTPs.length / 5) || 1;
+        return Array.from({ length: 5 }, (_, i) => {
+          const slice = assessmentTPs.slice(i * chunkSize, (i + 1) * chunkSize);
+          return slice.length ? Number((slice.reduce((a, b) => a + b, 0) / slice.length).toFixed(2)) : avgTP;
+        });
+      })()
+    : [];
+
+  const scores = liveMode && assessmentTPs.length > 0
+    ? SKILLS.map((skill) => {
+        // Average TP for lessons + assessment records tagged with this skill.
+        const skillLessons = lessons.filter((l) => l.skill === skill);
+        const skillAssessmentTps = (assessments || []).flatMap((a) =>
+          (a.records || []).map((r) => Number(r.tp)).filter(Number.isFinite));
+        // If we can't tie TPs to skills (records don't carry skill), use overall avg.
+        const tpAvg = skillAssessmentTps.length ? skillAssessmentTps.reduce((t, n) => t + n, 0) / skillAssessmentTps.length : avgTP;
+        return { label: skill, value: Math.round((tpAvg / 6) * 100) };
+      })
+    : [];
+
+  // Scatter: real student TP vs. attendance proxy (number of assessment records).
+  const classStudentIds = new Set(students.map((s) => String(s._id)));
+  const scatter = liveMode && assessedStudentIds.size > 0
+    ? Array.from(assessedStudentIds).slice(0, 10).map((studentId) => {
+        const studentTps = (assessments || []).flatMap((a) =>
+          (a.records || []).filter((r) => String(r.studentId) === studentId).map((r) => Number(r.tp)).filter(Number.isFinite));
+        const student = students.find((s) => String(s._id) === studentId);
+        const avg = studentTps.length ? studentTps.reduce((t, n) => t + n, 0) / studentTps.length : 0;
+        const evidenceCount = studentTps.length;
+        // x = evidence collection (0-100 scale), y = TP band (1-6)
+        return { x: Math.min(100, evidenceCount * 25), y: Number(avg.toFixed(1)), label: student?.studentName || "Pupil" };
+      })
+    : [];
+
+  // Ring gauge: skill coverage percentages (what fraction of lessons cover each skill).
+  const readingPercent = skillCoverage.find((s) => s.label === "Reading")?.value || 0;
+  const writingPercent = skillCoverage.find((s) => s.label === "Writing")?.value || 0;
+  const speakingPercent = skillCoverage.find((s) => s.label === "Speaking")?.value || 0;
+  const grammarPercent = skillCoverage.find((s) => s.label === "Grammar")?.value || 0;
+
+  const lowCoverageSkills = skillCoverage.filter((s) => s.value === 0).map((s) => s.label);
+
+  // Real TP4+ rate: fraction of assessed pupils at TP4 or above.
+  const tp4PlusRate = tpSource.length ? Math.round((tpSource.filter((tp) => tp >= 4).length / tpSource.length) * 100) : 0;
+  const tp4PlusCount = tpSource.filter((tp) => tp >= 4).length;
+  const needsReteachCount = weakCount;
 
   const overview = (
     <div className="photo-analytics-dashboard">
@@ -2463,22 +2952,23 @@ function AnalyticsPage({ lessons = [], classes = [], students = [], liveMode, se
               { value: grammarPercent, label: "Grammar", color: "#f59e0b" },
             ]}
           />
+          {!lessons.length && <p className="body-copy" style={{ textAlign: "center", marginTop: 8, fontSize: "0.78rem" }}>Skill coverage shows once you have lesson plans.</p>}
         </div>
         <div className="photo-chart-card">
           <PhotoSegmentedProgress
             tracks={[
-              { title: "TP4+ Mastery Rate", value: Math.round(avgTP * 17) || 82, statLabel: "+12% vs Term 1", trend: "up", color: "emerald" },
-              { title: "Evidence Collection Rate", value: evidenceCompletion || 65, statLabel: "+18 PBD Logged", trend: "up", color: "indigo" },
-              { title: "Student Engagement Index", value: Math.min(98, evidenceCompletion + 12) || 94, statLabel: "94% Active Rate", trend: "up", color: "cyan" },
+              { title: "TP4+ Mastery Rate", value: tp4PlusRate, statLabel: `${tp4PlusCount} of ${tpSource.length} pupils`, trend: tp4PlusRate >= 50 ? "up" : "down", color: "emerald" },
+              { title: "Evidence Collection Rate", value: evidenceCompletion, statLabel: `${assessedStudentIds.size} of ${totalStudentsCount} assessed`, trend: evidenceCompletion >= 50 ? "up" : "down", color: "indigo" },
+              { title: "Lessons Generated", value: Math.min(100, lessons.length * 10), statLabel: `${lessons.length} RPH saved`, trend: "up", color: "cyan" },
             ]}
           />
         </div>
         <div className="photo-chart-card">
           <PhotoMiniStrip
             groups={[
-              { stat: String(totalStudentsCount || 32), label: "Total Pupils Tracked", bars: [30, 65, 80, 50, 90, 40] },
-              { stat: String(Math.round((totalStudentsCount || 32) * 0.75)), label: "TP4-TP6 Achieved", bars: [60, 40, 85, 70, 95, 55] },
-              { stat: String(Math.round((totalStudentsCount || 32) * 0.25)), label: "Needs Reteaching", bars: [45, 75, 60, 88, 52, 78] },
+              { stat: String(totalStudentsCount), label: "Total Pupils Tracked", bars: tpBuckets.map((b) => b.value) },
+              { stat: String(tp4PlusCount), label: "TP4-TP6 Achieved", bars: tpBuckets.filter((b) => Number(b.label.replace("TP", "")) >= 4).map((b) => b.value) },
+              { stat: String(needsReteachCount), label: "Needs Reteaching", bars: tpBuckets.filter((b) => Number(b.label.replace("TP", "")) <= 3).map((b) => b.value) },
             ]}
           />
         </div>
@@ -2489,24 +2979,24 @@ function AnalyticsPage({ lessons = [], classes = [], students = [], liveMode, se
         <div className="photo-chart-card">
           <PhotoDonutChart
             activeTerm="Term 1"
-            totalAmount={liveMode && avgTP ? `${Math.round(avgTP * 17)}% KSSR` : "84.5% KSSR"}
-            segments={[
-              { label: "Reading Mastery", value: Math.round((readingL / totalL) * 25 + 18), color: "#f59e0b" },
-              { label: "Writing Accuracy", value: Math.round((writingL / totalL) * 25 + 24), color: "#f97316" },
-              { label: "Speaking Confidence", value: Math.round((speakingL / totalL) * 25 + 16), color: "#ef4444" },
-              { label: "Listening Skills", value: Math.round((listeningL / totalL) * 25 + 20), color: "#ec4899" },
-              { label: "Grammar & Vocab", value: Math.round((grammarL / totalL) * 25 + 14), color: "#3b82f6" },
-              { label: "Critical KBAT", value: 8, color: "#8b5cf6" },
-            ]}
+            totalAmount={avgTP ? `TP ${avgTP} avg` : "No TP data"}
+            segments={skillCoverage.filter((s) => s.value > 0).map((s, i) => ({
+              label: `${s.label} (${Math.round((lessons.filter((l) => l.skill === s.label).length) )} lessons)`,
+              value: s.value,
+              color: ["#f59e0b", "#f97316", "#ef4444", "#ec4899", "#3b82f6", "#8b5cf6"][i % 6],
+            }))}
           />
+          {!lessons.length && <p className="body-copy" style={{ textAlign: "center", marginTop: 8, fontSize: "0.78rem" }}>Skill distribution shows once you generate lesson plans.</p>}
         </div>
         <div className="photo-chart-card">
           <PhotoPeakDotWave
             title="KSSR · TP MASTERY PROGRESSION"
             subtitle="ENGLISH PBD CURRICULUM PERFORMANCE & CONTINUOUS ASSESSMENT"
-            mainStat={liveMode && avgTP ? `TP ${avgTP}` : "TP 4.6"}
+            mainStat={avgTP ? `TP ${avgTP}` : "No PBD data"}
             subStat="AVERAGE CLASS BAND OUT OF TP6"
+            seriesA={tpTrend}
           />
+          {!tpSource.length && <p className="body-copy" style={{ textAlign: "center", marginTop: 8, fontSize: "0.78rem" }}>Record PBD assessments to see mastery progression.</p>}
         </div>
       </div>
     </div>
@@ -2518,35 +3008,35 @@ function AnalyticsPage({ lessons = [], classes = [], students = [], liveMode, se
         className="wide"
         title="Individual Student Progress"
         question="Who is improving, stuck, or declining?"
-        insight={liveMode && students.length > 0 ? `${students[0]?.studentName || "Pupils"} and peers show steady progression across checks. Targeted guidance on lesson objectives maintains momentum.` : "Aishah and Nurul are stable or improving. Danish is moving slowly and needs a narrower objective for the next English lesson."}
+        insight={studentProgress.length ? `${studentProgress.length} pupil(s) with PBD data. Highest TP: ${Math.max(...studentProgress.flatMap((s) => s.values))}, lowest: ${Math.min(...studentProgress.flatMap((s) => s.values.filter((v) => v > 0)))}.` : "No PBD assessment records yet. Record TP scores on the PBD page to see individual progress."}
         action="Assign a sentence-frame task and check one oral response before independent work."
       >
-        <StudentProgressTracker series={studentProgress} />
+        {studentProgress.length ? <StudentProgressTracker series={studentProgress} /> : <p className="body-copy" style={{ textAlign: "center", padding: 24 }}>Record PBD assessments to track pupil progress.</p>}
       </AnalysisCard>
       <AnalysisCard
         title="Student Skill Radar"
         question="Which skill imbalance explains performance?"
-        insight={liveMode && lessons.length > 0 ? `Curriculum coverage is distributed across ${lessons.length} RPH objective(s). Continue balancing reading tasks with active guided writing.` : "Writing and grammar are the weakest points while reading and listening are relatively stronger."}
-        action="Pair reading comprehension with short guided writing, not a separate worksheet."
+        insight={lessons.length ? `Curriculum coverage across ${lessons.length} lesson(s): ${skillCoverage.map((s) => `${s.label} ${s.value}%`).join(", ")}.` : "No lessons yet — skill radar will show once you generate RPH."}
+        action={lowCoverageSkills.length ? `Generate a ${lowCoverageSkills[0]} lesson to balance coverage.` : "Pair reading comprehension with short guided writing."}
       >
-        <RadarChart data={radar} />
+        {radar.length ? <RadarChart data={radar} /> : <p className="body-copy" style={{ textAlign: "center", padding: 24 }}>No lesson data for skill radar yet.</p>}
       </AnalysisCard>
       <AnalysisCard
         title="Risk Prediction"
         question="Who needs intervention first?"
-        insight={liveMode && (classes.length || students.length) ? `${weakCount} pupil(s) form the targeted support group needing structured vocabulary rehearsal and writing frames.` : "Five pupils form a high-risk group, mainly because vocabulary and written evidence are below class expectations."}
+        insight={tpSource.length ? `${weakCount} pupil(s) are at TP1–TP3 and form the targeted support group needing structured vocabulary rehearsal and writing frames. ${tp4PlusCount} pupil(s) are at TP4 or above.` : "No PBD data yet — record assessments to identify at-risk pupils."}
         action="Start with low-cognitive-load vocabulary rehearsal, then sentence starters."
       >
         <RiskBreakdown />
       </AnalysisCard>
       <AnalysisCard
         className="wide"
-        title="Student Topic Heatmap"
-        question="Which exact topics need support?"
-        insight={liveMode && lessons.length > 0 ? `${lessons[0]?.topic || lessons[0]?.title || "English writing"} requires clearer sentence scaffolding for lower-performing pupils.` : "Email writing and past tense are the clearest blockers for lower-performing pupils."}
-        action="Reteach key formats using a model, colour-coded parts and a shared class example."
+        title="TP Distribution"
+        question="Where are pupils concentrated?"
+        insight={tpSource.length ? `TP distribution: ${tpBuckets.map((b) => `${b.label}=${b.value}`).join(", ")}. Average TP: ${avgTP || "—"}.` : "No TP data yet — record PBD to see the distribution."}
+        action="Use differentiated success criteria by TP band, not the same output target for all groups."
       >
-        <Heatmap />
+        {tpSource.length ? <BarSet data={tpBuckets} /> : <p className="body-copy" style={{ textAlign: "center", padding: 24 }}>Record PBD assessments to see TP distribution.</p>}
       </AnalysisCard>
     </section>
   );
@@ -2554,17 +3044,17 @@ function AnalyticsPage({ lessons = [], classes = [], students = [], liveMode, se
   const classesView = (
     <section className="analytics-tab-grid">
       <AnalysisCard
-        title="Class Comparison"
+        title="Class Roster Sizes"
         question="Which class needs attention first?"
-        insight={liveMode && classes.length > 0 ? `${classes[0]?.name || "Your class"} and other rosters show healthy performance. Scaffolding is advised for lower-scoring groups.` : "5 Maju is behind the other classes and should receive earlier scaffolding in upcoming English lessons."}
+        insight={classes.length ? `${classes.length} class(es): ${classes.map((c) => `${c.name} (${c.studentCount || 0} pupils)`).join(", ")}.` : "No classes created yet. Add a class to see roster comparisons."}
         action="Schedule an additional guided practice block before the next assessment."
       >
-        <BarSet data={classCompare} />
+        {classCompare.length ? <BarSet data={classCompare} /> : <p className="body-copy" style={{ textAlign: "center", padding: 24 }}>Create a class to see roster sizes.</p>}
       </AnalysisCard>
       <AnalysisCard
         title="TP Distribution Heatmap"
         question="Where are pupils concentrated?"
-        insight="2 Cemerlang has a healthy TP4 cluster, while 5 Maju has more pupils sitting around TP2 and TP3."
+        insight={tpSource.length ? `Across all classes: ${tpBuckets.map((b) => `${b.label}=${b.value}`).join(", ")}.` : "No PBD data yet to build a heatmap."}
         action="Use differentiated success criteria by class, not the same output target for all groups."
       >
         <TPHeatmap />
@@ -2572,18 +3062,18 @@ function AnalyticsPage({ lessons = [], classes = [], students = [], liveMode, se
       <AnalysisCard
         title="Class Spread"
         question="Is the class stable or uneven?"
-        insight="The spread shows several outliers, so whole-class reteaching alone will not be efficient."
+        insight={tpSource.length ? `TP range: ${Math.min(...tpSource)}–${Math.max(...tpSource)}. ${weakCount} pupil(s) need support, ${tp4PlusCount} are secure.` : "No PBD data yet to measure class spread."}
         action="Split pupils into quick support groups for vocabulary, sentence accuracy and extension."
       >
         <BoxPlot />
       </AnalysisCard>
       <AnalysisCard
-        title="Attendance vs Performance"
-        question="Does attendance explain TP?"
-        insight="Lower attendance appears connected to lower TP for several pupils, but it does not explain all writing weakness."
-        action="Combine catch-up notes with explicit writing practice for irregular attendance pupils."
+        title="Evidence vs TP"
+        question="Does more evidence correlate with higher TP?"
+        insight={scatter.length ? `${scatter.length} pupil(s) plotted. More assessment records generally align with more stable TP bands.` : "No assessment data yet — record PBD to see the evidence-to-performance relationship."}
+        action="Ensure every pupil has at least two evidence points per term."
       >
-        <ScatterPlot points={scatter} />
+        {scatter.length ? <ScatterPlot points={scatter} /> : <p className="body-copy" style={{ textAlign: "center", padding: 24 }}>Record PBD to see evidence vs TP scatter.</p>}
       </AnalysisCard>
     </section>
   );
@@ -2591,29 +3081,40 @@ function AnalyticsPage({ lessons = [], classes = [], students = [], liveMode, se
   const topics = (
     <section className="analytics-tab-grid">
       <AnalysisCard
-        title="Topic Mastery"
-        question="Which syllabus area is weakest?"
-        insight="Email writing and past tense are dragging down the class average more than reading comprehension."
-        action="Plan one integrated lesson: identify tense, build sentence, place it in an email."
-      >
-        <BarSet data={topicMastery} />
-      </AnalysisCard>
-      <AnalysisCard
-        title="Topic Difficulty Trend"
-        question="Are hard topics improving?"
-        insight="Reading is improving faster than writing. Pupils can understand ideas but struggle to express them clearly."
-        action="Add oral rehearsal before writing so pupils test their sentence verbally first."
-      >
-        <MultiLineChart series={[{ label: "Writing", values: [42, 48, 55, 58, 63] }, { label: "Reading", values: [68, 72, 76, 80, 86] }]} max={100} xLabels={["W1", "W2", "W3", "W4", "W5"]} />
-      </AnalysisCard>
-      <AnalysisCard
         className="wide"
-        title="Failure Distribution"
-        question="What causes the most breakdowns?"
-        insight="Email format and past tense create most failed evidence because pupils lose structure before they can show meaning."
-        action="Use a visual email template and sentence substitution table for the next writing cycle."
+        title="Lesson Topics"
+        question="What have you taught?"
+        insight={topicList.length ? `${topicList.length} lesson topic(s) saved. ${lowCoverageSkills.length ? `Skills with no lessons yet: ${lowCoverageSkills.join(", ")}.` : "All six KSSR skills have at least one lesson."}` : "No lesson plans yet. Generate an RPH to start tracking topic coverage."}
+        action={lowCoverageSkills.length ? `Generate a ${lowCoverageSkills[0]} lesson to balance skill coverage.` : "Continue generating lessons across all skills."}
       >
-        <Treemap data={[{ label: "Email format", value: 34 }, { label: "Past tense", value: 26 }, { label: "Vocabulary", value: 22 }, { label: "Main idea", value: 18 }]} />
+        {topicList.length ? (
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>Topic</th><th>Skill</th><th>Year</th><th>Objectives</th><th>Status</th></tr></thead>
+              <tbody>
+                {topicList.map((t, i) => (
+                  <tr key={i}><td><strong>{t.label}</strong></td><td>{t.skill}</td><td>{t.year}</td><td>{t.objectives}</td><td><Badge tone={t.status === "completed" ? "emerald" : "amber"}>{t.status}</Badge></td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : <p className="body-copy" style={{ textAlign: "center", padding: 24 }}>No lesson topics yet. Generate a lesson plan to populate this list.</p>}
+      </AnalysisCard>
+      <AnalysisCard
+        title="Skill Coverage"
+        question="Which KSSR skills are underrepresented?"
+        insight={lessons.length ? `${skillCoverage.filter((s) => s.value === 0).length} of 6 skills have no lessons. Reading: ${skillCoverage.find((s) => s.label === "Reading")?.value || 0}%, Writing: ${skillCoverage.find((s) => s.label === "Writing")?.value || 0}%.` : "No lesson plans yet — skill coverage will appear here once you generate RPH."}
+        action={lowCoverageSkills.length ? `Prioritise a ${lowCoverageSkills[0]} lesson next.` : "Your skill coverage is balanced across all six areas."}
+      >
+        <BarSet data={skillCoverage} />
+      </AnalysisCard>
+      <AnalysisCard
+        title="Skill Distribution"
+        question="How is your lesson library split?"
+        insight={lessons.length ? `Across ${lessons.length} lesson(s): ${skillCounts.filter((s) => s.count > 0).map((s) => `${s.skill} (${s.count})`).join(", ") || "no skills tagged yet"}.` : "Generate lesson plans to see the skill distribution."}
+        action="Aim for at least one lesson per KSSR skill per term."
+      >
+        <DonutChart data={skillCoverage.filter((s) => s.value > 0).map((s) => ({ label: s.label, value: s.value }))} />
       </AnalysisCard>
     </section>
   );
@@ -2623,25 +3124,25 @@ function AnalyticsPage({ lessons = [], classes = [], students = [], liveMode, se
       <AnalysisCard
         title="Assessment Type Distribution"
         question="Are evidence methods balanced?"
-        insight="Quiz evidence is overrepresented. Oral and observation evidence should increase to reflect primary ESL learning."
-        action="Add one speaking checklist and one observation rubric this week."
+        insight={assessmentBreakdown.length ? `${assessmentBreakdown.length} PBD assessment(s): ${assessmentBreakdown.map((a) => `${a.label} (${a.value} pupils, avg TP ${a.avgTp})`).join("; ")}.` : "No PBD assessments recorded yet. Create a template on the PBD page to start collecting evidence."}
+        action={assessmentBreakdown.length ? "Balance observation evidence with written and oral checks." : "Create your first PBD assessment template."}
       >
-        <DonutChart data={assessments} />
+        <DonutChart data={assessmentBreakdown.map((a) => ({ label: a.label, value: a.value }))} />
       </AnalysisCard>
       <AnalysisCard
         title="Assessment Score Summary"
-        question="Which assessment was hardest?"
-        insight="Writing has the lowest average score, which matches the topic and student-level risk signals."
-        action="Review the writing rubric and add a guided draft before the marked task."
+        question="Which skill area has the lowest TP?"
+        insight={scores.length ? `Average TP across skills: ${scores.map((s) => `${s.label} ${Math.round((s.value / 100) * 6 * 10) / 10}`).join(", ")}.` : "No assessment data yet — record PBD to see skill-level TP summary."}
+        action="Focus reteaching on the lowest-scoring skill area."
       >
-        <AssessmentScoreSummary data={scores} />
+        {scores.length ? <AssessmentScoreSummary data={scores} /> : <p className="body-copy" style={{ textAlign: "center", padding: 24 }}>No PBD scores recorded yet.</p>}
       </AnalysisCard>
       <AnalysisCard
         className="wide"
-        title="Completion Timeline"
-        question="What is overdue?"
-        insight="The writing assessment is overdue, so analytics may understate current writing progress."
-        action="Complete the writing evidence collection before generating parent reports."
+        title="Evidence Collection"
+        question="How complete is your PBD coverage?"
+        insight={`${assessedStudentIds.size} of ${totalStudentsCount} pupils (${evidenceCompletion}%) have at least one assessment record. ${totalStudentsCount - assessedStudentIds.size} pupil(s) still need PBD evidence.`}
+        action={evidenceCompletion < 100 ? `Assess ${totalStudentsCount - assessedStudentIds.size} more pupil(s) to reach full PBD coverage.` : "Full PBD coverage achieved — every pupil has evidence."}
       >
         <TimelineChart />
       </AnalysisCard>
@@ -2653,27 +3154,27 @@ function AnalyticsPage({ lessons = [], classes = [], students = [], liveMode, se
       <AnalysisCard
         title="Predicted TP Progression"
         question="Where will pupils be next month?"
-        insight="The forecast is positive if current interventions continue, but writing progress remains slower."
-        action="Keep the reading routine and add one structured writing conference per week."
+        insight={tpSource.length ? `Current average TP is ${avgTP}. If pupils gain ~0.3 TP per month with consistent PBD, the projected average next month is TP ${Number((avgTP + 0.3).toFixed(1))}. ${weakCount > 0 ? `${weakCount} pupil(s) at TP1-3 need targeted support to stay on track.` : "No pupils in the high-risk band."}` : "No PBD data yet — predictions require at least one assessment round."}
+        action="Keep the PBD routine and add one structured conference per week for TP1-3 pupils."
       >
         <ProjectionChart />
       </AnalysisCard>
       <AnalysisCard
-        title="Intervention Priority Matrix"
+        title="Intervention Priority"
         question="Who should receive support first?"
-        insight="Danish and Zikri are high-risk and high-importance because they are close to moving up a TP band."
-        action="Prioritise them for teacher conferencing before assigning independent tasks."
+        insight={tpSource.length ? `${weakCount} pupil(s) at TP1-3 are the priority intervention group. ${tp4PlusCount} pupil(s) are secure at TP4+. Focus on the gap between TP3 and TP4.` : "Record PBD assessments to identify intervention priorities."}
+        action="Prioritise TP1-3 pupils for teacher conferencing before assigning independent tasks."
       >
         <PriorityMatrix />
       </AnalysisCard>
       <AnalysisCard
         className="wide"
-        title="Learning Decline Detection"
-        question="Where is performance dropping?"
-        insight="Writing performance shows three consecutive drops. This is an anomaly worth acting on immediately."
-        action="Pause new writing content and reteach sentence construction with shared examples."
+        title="Coverage Gaps"
+        question="Where is curriculum coverage weakest?"
+        insight={lessons.length ? `Skill coverage: ${skillCoverage.map((s) => `${s.label} ${s.value}%`).join(", ")}. ${lowCoverageSkills.length ? `Skills with zero lessons: ${lowCoverageSkills.join(", ")}.` : "All six KSSR skills have lesson coverage."}` : "No lesson plans yet — coverage gaps will appear once you generate RPH."}
+        action={lowCoverageSkills.length ? `Plan a ${lowCoverageSkills[0]} lesson next to fill the biggest coverage gap.` : "Maintain balanced skill coverage across all six KSSR areas."}
       >
-        <AnomalyChart />
+        <BarSet data={skillCoverage} />
       </AnalysisCard>
     </section>
   );
@@ -2681,22 +3182,22 @@ function AnalyticsPage({ lessons = [], classes = [], students = [], liveMode, se
   const insights = (
     <section className="ai-analysis-grid">
       <AIAnalysisBlock
-        title="Writing is the main intervention point"
-        context="Across topic, assessment and student risk data, writing appears as the common weakness."
-        evidence="Lowest assessment average: Writing 61%. Weak topics: email writing, past tense and vocabulary."
-        action="Run a 20-minute writing repair lesson with model text, sentence frames and peer checking."
+        title={lowCoverageSkills.length ? `${lowCoverageSkills[0]} coverage gap detected` : "Skill coverage is balanced"}
+        context={lessons.length ? `Across ${lessons.length} lesson(s), skill distribution: ${skillCoverage.map((s) => `${s.label} ${s.value}%`).join(", ")}.` : "No lesson plans yet to analyse coverage."}
+        evidence={lowCoverageSkills.length ? `${lowCoverageSkills.join(", ")} ${lowCoverageSkills.length === 1 ? "has" : "have"} no lesson plans. Generate one to close the gap.` : "All six KSSR skills have at least one lesson."}
+        action={lowCoverageSkills.length ? `Generate a ${lowCoverageSkills[0]} RPH on the Lesson Planner page.` : "Continue building lessons across all skills."}
       />
       <AIAnalysisBlock
-        title="Reading comprehension is ready for extension"
-        context="Reading comprehension is improving and now supports higher-order questions."
-        evidence="Topic mastery for main idea is 86%, and reading trend is rising faster than writing."
-        action="Add one KBAT oral question before the written response to bridge understanding into expression."
+        title={tpSource.length ? `${weakCount} pupil(s) need intervention` : "No PBD data yet"}
+        context={tpSource.length ? `Average TP: ${avgTP}. ${tp4PlusCount} pupil(s) at TP4+, ${weakCount} at TP1-3.` : "PBD assessments are the main data source for pupil insights."}
+        evidence={tpSource.length ? `TP distribution: ${tpBuckets.map((b) => `${b.label}=${b.value}`).join(", ")}.` : "Record PBD on the Assessment page to unlock pupil-level insights."}
+        action="Start with low-cognitive-load vocabulary rehearsal, then sentence starters for TP1-3 pupils."
       />
       <AIAnalysisBlock
-        title="Evidence collection needs more speaking data"
-        context="The current evidence balance leans too heavily on quizzes and written outputs."
-        evidence="Oral evidence is only 14% of recorded assessment methods."
-        action="Use a simple speaking rubric during pair work and record TP evidence immediately."
+        title={evidenceCompletion < 100 ? `PBD coverage at ${evidenceCompletion}%` : "Full PBD coverage achieved"}
+        context={`${assessedStudentIds.size} of ${totalStudentsCount} pupils have at least one assessment record.`}
+        evidence={evidenceCompletion < 100 ? `${totalStudentsCount - assessedStudentIds.size} pupil(s) still need PBD evidence collected.` : "Every tracked pupil has assessment evidence."}
+        action={evidenceCompletion < 100 ? "Open the PBD & Assessment page to record evidence for remaining pupils." : "Maintain evidence collection each term to keep analytics current."}
       />
     </section>
   );
@@ -3256,7 +3757,14 @@ function AnomalyChart() {
 
 function ReportsPage({ lessons = [], classes = [], compact = false, liveMode = false, setActivePage }) {
   const [classFilter, setClassFilter] = useState("all");
-  const reports = ["Individual English PBD Report", "Full Class English Report", "TP Distribution Report", "Parent-Friendly English Progress Report"];
+  const [generating, setGenerating] = useState("");
+  const [reportNotice, setReportNotice] = useState("");
+  const reports = [
+    { id: "individual", label: "Individual English PBD Report" },
+    { id: "class", label: "Full Class English Report" },
+    { id: "tp", label: "TP Distribution Report" },
+    { id: "parent", label: "Parent-Friendly English Progress Report" },
+  ];
   const visibleLessons = classFilter === "all"
     ? lessons
     : lessons.filter((lesson) => {
@@ -3264,11 +3772,56 @@ function ReportsPage({ lessons = [], classes = [], compact = false, liveMode = f
       if (classFilter === "legacy") return !lessonClassId;
       return lessonClassId === classFilter;
     });
+  const lessonLines = (items) => items.map((lesson, idx) => `${idx + 1}. ${lesson.title || "Untitled RPH"} | ${lesson.className || lesson.classId?.name || "General"} | ${lesson.year || ""} | ${lesson.subject || "English"} | ${(lesson.objectives || []).length} objectives`).join("\n");
+  const buildReport = (type) => {
+    const header = "ESLessonCraft MY — English Report\nGenerated: " + new Date().toLocaleString("en-MY") + "\n" + "=".repeat(48) + "\n\n";
+    const pool = visibleLessons.length ? visibleLessons : lessons;
+    if (!pool.length) return null;
+    if (type === "individual") {
+      return header + "INDIVIDUAL ENGLISH PBD REPORT\n\n" + pool.map((l) => {
+        const objs = (l.objectives || []).map((o, i) => `  ${i + 1}. ${o}`).join("\n");
+        return `Pupil RPH: ${l.title}\nClass: ${l.className || l.classId?.name || "General"} (${l.year || "Year 4"})\nObjectives:\n${objs || "  -"}\nPBD evidence: ${(l.assessment || l.assessments || ["Observation"]).join ? (l.assessment || l.assessments || []).join("; ") : (l.assessment || l.assessments || "Observation")}\nStatus: ${l.status || "planned"}\n`;
+      }).join("\n---\n");
+    }
+    if (type === "class") {
+      return header + "FULL CLASS ENGLISH REPORT\n\nClasses:\n" + classes.map((c, i) => `${i + 1}. ${c.name} · ${c.year} (${c.studentCount || 0} pupils)`).join("\n") + "\n\nLessons:\n" + lessonLines(pool);
+    }
+    if (type === "tp") {
+      return header + "TP DISTRIBUTION REPORT\n\nBased on " + pool.length + " lesson(s):\n\n" + pool.map((l) => `- ${l.title}: ${(l.objectives || []).length} objectives, skill ${l.skill || "Reading"}`).join("\n");
+    }
+    if (type === "parent") {
+      return header + "PARENT-FRIENDLY ENGLISH PROGRESS REPORT\n\nDear parents and guardians,\n\nThis term your child is working on the following English lessons:\n\n" + pool.map((l, i) => `${i + 1}. ${l.title} (${l.year || "Year 4"})\n   What pupils are learning: ${(l.objectives || ["English skills for daily use"])[0]}`).join("\n\n") + "\n\nThank you for supporting your child's English learning at home.\n\nESLessonCraft MY Teacher OS";
+    }
+    return null;
+  };
+  const generateReport = (type) => {
+    setGenerating(type);
+    setReportNotice("");
+    const text = buildReport(type);
+    if (!text) {
+      setReportNotice("No lessons to report yet. Generate a lesson plan first.");
+      setGenerating("");
+      return;
+    }
+    const filename = `${type}-report-${new Date().toISOString().slice(0, 10)}.txt`;
+    setTimeout(() => {
+      downloadTextFile(filename, text);
+      setReportNotice("Report downloaded. Open the .txt file to print or share.");
+      setGenerating("");
+    }, 300);
+  };
   return (
     <div className="page-stack">
       {!compact && <PageHeader eyebrow="Reports" title="Generate English reports." subtitle="Clean formats for panel review, parents and administrators." />}
+      {reportNotice && <div className="success-note"><CheckCircle2 /> {reportNotice}</div>}
       <section className="report-grid">
-        {reports.map((report) => <Card key={report} title={report} subtitle="PDF · print-friendly"><button className="secondary-btn"><Download /> Generate</button></Card>)}
+        {reports.map((report) => (
+          <Card key={report.id} title={report.label} subtitle="Print-friendly · .txt download">
+            <button className="secondary-btn" disabled={!!generating} onClick={() => generateReport(report.id)}>
+              {generating === report.id ? <RefreshCw /> : <Download />} {generating === report.id ? "Generating…" : "Generate"}
+            </button>
+          </Card>
+        ))}
       </section>
       {!compact && <Card title="RPH terkini" subtitle={`${visibleLessons.length || 4} rekod tersedia`}>
         <label className="field">
@@ -3293,9 +3846,141 @@ function ReportsPage({ lessons = [], classes = [], compact = false, liveMode = f
   );
 }
 
-function renderAnnotatedContent(text, annotations, activeIndex, setActiveIndex) {
-  if (!text || !annotations || !annotations.length) return text;
+// Lesson-plan section headers that should be styled as document headings.
+const DOCUMENT_SECTION_HEADERS = /^(Subject|Class|Time|Topic|Skill Focus|Objectives|Procedure|Assessment|Materials|Success Criteria|Differentiation|Reflection|Closure|Pre Lesson|Lesson Development|Stage I|Stage II|Stage III|Post Lesson|Activities|Homework)\s*:/gmi;
 
+// A hover popover that shows the annotation comment when the teacher hovers
+// over or clicks a highlighted phrase — like Google Docs inline comments.
+function HoverComment({ ann, index, active, onClick, children }) {
+  const [hovered, setHovered] = useState(false);
+  const show = hovered || active;
+  return (
+    <span
+      style={{ position: "relative", display: "inline" }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <mark
+        className={`highlight ${ann.severity || "medium"} ${active ? "active" : ""}`}
+        onClick={onClick}
+      >
+        {children}
+      </mark>
+      {show && (
+        <div
+          className="comment-popover"
+          style={{
+            position: "absolute",
+            bottom: "calc(100% + 8px)",
+            left: 0,
+            zIndex: 100,
+            width: 320,
+            maxWidth: "calc(100vw - 80px)",
+            padding: "14px 16px",
+            borderRadius: 12,
+            background: "var(--card)",
+            border: "1px solid var(--border)",
+            boxShadow: "0 8px 28px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08)",
+            fontSize: "0.82rem",
+            lineHeight: 1.5,
+            color: "var(--foreground)",
+            pointerEvents: "none",
+          }}
+        >
+          {ann.severity && (
+            <span
+              className={`badge ${ann.severity === "high" ? "rose" : "amber"}`}
+              style={{ position: "absolute", top: 10, right: 12, textTransform: "uppercase", fontSize: "0.62rem", fontWeight: 800, padding: "2px 7px", borderRadius: 8 }}
+            >
+              {ann.severity}
+            </span>
+          )}
+          {ann.issue && <strong style={{ display: "block", marginBottom: 4, paddingRight: ann.severity ? 50 : 0, fontSize: "0.85rem" }}>{ann.issue}</strong>}
+          {ann.text && <div style={{ padding: "5px 8px", background: "color-mix(in srgb, var(--primary) 8%, transparent)", borderRadius: 6, marginBottom: 6, fontStyle: "italic", color: "var(--muted)" }}>"{ann.text}"</div>}
+          {ann.explanation && <p style={{ margin: "0 0 8px" }}>{ann.explanation}</p>}
+          {ann.suggestion && (
+            <div style={{ padding: "8px 10px", background: "color-mix(in srgb, var(--emerald) 10%, transparent)", borderRadius: 8, border: "1px solid color-mix(in srgb, var(--emerald) 30%, transparent)" }}>
+              <strong style={{ fontSize: "0.76rem", color: "var(--emerald)", display: "block", marginBottom: 2 }}>Suggested Remedy</strong>
+              <span>{ann.suggestion}</span>
+            </div>
+          )}
+          <div
+            style={{
+              position: "absolute",
+              bottom: -7,
+              left: 16,
+              width: 12,
+              height: 12,
+              background: "var(--card)",
+              borderRight: "1px solid var(--border)",
+              borderBottom: "1px solid var(--border)",
+              transform: "rotate(45deg)",
+            }}
+          />
+        </div>
+      )}
+    </span>
+  );
+}
+
+// Renders the lesson plan text as a structured document with proper headings,
+// labels, and paragraphs — while preserving annotation highlight marks at the
+// correct character positions. This makes the evaluation engine's "Document
+// View" look like a real formatted RPH rather than a flat text blob.
+function formatDocumentSegment(segment, keyPrefix) {
+  if (typeof segment === "string") {
+    // Split the segment into lines and format each one.
+    const lines = segment.split("\n");
+    return lines.map((line, lineIndex) => {
+      if (!line.trim()) return <br key={`${keyPrefix}-br-${lineIndex}`} />;
+      // Check if the line is a section header (e.g. "Objectives:", "Procedure:")
+      const headerMatch = line.match(/^(Subject|Class|Time|Topic|Skill Focus|Objectives|Procedure|Assessment|Materials|Success Criteria|Differentiation|Reflection)\s*:/i);
+      if (headerMatch) {
+        const label = headerMatch[0].replace(":", "");
+        const rest = line.slice(headerMatch[0].length);
+        return (
+          <div key={`${keyPrefix}-h-${lineIndex}`} className="doc-section-header" style={{ marginTop: lineIndex > 0 ? 14 : 0, marginBottom: 4 }}>
+            <strong style={{ fontSize: "0.78rem", fontWeight: 800, color: "var(--foreground)", textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</strong>
+            {rest.trim() && <span style={{ fontWeight: 400, marginLeft: 8 }}>{rest.trim()}</span>}
+          </div>
+        );
+      }
+      // Check if the line is a numbered step (e.g. "1. Set Induction (5 mins): ...")
+      const stepMatch = line.match(/^(\d+)\.\s+(.+)/);
+      if (stepMatch) {
+        return (
+          <div key={`${keyPrefix}-step-${lineIndex}`} className="doc-step" style={{ marginLeft: 8, marginBottom: 8, paddingLeft: 0 }}>
+            <span style={{ fontWeight: 800, color: "var(--primary)" }}>{stepMatch[1]}.</span> {stepMatch[2]}
+          </div>
+        );
+      }
+      // Check if the line is a bullet point
+      const bulletMatch = line.match(/^[•\-\*]\s+(.+)/);
+      if (bulletMatch) {
+        return (
+          <div key={`${keyPrefix}-bullet-${lineIndex}`} style={{ marginLeft: 12, marginBottom: 4, display: "flex", gap: 6 }}>
+            <span style={{ color: "var(--primary)", flexShrink: 0 }}>•</span>
+            <span>{bulletMatch[1]}</span>
+          </div>
+        );
+      }
+      // Regular paragraph line
+      return <p key={`${keyPrefix}-p-${lineIndex}`} style={{ margin: "0 0 6px", lineHeight: 1.6 }}>{line}</p>;
+    });
+  }
+  // If it's already a React element (a <mark> highlight), just return it.
+  return segment;
+}
+
+function renderAnnotatedContent(text, annotations, activeIndex, setActiveIndex) {
+  if (!text) return null;
+
+  // If no annotations, just format the document.
+  if (!annotations || !annotations.length) {
+    return formatDocumentSegment(text, "doc");
+  }
+
+  // First, compute the annotation highlight ranges as before.
   const ranges = [];
   const lowerText = text.toLowerCase();
 
@@ -3315,36 +4000,70 @@ function renderAnnotatedContent(text, annotations, activeIndex, setActiveIndex) 
     }
   });
 
-  if (!ranges.length) return text;
+  if (!ranges.length) {
+    return formatDocumentSegment(text, "doc");
+  }
 
   ranges.sort((a, b) => a.start - b.start);
 
+  // Build a mixed array of text segments (strings) and highlight marks (React
+  // elements). Each segment preserves its position in the original text so we
+  // can format the text portions while keeping highlights inline.
   const parts = [];
   let lastIndex = 0;
 
   ranges.forEach((range, i) => {
     if (range.start > lastIndex) {
-      parts.push(text.slice(lastIndex, range.start));
+      parts.push({ type: "text", content: text.slice(lastIndex, range.start) });
     }
-    const snippet = text.slice(range.start, range.end);
-    parts.push(
-      <mark
-        key={`ann-${range.index}-${i}`}
-        className={`highlight ${range.ann.severity || "medium"} ${range.index === activeIndex ? "active" : ""}`}
-        onClick={() => setActiveIndex(range.index === activeIndex ? null : range.index)}
-        title={range.ann.issue}
-      >
-        {snippet}
-      </mark>
-    );
+    parts.push({
+      type: "mark",
+      content: text.slice(range.start, range.end),
+      ann: range.ann,
+      index: range.index,
+    });
     lastIndex = range.end;
   });
 
   if (lastIndex < text.length) {
-    parts.push(text.slice(lastIndex));
+    parts.push({ type: "text", content: text.slice(lastIndex) });
   }
 
-  return parts;
+  // Now render: format text segments as document structure, keep marks inline.
+  // We join adjacent formatted segments and marks so they flow together.
+  const rendered = [];
+  let textBuffer = "";
+
+  parts.forEach((part, i) => {
+    if (part.type === "text") {
+      textBuffer += part.content;
+    } else {
+      // Flush the accumulated text buffer as formatted document content.
+      if (textBuffer) {
+        rendered.push(...formatDocumentSegment(textBuffer, `seg-${rendered.length}`));
+        textBuffer = "";
+      }
+      // Render the highlight with a hover popover showing the annotation.
+      rendered.push(
+        <HoverComment
+          key={`ann-${part.index}-${i}`}
+          ann={part.ann}
+          index={part.index}
+          active={part.index === activeIndex}
+          onClick={() => setActiveIndex(part.index === activeIndex ? null : part.index)}
+        >
+          {part.content}
+        </HoverComment>
+      );
+    }
+  });
+
+  // Flush any remaining text.
+  if (textBuffer) {
+    rendered.push(...formatDocumentSegment(textBuffer, `seg-${rendered.length}`));
+  }
+
+  return rendered;
 }
 
 const SAMPLE_EVAL_LESSON = `Subject: English Language
@@ -3382,16 +4101,19 @@ function EvaluatePage({ lessons = [], liveMode = false }) {
   const [summary, setSummary] = useState("");
   const [activeIndex, setActiveIndex] = useState(null);
   const [activeTab, setActiveTab] = useState("comments");
+  const [lessonResult, setLessonResult] = useState(null);
 
   async function handleEvaluate(e) {
     if (e && e.preventDefault) e.preventDefault();
     setError("");
     setLoading(true);
     setActiveIndex(null);
+    setLessonResult(null);
 
     try {
       const formData = new FormData();
       let textToUse = "";
+      let structuredResult = null;
 
       if (mode === "file" && fileInput) {
         formData.append("file", fileInput);
@@ -3399,6 +4121,8 @@ function EvaluatePage({ lessons = [], liveMode = false }) {
         const found = lessons.find((l) => l._id === selectedLessonId);
         if (found) {
           textToUse = typeof found.content === "string" && found.content.trim() ? found.content : lessonToText(found);
+          // The saved lesson may have the full AI-generated structured result.
+          structuredResult = found.aiGeneratedContent || found.generatedFields || found;
         }
         if (!textToUse.trim()) {
           throw new Error("Selected saved lesson has no text content.");
@@ -3427,11 +4151,16 @@ function EvaluatePage({ lessons = [], liveMode = false }) {
       setAnnotations(returnedAnnotations);
       setSummary(data.summary || `${returnedAnnotations.length} annotation(s) found for KSSR improvement.`);
       setOverallScore(data.overallScore || Math.max(50, 95 - returnedAnnotations.length * 7));
-      
+
       if (mode === "file" && fileInput && !textToUse) {
         setEvaluatedText(`[Uploaded File: ${fileInput.name}]\n\n${data.lessonText || textInput}`);
       } else {
         setEvaluatedText(textToUse || textInput);
+      }
+
+      // If we have a structured lesson result, use the KPM table document viewer.
+      if (structuredResult && (structuredResult.procedure || structuredResult.objectives)) {
+        setLessonResult(structuredResult);
       }
 
       setActiveTab("comments");
@@ -3458,7 +4187,7 @@ function EvaluatePage({ lessons = [], liveMode = false }) {
         </div>
         <div className="actions-row">
           {evaluatedText && (
-            <button className="secondary-btn" onClick={() => { setEvaluatedText(""); setAnnotations([]); }}>
+            <button className="secondary-btn" onClick={() => { setEvaluatedText(""); setAnnotations([]); setLessonResult(null); }}>
               <RefreshCw /> Edit & Re-Evaluate
             </button>
           )}
@@ -3559,11 +4288,13 @@ function EvaluatePage({ lessons = [], liveMode = false }) {
             <div className="card-title-row" style={{ marginBottom: 16 }}>
               <div>
                 <h2 style={{ fontSize: "1.1rem", margin: 0 }}>Document View</h2>
-                <small className="muted">{currentDisplayLength} characters · Click any highlighted phrase to jump to its comment</small>
+                <small className="muted">{currentDisplayLength} characters · Hover any highlighted phrase to view its comment</small>
               </div>
             </div>
             <div className="document-page">
-              {renderAnnotatedContent(evaluatedText, annotations, activeIndex, setActiveIndex)}
+              {lessonResult
+                ? <KpmLessonDocument result={lessonResult} annotations={annotations} activeIndex={activeIndex} setActiveIndex={setActiveIndex} />
+                : renderAnnotatedContent(evaluatedText, annotations, activeIndex, setActiveIndex)}
             </div>
           </div>
 
@@ -3737,8 +4468,287 @@ function SettingsPage({ backendStatus, theme, setTheme, currentUser, setCurrentU
   );
 }
 
+// Lightweight inline markdown renderer for copilot messages.
+// Converts **bold**, *italic*, `code`, and \n line breaks — enough for chat
+// replies without pulling in a full markdown library.
+function renderMarkdown(text) {
+  if (!text) return text;
+  // Split into lines so we can honour explicit line breaks.
+  const lines = String(text).split("\n");
+  return lines.map((line, lineIndex) => {
+    // Tokenize the line: split on **bold**, *italic*, `code` markers.
+    const tokens = [];
+    let remaining = line;
+    let key = 0;
+    const patterns = [
+      { regex: /^\*\*(.+?)\*\*/, render: (m) => <strong key={`b-${key++}`} style={{ fontWeight: 800 }}>{m[1]}</strong> },
+      { regex: /^\*(.+?)\*/, render: (m) => <em key={`i-${key++}`}>{m[1]}</em> },
+      { regex: /^`(.+?)`/, render: (m) => <code key={`c-${key++}`} style={{ background: "color-mix(in srgb, var(--muted) 20%, transparent)", padding: "1px 4px", borderRadius: 4, fontSize: "0.85em" }}>{m[1]}</code> },
+    ];
+    while (remaining.length > 0) {
+      let matched = false;
+      for (const { regex, render } of patterns) {
+        const m = remaining.match(regex);
+        if (m) {
+          tokens.push(render(m));
+          remaining = remaining.slice(m[0].length);
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) {
+        // Push raw text up to the next marker.
+        const next = remaining.search(/(\*\*|\*|`)/);
+        if (next === -1) {
+          tokens.push(<span key={`t-${key++}`}>{remaining}</span>);
+          remaining = "";
+        } else if (next === 0) {
+          // Marker at position 0 but no match above — push it as literal.
+          tokens.push(<span key={`t-${key++}`}>{remaining[0]}</span>);
+          remaining = remaining.slice(1);
+        } else {
+          tokens.push(<span key={`t-${key++}`}>{remaining.slice(0, next)}</span>);
+          remaining = remaining.slice(next);
+        }
+      }
+    }
+    return <span key={`l-${lineIndex}`}>{tokens}{lineIndex < lines.length - 1 && <br />}</span>;
+  });
+}
+
+// Reveals text progressively like ChatGPT. Reveals a few characters per tick
+// (faster than one-char-at-a-time so long replies don't feel sluggish), and
+// calls onDone when the full text is shown so action buttons can appear after.
+function TypewriterText({ text, onDone }) {
+  const [shown, setShown] = useState("");
+  useEffect(() => {
+    setShown("");
+    if (!text) {
+      onDone?.();
+      return;
+    }
+    let i = 0;
+    // Reveal ~2-3 chars per tick at ~18ms intervals — fast enough for long
+    // replies to finish in a few seconds, slow enough to feel like streaming.
+    const tick = () => {
+      const chunk = Math.random() < 0.7 ? 2 : 3;
+      i = Math.min(i + chunk, text.length);
+      setShown(text.slice(0, i));
+      if (i < text.length) {
+        timer = setTimeout(tick, 18);
+      } else {
+        onDone?.();
+      }
+    };
+    let timer = setTimeout(tick, 18);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text]);
+  // If the partial text has an unclosed ** or *, close it so renderMarkdown
+  // doesn't leave literal asterisks visible mid-stream.
+  let safeShown = shown;
+  const boldOpens = (safeShown.match(/\*\*/g) || []).length;
+  if (boldOpens % 2 !== 0) safeShown += "**";
+  const italicOpens = (safeShown.match(/(?<!\*)\*(?!\*)/g) || []).length;
+  if (italicOpens % 2 !== 0) safeShown += "*";
+  return <>{renderMarkdown(safeShown)}<span className="copilot-cursor" style={{ display: shown.length < (text || "").length ? "inline" : "none", opacity: 0.5, animation: "copilotBlink 0.8s infinite" }}>▋</span></>;
+}
+
+// Skeleton loading state shown while the copilot is "thinking". The status
+// lines are chosen based on what the teacher actually asked, so each question
+// shows contextually relevant "thinking" steps — not the same sequence every time.
+function CopilotThinking({ question = "" }) {
+  const q = question.toLowerCase();
+
+  // Build a context-specific step sequence based on keywords in the question.
+  const has = (...kws) => kws.some((kw) => q.includes(kw));
+  const plans = has("plan", "lesson", "rph", "teach", "topic", "skill");
+  const pupils = has("pupil", "student", "support", "intervention", "help", "weak", "struggl");
+  const pbd = has("pbd", "assess", "tp", "evidence", "record", "score", "progress");
+  const timetable = has("schedule", "timetable", "period", "time slot", "weekly");
+  const classes = has("class", "roster", "year");
+  const materials = has("material", "resource", "upload", "worksheet");
+
+  const steps = [];
+  // Always start with acknowledging the question itself.
+  if (has("what can", "help", "how", "suggest", "recommend")) {
+    steps.push("Understanding what you need…");
+  } else {
+    steps.push("Reading your question…");
+  }
+
+  // Add the relevant context-reading steps in a topic-driven order.
+  if (pupils) steps.push("Checking pupil rosters and proficiency…");
+  if (pbd) steps.push("Reviewing PBD assessment records…");
+  if (plans) steps.push("Looking at your lesson plans…");
+  if (classes) steps.push("Checking your class profiles…");
+  if (timetable) steps.push("Reading your weekly timetable…");
+  if (materials) steps.push("Scanning uploaded materials…");
+  if (has("analytic", "insight", "mastery", "average", "data")) steps.push("Crunching your analytics data…");
+
+  // If nothing topic-specific matched, fall back to a short general sequence.
+  if (steps.length <= 1) {
+    steps.push("Scanning your workspace data…", "Gathering context…");
+  }
+
+  // Always end with composing.
+  steps.push("Composing your answer…");
+
+  // Cap at 6 steps so the cycling doesn't drag on long AI responses.
+  const finalSteps = steps.slice(0, 6);
+  const [stepIndex, setStepIndex] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setStepIndex((i) => Math.min(i + 1, finalSteps.length - 1));
+    }, 1200);
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [question]);
+  return (
+    <div style={{ alignSelf: "flex-start", maxWidth: "88%", display: "flex", flexDirection: "column", gap: 8 }}>
+      <div className="copilot-msg assistant" style={{ padding: "10px 14px", borderRadius: "14px 14px 14px 4px", background: "var(--bg-subtle)", fontSize: "0.875rem", lineHeight: 1.5 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+          <span className="copilot-typing" style={{ display: "inline-flex", gap: 3, flexShrink: 0 }}>
+            <i style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--primary)", animation: "copilotBlink 1.2s infinite", opacity: 0.4 }} />
+            <i style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--primary)", animation: "copilotBlink 1.2s infinite 0.2s", opacity: 0.4 }} />
+            <i style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--primary)", animation: "copilotBlink 1.2s infinite 0.4s", opacity: 0.4 }} />
+          </span>
+          <span style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--muted)" }}>{finalSteps[stepIndex]}</span>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+          <div className="copilot-skeleton-bar" style={{ height: 9, width: "92%", borderRadius: 4, background: "color-mix(in srgb, var(--muted) 18%, transparent)", animation: "copilotShimmer 1.6s infinite" }} />
+          <div className="copilot-skeleton-bar" style={{ height: 9, width: "78%", borderRadius: 4, background: "color-mix(in srgb, var(--muted) 18%, transparent)", animation: "copilotShimmer 1.6s infinite 0.15s" }} />
+          <div className="copilot-skeleton-bar" style={{ height: 9, width: "85%", borderRadius: 4, background: "color-mix(in srgb, var(--muted) 18%, transparent)", animation: "copilotShimmer 1.6s infinite 0.3s" }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AICopilot({ open, setOpen, setActivePage }) {
-  return <aside className={`copilot ${open ? "open" : ""}`}><div className="copilot-head"><div><p className="eyebrow">ESLessonCraft AI</p><h2>Copilot</h2></div><button className="icon-btn" onClick={() => setOpen(false)}><X /></button></div><div className="copilot-body"><Insight item={aiInsights[0]} onClick={() => setActivePage("pbd")} /><Insight item={aiInsights[1]} onClick={() => setActivePage("lesson-planner")} /><label className="field"><span>Ask AI</span><textarea rows="4" placeholder="Example: build a 15-minute English vocabulary intervention for TP2 pupils..." /></label><button className="primary-btn full"><Sparkles /> Generate suggestion</button></div></aside>;
+  const [messages, setMessages] = useState(() => [
+    { role: "assistant", text: "Hi! I'm your ESLessonCraft Copilot. I can see your classes, students, lesson plans, PBD assessments, and timetable. Ask me anything — e.g. \"Which pupils need support?\" or \"Suggest a lesson for my Year 3 class.\"" },
+  ]);
+  const [prompt, setPrompt] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [fallbackNoticed, setFallbackNoticed] = useState(false);
+  const [typingDone, setTypingDone] = useState(true);
+  const [currentQuestion, setCurrentQuestion] = useState("");
+  const scrollRef = useRef(null);
+
+  // Auto-scroll to the latest message when the transcript changes or while typing.
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [messages, busy, typingDone]);
+
+  // Keep scrolling during the typewriter animation so the latest text stays in view.
+  useEffect(() => {
+    if (typingDone) return;
+    const timer = setInterval(() => {
+      if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }, 50);
+    return () => clearInterval(timer);
+  }, [typingDone]);
+
+  const ask = async () => {
+    const text = prompt.trim();
+    if (!text || busy) return;
+    setBusy(true);
+    setTypingDone(false);
+    setCurrentQuestion(text);
+    setPrompt("");
+    setMessages((prev) => [...prev, { role: "user", text }]);
+    try {
+      const result = await apiPost("/copilot/ask", { question: text });
+      setMessages((prev) => [...prev, { role: "assistant", text: result.reply || "I couldn't generate a response.", actions: result.actions || [] }]);
+      setFallbackNoticed(Boolean(result.aiSource?.fallbackTriggered));
+    } catch (err) {
+      setMessages((prev) => [...prev, { role: "assistant", text: `Sorry, I couldn't reach the AI service: ${err.message || "unknown error"}. Please try again.`, actions: [] }]);
+      setTypingDone(true);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleKeyDown = (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      ask();
+    }
+  };
+
+  const suggestions = [
+    "What should I teach next?",
+    "Which pupils need support?",
+    "Summarise my progress",
+  ];
+
+  return (
+    <aside className={`copilot ${open ? "open" : ""}`}>
+      <div className="copilot-head">
+        <div><p className="eyebrow">ESLessonCraft AI</p><h2>Copilot</h2></div>
+        <button className="icon-btn" onClick={() => setOpen(false)}><X /></button>
+      </div>
+      <div className="copilot-body">
+        <div className="copilot-transcript" ref={scrollRef} style={{ display: "flex", flexDirection: "column", gap: 10, overflowY: "auto", maxHeight: "calc(100vh - 320px)", minHeight: 120, paddingRight: 4 }}>
+          {messages.map((message, index) => {
+            const actionIcons = { Sparkles, Users, ClipboardCheck, CalendarDays, BarChart3, FileCheck, FolderOpen };
+            const isLatestAssistant = message.role === "assistant" && index === messages.length - 1 && !typingDone;
+            const showActions = message.role === "assistant" && message.actions && message.actions.length > 0 && !(isLatestAssistant);
+            return (
+              <div key={index} style={{ alignSelf: message.role === "user" ? "flex-end" : "flex-start", maxWidth: "88%", display: "flex", flexDirection: "column", gap: 6 }}>
+                <div className={`copilot-msg ${message.role}`} style={{
+                  padding: "10px 14px",
+                  borderRadius: message.role === "user" ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
+                  background: message.role === "user" ? "var(--primary)" : "var(--bg-subtle)",
+                  color: message.role === "user" ? "#ffffff" : "var(--foreground)",
+                  fontSize: "0.875rem",
+                  lineHeight: 1.5,
+                  whiteSpace: message.role === "assistant" ? "pre-line" : "pre-wrap",
+                  wordBreak: "break-word",
+                }}>
+                  {isLatestAssistant
+                    ? <TypewriterText text={message.text} onDone={() => setTypingDone(true)} />
+                    : renderMarkdown(message.text)}
+                </div>
+                {showActions && (
+                  <div className="copilot-actions" style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {message.actions.map((action) => {
+                      const Icon = actionIcons[action.icon] || Sparkles;
+                      return (
+                        <button key={action.pageId} type="button" className="copilot-action-btn" onClick={() => { setActivePage(action.pageId); setOpen(false); }} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: "0.75rem", fontWeight: 700, padding: "5px 11px", borderRadius: 16, border: "1px solid var(--primary)", background: "var(--primary)", color: "#ffffff", cursor: "pointer", whiteSpace: "nowrap" }}>
+                          <Icon width={13} height={13} /> {action.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {busy && <CopilotThinking question={currentQuestion} />}
+        </div>
+        {fallbackNoticed && !busy && (
+          <p className="copilot-fallback-note" style={{ fontSize: "0.72rem", color: "var(--muted)", margin: "4px 0", display: "flex", gap: 6, alignItems: "center" }}>
+            <AlertTriangle width={12} height={12} /> AI was unavailable — showing a workspace-based answer.
+          </p>
+        )}
+        {messages.length <= 1 && !busy && (
+          <div className="copilot-suggestions" style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+            {suggestions.map((suggestion) => (
+              <button key={suggestion} type="button" className="copilot-chip" onClick={() => { setPrompt(suggestion); }} style={{ fontSize: "0.75rem", padding: "5px 10px", borderRadius: 16, border: "1px solid var(--border)", background: "var(--bg-subtle)", color: "var(--foreground)", cursor: "pointer", fontWeight: 600 }}>
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="copilot-input-row" style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+          <textarea rows="2" value={prompt} onChange={(event) => setPrompt(event.target.value)} onKeyDown={handleKeyDown} placeholder="Ask about your classes, lessons, pupils…" disabled={busy} style={{ flex: 1, resize: "none", fontSize: "0.875rem", padding: "10px 12px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--card-bg)", color: "var(--foreground)" }} />
+          <button className="primary-btn" onClick={ask} disabled={busy || !prompt.trim()} style={{ flexShrink: 0, padding: "10px 16px", gap: 6 }}>{busy ? <RefreshCw /> : <Send />} <span>{busy ? "Sending…" : "Send"}</span></button>
+        </div>
+      </div>
+    </aside>
+  );
 }
 
 function PageHeader({ eyebrow, title, subtitle, children }) {
@@ -3839,7 +4849,7 @@ function FormGrid({ form, updateForm, classes = [], applyClassContext }) {
   );
 }
 
-function LessonPreview({ result }) {
+function LessonPreview({ result, onRegenerate }) {
   const sections = [
     ["Objectives", result.objectives],
     ["Success Criteria", result.successCriteria],
@@ -3893,12 +4903,12 @@ function LessonPreview({ result }) {
       </div>
       {sections.map(([title, items]) => (
         <div className="lesson-section" key={title}>
-          <div><h3>{title}</h3><button><RefreshCw /> Regenerate</button></div>
+          <div><h3>{title}</h3><button onClick={onRegenerate}><RefreshCw /> Regenerate</button></div>
           <ul>{(items || []).map((item, index) => <li key={`${title}-${index}`}>{formatLessonItem(item)}</li>)}</ul>
         </div>
       ))}
       <div className="lesson-section">
-        <div><h3>Lesson Procedure</h3><button><RefreshCw /> Regenerate</button></div>
+        <div><h3>Lesson Procedure</h3><button onClick={onRegenerate}><RefreshCw /> Regenerate</button></div>
         <div className="procedure-list">
           {(result.procedure || []).map((stage, index) => (
             <article key={`${stage.stage}-${index}`}>
@@ -3972,14 +4982,6 @@ function Badge({ tone = "indigo", children }) {
 function TemplateGrid() {
   const templates = ["Oral Response", "Reading Comprehension", "Short Writing", "Group Presentation"];
   return <section className="report-grid"><button className="create-card"><Plus /> Create new template<span>Or generate with AI</span></button>{templates.map((name) => <Card key={name} title={name} subtitle="Reusable English PBD template"><button className="secondary-btn">Use</button></Card>)}</section>;
-}
-
-function RubricsPanel() {
-  return <Card title="Rubrik PBD" subtitle="Kriteria boleh laras untuk TP1 hingga TP6"><BarSet data={[{ label: "Kefahaman", value: 80 }, { label: "Aplikasi", value: 68 }, { label: "Komunikasi", value: 74 }, { label: "Kolaborasi", value: 86 }]} /></Card>;
-}
-
-function PortfolioGrid({ students }) {
-  return <section className="material-grid wide">{students.map((student) => <button className="student-card" key={student.id}><div>{student.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}</div><strong>{student.name}</strong><span>5 Bestari · TP{student.tp}</span><Progress value={student.score} /></button>)}</section>;
 }
 
 function UASAPanel() {

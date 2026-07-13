@@ -79,6 +79,13 @@ router.post("/periods", requireDatabase, async (req, res, next) => {
       year: req.body.year || "Year 4",
       recurring: req.body.recurring !== false,
       notes: req.body.notes || "",
+      tone: req.body.tone || "",
+      skill: req.body.skill || "",
+      topic: req.body.topic || "",
+      status: req.body.status || "",
+      material: req.body.material || "",
+      assessment: req.body.assessment || "",
+      lessonPlan: req.body.lessonPlan || "",
     });
     res.status(201).json(period);
   } catch (error) {
@@ -104,6 +111,13 @@ router.put("/periods/:id", requireDatabase, async (req, res, next) => {
         year: req.body.year,
         recurring: req.body.recurring,
         notes: req.body.notes,
+        tone: req.body.tone,
+        skill: req.body.skill,
+        topic: req.body.topic,
+        status: req.body.status,
+        material: req.body.material,
+        assessment: req.body.assessment,
+        lessonPlan: req.body.lessonPlan,
       },
       { new: true, runValidators: true },
     );
