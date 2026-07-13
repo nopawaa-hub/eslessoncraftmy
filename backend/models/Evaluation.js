@@ -2,7 +2,9 @@ import mongoose from "mongoose";
 
 const annotationSchema = new mongoose.Schema(
   {
-    text: { type: String, required: true },
+    text: { type: String, default: "" },
+    start: { type: Number, default: -1 },
+    end: { type: Number, default: -1 },
     issue: { type: String, required: true },
     explanation: { type: String, required: true },
     suggestion: { type: String, required: true },

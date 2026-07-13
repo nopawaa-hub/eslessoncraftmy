@@ -50,6 +50,23 @@ export async function extractTextFromUpload(file) {
   throw new Error("Unsupported file type. Please upload .txt, .pdf, or .docx only.");
 }
 
+// Convert an uploaded DOCX to HTML so the frontend can render the ACTUAL
+// document formatting (tables, styles, paragraphs) instead of flat text.
+// Returns null for non-DOCX files so the frontend falls back to text.
+export async function extractHtmlFromUpload(file) {
+  if (!file) return null;
+
+  const originalName = file.originalname || "";
+  const isDocx =
+    (file.mimetype || "") === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    originalName.toLowerCase().endsWith(".docx");
+
+  if (!isDocx) return null;
+
+  const result = await mammoth.convertToHtml({ buffer: file.buffer });
+  return result.value || null;
+}
+
 export async function resolveLessonText(req) {
   const uploadedText = await extractTextFromUpload(req.file);
   const bodyText = req.body?.lessonPlan || req.body?.text || "";

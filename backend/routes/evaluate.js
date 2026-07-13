@@ -59,7 +59,10 @@ router.post("/", requireDatabase, upload.single("file"), async (req, res, next) 
       summary: `${result.annotations.length} annotation(s) found for KSSR improvement.`,
     });
 
-    res.status(201).json({ ...result, lessonPlanId, evaluationId: evaluation._id, summary: evaluation.summary });
+    // Return ONLY annotation metadata + extracted text. The frontend renders
+    // the original uploaded file bytes natively — the AI never returns document
+    // text or HTML, only start/end offsets for highlight overlays.
+    res.status(201).json({ ...result, lessonPlanId, evaluationId: evaluation._id, summary: evaluation.summary, lessonText });
   } catch (error) {
     next(error);
   }

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { DocxViewer, PdfViewer, TextViewer } from "./DocViewer.jsx";
 import {
   AlertTriangle,
   ArrowUp,
@@ -594,6 +595,55 @@ function StringifyRemarks(remarks) {
   return String(remarks);
 }
 
+// Overlay annotation highlight <mark> elements on raw DOCX HTML.
+// Takes the mammoth HTML string, finds annotation phrases in the text, and
+// wraps them in <mark> tags with the severity class + title attribute.
+// Returns the modified HTML string for dangerouslySetInnerHTML.
+function overlayAnnotationsOnHtml(html, annotations, activeIndex, setActiveIndex) {
+  if (!html) return html;
+  if (!annotations || !annotations.length) return html;
+
+  let result = html;
+  const used = new Set();
+
+  // Process each annotation — find its text in the HTML and wrap it.
+  // We operate on text between > and < (text nodes) to avoid breaking tags.
+  annotations.forEach((ann, idx) => {
+    if (!ann.text || typeof ann.text !== "string") return;
+    const phrase = ann.text;
+    const phraseLower = phrase.toLowerCase();
+    const severity = ann.severity || "medium";
+    const isActive = idx === activeIndex;
+    const title = ann.issue || "Pedagogy Note";
+
+    // Split HTML into text-node segments (between > and <) and tag segments.
+    // Only replace in text nodes, never inside HTML tags.
+    const parts = result.split(/(<[^>]+>)/);
+    for (let i = 0; i < parts.length; i += 1) {
+      // Odd indices are tags, even are text nodes.
+      if (i % 2 === 1) continue;
+      const textNode = parts[i];
+      if (!textNode) continue;
+      const lowerNode = textNode.toLowerCase();
+      const pos = lowerNode.indexOf(phraseLower);
+      if (pos === -1) continue;
+      if (used.has(phraseLower + pos)) continue;
+
+      // Wrap the phrase in a <mark> with a data-attribute for click handling.
+      const before = textNode.slice(0, pos);
+      const match = textNode.slice(pos, pos + phrase.length);
+      const after = textNode.slice(pos + phrase.length);
+      const mark = `<mark class="highlight ${severity} ${isActive ? "active" : ""}" data-ann-idx="${idx}" title="${title.replace(/"/g, "&quot;")}">${match}</mark>`;
+      parts[i] = before + mark + after;
+      used.add(phraseLower + pos);
+      break; // Only replace the first occurrence of each annotation.
+    }
+    result = parts.join("");
+  });
+
+  return result;
+}
+
 function App() {
   const [activePage, setActivePage] = useState("dashboard");
   const [collapsed, setCollapsed] = useState(false);
@@ -611,6 +661,58 @@ function App() {
   const [selectedClassId, setSelectedClassId] = useState("");
   const isDemoUser = currentUser?.email === "demo@test.com" || currentUser?.role === "demo" || String(currentUser?._id) === "000000000000000000000001";
   const liveMode = typeof window !== "undefined" && (window.location.pathname.startsWith("/testing") || window.location.search.includes("live=1") || (currentUser && !isDemoUser));
+
+  // Auto-minimize the sidebar into a circular logo after 2s of no interaction.
+  // Expands back to full width when the mouse hovers over it.
+  const [sidebarIdle, setSidebarIdle] = useState(false);
+  const idleTimerRef = useRef(null);
+
+  useEffect(() => {
+    if (!currentUser || window.innerWidth <= 760) return;
+
+    const IDLE_DELAY = 2000;
+
+    const scheduleMinimize = () => {
+      clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = setTimeout(() => {
+        setSidebarIdle(true);
+      }, IDLE_DELAY);
+    };
+
+    const onActivity = () => {
+      setSidebarIdle(false);
+      scheduleMinimize();
+    };
+
+    // On sidebar hover, cancel idle + expand.
+    const onSidebarMouseEnter = () => {
+      clearTimeout(idleTimerRef.current);
+      setSidebarIdle(false);
+    };
+
+    // Listen on document level (event delegation) so it survives re-renders.
+    const handleMouseEnter = (e) => {
+      const sidebar = e.target.closest?.(".sidebar");
+      if (sidebar) onSidebarMouseEnter();
+    };
+
+    window.addEventListener("mousemove", onActivity);
+    window.addEventListener("keydown", onActivity);
+    window.addEventListener("scroll", onActivity, true);
+    window.addEventListener("touchstart", onActivity, true);
+    document.addEventListener("mouseover", handleMouseEnter);
+
+    scheduleMinimize();
+
+    return () => {
+      clearTimeout(idleTimerRef.current);
+      window.removeEventListener("mousemove", onActivity);
+      window.removeEventListener("keydown", onActivity);
+      window.removeEventListener("scroll", onActivity, true);
+      window.removeEventListener("touchstart", onActivity, true);
+      document.removeEventListener("mouseover", handleMouseEnter);
+    };
+  }, [currentUser]);
 
   const refreshLessons = async () => {
     try {
@@ -754,7 +856,7 @@ function App() {
 
   return (
     <div className="app-root" data-page={activePage}>
-      <Sidebar activePage={activePage} setActivePage={setActivePage} collapsed={collapsed} setCollapsed={setCollapsed} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
+      <Sidebar activePage={activePage} setActivePage={setActivePage} collapsed={collapsed} setCollapsed={setCollapsed} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} sidebarIdle={sidebarIdle} />
       <div className="main-column">
         <TopBar setMobileOpen={setMobileOpen} setActivePage={setActivePage} backendStatus={backendStatus} theme={theme} setTheme={setTheme} currentUser={currentUser} onLogout={handleLogout} />
         <main className="page-wrap"><ErrorBoundary key={activePage} onGoHome={() => setActivePage("dashboard")}>{renderPage(context)}</ErrorBoundary></main>
@@ -898,7 +1000,7 @@ function LoginScreen({ backendStatus, onLogin, theme, setTheme, onDemoLogin }) {
     <div className="auth-shell">
       <section className="auth-card">
         <div className="brand auth-brand">
-          <div className="brand-mark"><GraduationCap /></div>
+          <div className="brand-mark"><img src="/logo.svg" alt="ESLessonCraft MY" style={{ width: "100%", height: "100%", objectFit: "contain" }} /></div>
           <div><p className="brand-title">ESLessonCraft MY</p><p className="brand-subtitle">Teacher OS</p></div>
         </div>
         <div className="auth-copy">
@@ -965,7 +1067,7 @@ function Sidebar({ activePage, setActivePage, collapsed, setCollapsed, mobileOpe
       {mobileOpen && <button className="mobile-backdrop" onClick={() => setMobileOpen(false)} aria-label="Close menu" />}
       <aside className={`sidebar ${collapsed ? "is-collapsed" : ""} ${mobileOpen ? "is-open" : ""}`}>
         <div className="brand">
-          <div className="brand-mark"><GraduationCap /></div>
+          <div className="brand-mark"><img src="/logo.svg" alt="ESLessonCraft MY" style={{ width: "100%", height: "100%", objectFit: "contain" }} /></div>
           {!collapsed && <div><p className="brand-title">ESLessonCraft MY</p><p className="brand-subtitle">Teacher OS</p></div>}
         </div>
         <nav className="nav-list">
@@ -3878,9 +3980,10 @@ function HoverComment({ ann, index, active, onClick, children }) {
             maxWidth: "calc(100vw - 80px)",
             padding: "14px 16px",
             borderRadius: 12,
-            background: "var(--card)",
-            border: "1px solid var(--border)",
-            boxShadow: "0 8px 28px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08)",
+            background: "color-mix(in srgb, var(--card) 82%, transparent)",
+            border: "1px solid color-mix(in srgb, var(--border) 70%, transparent)",
+            boxShadow: "0 8px 28px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)",
+            backdropFilter: "blur(14px)",
             fontSize: "0.82rem",
             lineHeight: 1.5,
             color: "var(--foreground)",
@@ -3929,22 +4032,41 @@ function HoverComment({ ann, index, active, onClick, children }) {
 // View" look like a real formatted RPH rather than a flat text blob.
 function formatDocumentSegment(segment, keyPrefix) {
   if (typeof segment === "string") {
-    // Split the segment into lines and format each one.
+    // Section header keywords — matched case-insensitively with or without a colon.
+    // This handles both "Subject: English" and "SUBJECT English" (DOCX extraction format).
+    const headerKeywords = "Subject|Class|Time|Topic|Skill Focus|Skill|Objectives|Procedure|Assessment|Materials|Success Criteria|Differentiation|Reflection|Theme|Date|Year|Content Standard|Learning Standard|Learning Outcome|Prior Knowledge|Pre Lesson|Stage I|Stage II|Stage III|Post Lesson|Closure|Set Induction|Presentation|Practice|Production";
+    const headerRegex = new RegExp(`^(${headerKeywords})\\s*:?[\\s]+(.+)`, "i");
+    // Also match a header line that is ONLY the keyword (e.g. "OBJECTIVES" alone on a line).
+    const headerOnlyRegex = new RegExp(`^(${headerKeywords})\\s*:?$`, "i");
+
     const lines = segment.split("\n");
     return lines.map((line, lineIndex) => {
       if (!line.trim()) return <br key={`${keyPrefix}-br-${lineIndex}`} />;
-      // Check if the line is a section header (e.g. "Objectives:", "Procedure:")
-      const headerMatch = line.match(/^(Subject|Class|Time|Topic|Skill Focus|Objectives|Procedure|Assessment|Materials|Success Criteria|Differentiation|Reflection)\s*:/i);
-      if (headerMatch) {
-        const label = headerMatch[0].replace(":", "");
-        const rest = line.slice(headerMatch[0].length);
+
+      // Check if the line is a section header with a value (e.g. "Subject: English" or "SUBJECT English")
+      const headerMatch = line.match(headerRegex);
+      // Skip false positives like "1. Set Induction..." which start with a number
+      if (headerMatch && !line.match(/^\d+\./)) {
+        const label = headerMatch[1];
+        const rest = headerMatch[2];
         return (
           <div key={`${keyPrefix}-h-${lineIndex}`} className="doc-section-header" style={{ marginTop: lineIndex > 0 ? 14 : 0, marginBottom: 4 }}>
             <strong style={{ fontSize: "0.78rem", fontWeight: 800, color: "var(--foreground)", textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</strong>
-            {rest.trim() && <span style={{ fontWeight: 400, marginLeft: 8 }}>{rest.trim()}</span>}
+            <span style={{ fontWeight: 400, marginLeft: 8 }}>{rest.trim()}</span>
           </div>
         );
       }
+
+      // Check if the line is a section header only (e.g. "OBJECTIVES" on its own line)
+      if (headerOnlyRegex.test(line.trim()) && !line.match(/^\d+\./)) {
+        const label = line.trim().replace(/:$/, "");
+        return (
+          <div key={`${keyPrefix}-ho-${lineIndex}`} className="doc-section-header" style={{ marginTop: lineIndex > 0 ? 14 : 0, marginBottom: 4 }}>
+            <strong style={{ fontSize: "0.78rem", fontWeight: 800, color: "var(--foreground)", textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</strong>
+          </div>
+        );
+      }
+
       // Check if the line is a numbered step (e.g. "1. Set Induction (5 mins): ...")
       const stepMatch = line.match(/^(\d+)\.\s+(.+)/);
       if (stepMatch) {
@@ -4087,6 +4209,96 @@ Procedure:
 Assessment:
 Teacher checks the completed worksheet for accuracy.`;
 
+// =========================================================================
+// SVG LINE CONNECTOR — draws a glowing line between hovered/active card & highlight
+// =========================================================================
+function SvgLineConnector({ targetIdx, containerRef }) {
+  const [coords, setCoords] = useState(null);
+
+  useEffect(() => {
+    if (targetIdx === null || targetIdx === undefined || !containerRef?.current) {
+      setCoords(null);
+      return;
+    }
+
+    const updateCoords = () => {
+      if (!containerRef.current) return;
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const cardEl = document.getElementById(`comment-card-${targetIdx}`);
+      const markEl = document.querySelector(`mark[data-ann-idx="${targetIdx}"], .pdf-highlight[data-ann-idx="${targetIdx}"]`);
+
+      if (!cardEl || !markEl) {
+        setCoords(null);
+        return;
+      }
+
+      const cardRect = cardEl.getBoundingClientRect();
+      const markRect = markEl.getBoundingClientRect();
+
+      const x1 = cardRect.right - containerRect.left;
+      const y1 = cardRect.top + cardRect.height / 2 - containerRect.top;
+      const x2 = markRect.left - containerRect.left;
+      const y2 = markRect.top + markRect.height / 2 - containerRect.top;
+
+      setCoords({ x1, y1, x2, y2 });
+    };
+
+    updateCoords();
+    const interval = setInterval(updateCoords, 60);
+    window.addEventListener("resize", updateCoords);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("resize", updateCoords);
+    };
+  }, [targetIdx, containerRef]);
+
+  if (!coords) return null;
+
+  const { x1, y1, x2, y2 } = coords;
+  const dx = Math.abs(x2 - x1) * 0.42;
+  const pathData = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+
+  return (
+    <svg
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        pointerEvents: "none",
+        zIndex: 150,
+        overflow: "visible",
+      }}
+    >
+      <defs>
+        <filter id="connector-glow-app" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="3.5" result="blur" />
+          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+      </defs>
+      <path
+        d={pathData}
+        stroke="var(--primary)"
+        strokeWidth="4"
+        strokeOpacity="0.3"
+        fill="none"
+        filter="url(#connector-glow-app)"
+      />
+      <path
+        d={pathData}
+        stroke="var(--primary)"
+        strokeWidth="2.4"
+        strokeDasharray="6,4"
+        fill="none"
+        style={{ animation: "dashFlow 1s linear infinite" }}
+      />
+      <circle cx={x1} cy={y1} r="4.5" fill="var(--primary)" />
+      <circle cx={x2} cy={y2} r="4.5" fill="var(--primary)" />
+    </svg>
+  );
+}
+
 function EvaluatePage({ lessons = [], liveMode = false }) {
   const [mode, setMode] = useState("text");
   const [textInput, setTextInput] = useState(liveMode && !lessons.length ? "" : SAMPLE_EVAL_LESSON);
@@ -4098,10 +4310,61 @@ function EvaluatePage({ lessons = [], liveMode = false }) {
   const [evaluatedText, setEvaluatedText] = useState("");
   const [annotations, setAnnotations] = useState([]);
   const [overallScore, setOverallScore] = useState(78);
+  const [rubric, setRubric] = useState(null);
   const [summary, setSummary] = useState("");
   const [activeIndex, setActiveIndex] = useState(null);
   const [activeTab, setActiveTab] = useState("comments");
   const [lessonResult, setLessonResult] = useState(null);
+  const [fileDataUrl, setFileDataUrl] = useState(null);
+  const [fileType, setFileType] = useState(null);
+  const [docView, setDocView] = useState("document");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [zoomLevel, setZoomLevel] = useState(100);
+  const [hoveredIndex, setHoveredIndex] = useState(null);
+  const commentScrollRef = useRef(null);
+  const pagesAreaRef = useRef(null);
+
+  // Scroll the highlight in the document right into view and pulse/blip it when card is clicked.
+  const scrollToHighlight = (idx) => {
+    setTimeout(() => {
+      const mark = document.querySelector(`mark[data-ann-idx="${idx}"], .pdf-highlight[data-ann-idx="${idx}"]`);
+      if (mark) {
+        mark.scrollIntoView({ behavior: "smooth", block: "center" });
+        mark.classList.add("blipping");
+        setTimeout(() => mark.classList.remove("blipping"), 1200);
+      }
+      const card = document.getElementById(`comment-card-${idx}`);
+      if (card) {
+        card.classList.add("blipping");
+        setTimeout(() => card.classList.remove("blipping"), 1200);
+      }
+    }, 50);
+  };
+
+  // Scroll the comment card into view and pulse/blip it when a highlight is clicked.
+  const scrollToComment = (idx) => {
+    setTimeout(() => {
+      const card = document.getElementById(`comment-card-${idx}`);
+      if (card && card.scrollIntoView) {
+        card.scrollIntoView({ behavior: "smooth", block: "center" });
+        card.classList.add("blipping");
+        setTimeout(() => card.classList.remove("blipping"), 1200);
+      }
+      const mark = document.querySelector(`mark[data-ann-idx="${idx}"], .pdf-highlight[data-ann-idx="${idx}"]`);
+      if (mark) {
+        mark.classList.add("blipping");
+        setTimeout(() => mark.classList.remove("blipping"), 1200);
+      }
+    }, 50);
+  };
+
+  // When searching, filter annotations to those matching the query.
+  const searchMatchCount = searchQuery
+    ? annotations.filter((a) => (a.text || "").toLowerCase().includes(searchQuery.toLowerCase()) || (a.issue || "").toLowerCase().includes(searchQuery.toLowerCase())).length
+    : 0;
+  const effectiveAnnotations = searchQuery
+    ? annotations.filter((a) => (a.text || "").toLowerCase().includes(searchQuery.toLowerCase()) || (a.issue || "").toLowerCase().includes(searchQuery.toLowerCase()))
+    : annotations;
 
   async function handleEvaluate(e) {
     if (e && e.preventDefault) e.preventDefault();
@@ -4109,6 +4372,22 @@ function EvaluatePage({ lessons = [], liveMode = false }) {
     setLoading(true);
     setActiveIndex(null);
     setLessonResult(null);
+    setFileDataUrl(null);
+    setFileType(null);
+    setSearchQuery("");
+    setZoomLevel(100);
+    setDocView("document");
+
+    // If a file was uploaded, read it as a data URL so we can render it
+    // NATIVELY in the browser (PDF via <embed>, images via <img>).
+    if (mode === "file" && fileInput) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setFileDataUrl(e.target.result);
+        setFileType(fileInput.type);
+      };
+      reader.readAsDataURL(fileInput);
+    }
 
     try {
       const formData = new FormData();
@@ -4150,13 +4429,14 @@ function EvaluatePage({ lessons = [], liveMode = false }) {
       const returnedAnnotations = Array.isArray(data.annotations) ? data.annotations : [];
       setAnnotations(returnedAnnotations);
       setSummary(data.summary || `${returnedAnnotations.length} annotation(s) found for KSSR improvement.`);
-      setOverallScore(data.overallScore || Math.max(50, 95 - returnedAnnotations.length * 7));
+      setOverallScore(data.overallScore || data.rubric?.overallScore || Math.max(50, 95 - returnedAnnotations.length * 7));
+      setRubric(data.rubric || null);
 
-      if (mode === "file" && fileInput && !textToUse) {
-        setEvaluatedText(`[Uploaded File: ${fileInput.name}]\n\n${data.lessonText || textInput}`);
-      } else {
-        setEvaluatedText(textToUse || textInput);
-      }
+      // Use the extracted text returned by the backend (especially for file uploads
+      // where the DOCX/PDF text is extracted server-side). Fall back to the
+      // locally-available text for text/saved modes.
+      const displayText = data.lessonText || textToUse || textInput;
+      setEvaluatedText(displayText);
 
       // If we have a structured lesson result, use the KPM table document viewer.
       if (structuredResult && (structuredResult.procedure || structuredResult.objectives)) {
@@ -4187,7 +4467,7 @@ function EvaluatePage({ lessons = [], liveMode = false }) {
         </div>
         <div className="actions-row">
           {evaluatedText && (
-            <button className="secondary-btn" onClick={() => { setEvaluatedText(""); setAnnotations([]); setLessonResult(null); }}>
+            <button className="secondary-btn" onClick={() => { setEvaluatedText(""); setAnnotations([]); setLessonResult(null); setFileDataUrl(null); setFileType(null); setSearchQuery(""); setActiveIndex(null); setRubric(null); }}>
               <RefreshCw /> Edit & Re-Evaluate
             </button>
           )}
@@ -4283,143 +4563,110 @@ function EvaluatePage({ lessons = [], liveMode = false }) {
           </form>
         </Card>
       ) : (
-        <div className="docs-layout">
-          <div className="document-panel">
-            <div className="card-title-row" style={{ marginBottom: 16 }}>
-              <div>
-                <h2 style={{ fontSize: "1.1rem", margin: 0 }}>Document View</h2>
-                <small className="muted">{currentDisplayLength} characters · Hover any highlighted phrase to view its comment</small>
+        <div className="DV-docViewer DV-viewDocument">
+          <div className="DV-pagesArea" ref={pagesAreaRef} style={{ position: "relative" }}>
+            <SvgLineConnector targetIdx={hoveredIndex !== null ? hoveredIndex : activeIndex} containerRef={pagesAreaRef} />
+            {/* === LEFT: COMMENT CARDS === */}
+            <div className="DV-sidebar">
+              <div className="DV-sidebar-header">
+                <FileCheck style={{ width: 16, height: 16 }} />
+                <strong>Comments &amp; Feedback</strong>
+                <span className="DV-header-count">{annotations.length}</span>
               </div>
-            </div>
-            <div className="document-page">
-              {lessonResult
-                ? <KpmLessonDocument result={lessonResult} annotations={annotations} activeIndex={activeIndex} setActiveIndex={setActiveIndex} />
-                : renderAnnotatedContent(evaluatedText, annotations, activeIndex, setActiveIndex)}
-            </div>
-          </div>
-
-          <div className="comments-panel">
-            <div className="feedback-tabs">
-              <button
-                type="button"
-                className={activeTab === "comments" ? "active" : ""}
-                onClick={() => setActiveTab("comments")}
-              >
-                Comments ({annotations.length})
-              </button>
-              <button
-                type="button"
-                className={activeTab === "rubrics" ? "active" : ""}
-                onClick={() => setActiveTab("rubrics")}
-              >
-                Rubric Score
-              </button>
-            </div>
-
-            {activeTab === "comments" && (
-              <div>
+              <div className="DV-navigation" ref={commentScrollRef}>
                 {summary && (
-                  <div style={{ marginBottom: 14, padding: 12, borderRadius: 12, background: "var(--soft)", border: "1px solid var(--border)", fontSize: "0.88rem" }}>
-                    <strong>AI Review Summary:</strong>
-                    <p className="muted" style={{ margin: "4px 0 0" }}>{summary}</p>
+                  <div className="DV-description">
+                    <strong>AI Review Summary</strong>
+                    <p>{summary}</p>
                   </div>
                 )}
-
                 {annotations.length === 0 ? (
-                  <div style={{ textAlign: "center", padding: 32, color: "var(--muted)" }}>
-                    <CheckCircle2 style={{ width: 36, height: 36, margin: "0 auto 8px", color: "var(--emerald)" }} />
-                    <strong>No pedagogy issues found!</strong>
-                    <p style={{ fontSize: "0.85rem", marginTop: 4 }}>This lesson plan demonstrates strong KSSR alignment and active student learning.</p>
+                  <div className="DV-noAnnotations">
+                    <CheckCircle2 style={{ width: 28, height: 28, color: "var(--emerald)", margin: "0 auto 6px" }} />
+                    <strong>No issues found!</strong>
+                    <p>Strong KSSR alignment detected.</p>
                   </div>
                 ) : (
                   annotations.map((ann, idx) => (
                     <div
                       key={idx}
-                      className={`comment-card ${ann.severity || "medium"} ${idx === activeIndex ? "active" : ""}`}
-                      onClick={() => setActiveIndex(idx === activeIndex ? null : idx)}
+                      id={`comment-card-${idx}`}
+                      className={`comment-card ${ann.severity || "medium"} ${idx === activeIndex ? "active" : ""} ${idx === hoveredIndex ? "hovered" : ""}`}
+                      onClick={() => {
+                        const next = idx === activeIndex ? null : idx;
+                        setActiveIndex(next);
+                        if (next !== null) scrollToHighlight(next);
+                      }}
+                      onMouseEnter={() => setHoveredIndex(idx)}
+                      onMouseLeave={() => setHoveredIndex(null)}
                     >
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-                        <strong style={{ color: "var(--foreground)" }}>{ann.issue || ann.category || "Pedagogy Note"}</strong>
-                        <span className={`badge ${ann.severity === "high" ? "rose" : "amber"}`} style={{ textTransform: "uppercase", fontSize: "0.68rem" }}>
-                          {ann.severity || "medium"}
-                        </span>
+                        <strong style={{ color: "var(--foreground)", fontSize: "0.86rem" }}>{ann.issue || ann.category || "Pedagogy Note"}</strong>
+                        <span className={`badge ${ann.severity === "high" ? "rose" : "amber"}`} style={{ textTransform: "uppercase", fontSize: "0.64rem", flexShrink: 0 }}>{ann.severity || "medium"}</span>
                       </div>
-                      
-                      {ann.text && (
-                        <div style={{ padding: "4px 8px", background: "color-mix(in srgb, var(--accent) 60%, transparent)", borderRadius: 6, fontSize: "0.82rem", fontFamily: "monospace", color: "var(--primary)" }}>
-                          "{ann.text}"
-                        </div>
-                      )}
-
-                      <span>{ann.explanation}</span>
-
+                      {ann.text && <div style={{ padding: "5px 8px", background: "color-mix(in srgb, var(--primary) 8%, transparent)", borderRadius: 6, fontSize: "0.8rem", fontStyle: "italic", color: "var(--muted)", margin: "6px 0" }}>"{ann.text}"</div>}
+                      {ann.explanation && <p style={{ fontSize: "0.82rem", color: "var(--muted)", margin: "4px 0", lineHeight: 1.5 }}>{ann.explanation}</p>}
                       {ann.suggestion && (
-                        <div style={{ marginTop: 6, padding: 10, background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8 }}>
-                          <strong style={{ fontSize: "0.82rem", color: "var(--primary)", display: "block", marginBottom: 2 }}>
-                            Suggested Remedy:
-                          </strong>
-                          <span style={{ fontSize: "0.84rem", color: "var(--foreground)" }}>{ann.suggestion}</span>
+                        <div style={{ marginTop: 6, padding: "8px 10px", background: "color-mix(in srgb, var(--emerald) 8%, transparent)", borderRadius: 8, border: "1px solid color-mix(in srgb, var(--emerald) 25%, transparent)" }}>
+                          <strong style={{ fontSize: "0.74rem", color: "var(--emerald)", display: "block", marginBottom: 2 }}>Suggested Remedy</strong>
+                          <span style={{ fontSize: "0.8rem", color: "var(--foreground)" }}>{ann.suggestion}</span>
                         </div>
                       )}
                     </div>
                   ))
                 )}
               </div>
-            )}
-
-            {activeTab === "rubrics" && (
-              <div>
-                <div className="rubric-score-card">
-                  <small>AI Pedagogy Score</small>
-                  <strong>{overallScore}%</strong>
-                  <span style={{ fontSize: "0.82rem", opacity: 0.8 }}>
-                    {overallScore >= 80 ? "High KSSR & PBD Readiness" : "Needs Scaffolding & Differentiation"}
-                  </span>
+              <div className="DV-supplemental">
+                <div className="DV-rubricScore">
+                  <small>AI Score</small>
+                  <strong>{rubric?.overallScore ?? overallScore}{rubric ? "" : "%"}</strong>
+                  <span>{(rubric?.overallScore ?? overallScore) >= 85 ? "Excellent" : (rubric?.overallScore ?? overallScore) >= 70 ? "Good" : (rubric?.overallScore ?? overallScore) >= 50 ? "Could Improve" : "Needs Work"}</span>
                 </div>
-
-                <div className="rubric-list">
-                  <div className="rubric-item">
-                    <div>
-                      <span>Student-Centered Active Learning</span>
-                      <span>{Math.min(100, Math.max(40, overallScore - 4))}%</span>
-                    </div>
-                    <div className="rubric-bar">
-                      <span style={{ width: `${Math.min(100, Math.max(40, overallScore - 4))}%` }} />
-                    </div>
-                  </div>
-
-                  <div className="rubric-item">
-                    <div>
-                      <span>HOTS & Thinking Skills (KBAT)</span>
-                      <span>{Math.min(100, Math.max(35, overallScore - 8))}%</span>
-                    </div>
-                    <div className="rubric-bar">
-                      <span style={{ width: `${Math.min(100, Math.max(35, overallScore - 8))}%` }} />
-                    </div>
-                  </div>
-
-                  <div className="rubric-item">
-                    <div>
-                      <span>PBD Formative Assessment Alignment</span>
-                      <span>{Math.min(100, Math.max(45, overallScore + 2))}%</span>
-                    </div>
-                    <div className="rubric-bar">
-                      <span style={{ width: `${Math.min(100, Math.max(45, overallScore + 2))}%` }} />
-                    </div>
-                  </div>
-
-                  <div className="rubric-item">
-                    <div>
-                      <span>Differentiation & Support (TP1-TP6)</span>
-                      <span>{Math.min(100, Math.max(30, overallScore - 12))}%</span>
-                    </div>
-                    <div className="rubric-bar">
-                      <span style={{ width: `${Math.min(100, Math.max(30, overallScore - 12))}%` }} />
-                    </div>
-                  </div>
-                </div>
+                <button type="button" className="DV-supplementalLink" onClick={() => setActiveTab(activeTab === "rubrics" ? "comments" : "rubrics")}>
+                  {activeTab === "rubrics" ? "← Back to document" : "View rubric →"}
+                </button>
               </div>
-            )}
+            </div>
+
+            {/* === RIGHT: DOCUMENT === */}
+            <div className="DV-pageCollection">
+              {activeTab === "rubrics" ? (
+                <div className="DV-rubricPanel">
+                  <h2>Evaluation Rubric</h2>
+                  <div className="rubric-score-card">
+                    <small>Overall Score</small>
+                    <strong>{rubric?.overallScore ?? overallScore}{rubric ? "/100" : "%"}</strong>
+                    <span style={{ fontSize: "0.82rem", opacity: 0.8 }}>{(() => { const s = rubric?.overallScore ?? overallScore; if (s >= 85) return "Excellent"; if (s >= 70) return "Good"; if (s >= 50) return "Could Improve"; return "Needs Work"; })()}</span>
+                  </div>
+                  <div className="rubric-list">
+                    {rubric && Object.entries(rubric).filter(([k]) => !["overallScore", "overallGrade"].includes(k)).map(([key, val]) => {
+                      const pct = Math.round((val.score / val.maxScore) * 100);
+                      const statusColors = { excellent: "var(--emerald)", good: "var(--primary)", could_improve: "var(--amber)", needs_work: "var(--rose)" };
+                      const labels = { curriculumAlignment: "Curriculum Alignment", learningObjectives: "Learning Objectives (SMART)", lessonFlow: "Lesson Flow", activities: "Activity Quality", pak21: "PAK-21 (21st Century)", kbatHots: "KBAT / HOTS", assessment: "Assessment Alignment", differentiation: "Differentiation", teachingAids: "Teaching Aids (BBM)", language: "Language Quality", reflection: "Reflection Quality", classroomManagement: "Classroom Management", inclusivity: "Inclusivity", timing: "Timing" };
+                      return (
+                        <div className="rubric-item" key={key}>
+                          <div><span>{labels[key] || key}</span><span style={{ color: statusColors[val.status] || "var(--muted)" }}>{val.score}/{val.maxScore}</span></div>
+                          <div className="rubric-bar"><span style={{ width: `${pct}%`, background: statusColors[val.status] || "var(--primary)" }} /></div>
+                          {val.note && <small style={{ fontSize: "0.72rem", color: "var(--muted)", display: "block", marginTop: 2 }}>{val.note}</small>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className="document-page" style={{ padding: fileDataUrl ? 0 : undefined }}>
+                  {docView === "text"
+                    ? <TextViewer text={evaluatedText} annotations={effectiveAnnotations} activeIndex={activeIndex} setActiveIndex={(idx) => { setActiveIndex(idx); scrollToComment(idx); }} hoveredIndex={hoveredIndex} setHoveredIndex={setHoveredIndex} />
+                    : fileDataUrl && fileType === "application/pdf"
+                      ? <PdfViewer dataUrl={fileDataUrl} annotations={effectiveAnnotations} activeIndex={activeIndex} setActiveIndex={(idx) => { setActiveIndex(idx); scrollToComment(idx); }} hoveredIndex={hoveredIndex} setHoveredIndex={setHoveredIndex} />
+                      : fileDataUrl && fileType && fileType.startsWith("image/")
+                        ? <img src={fileDataUrl} alt="Document" style={{ width: "100%", height: "auto" }} />
+                        : fileDataUrl
+                          ? <DocxViewer dataUrl={fileDataUrl} annotations={effectiveAnnotations} activeIndex={activeIndex} setActiveIndex={(idx) => { setActiveIndex(idx); scrollToComment(idx); }} hoveredIndex={hoveredIndex} setHoveredIndex={setHoveredIndex} zoom={zoomLevel / 100} />
+                          : <TextViewer text={evaluatedText} annotations={effectiveAnnotations} activeIndex={activeIndex} setActiveIndex={(idx) => { setActiveIndex(idx); scrollToComment(idx); }} hoveredIndex={hoveredIndex} setHoveredIndex={setHoveredIndex} />}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

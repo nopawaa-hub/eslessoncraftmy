@@ -117,7 +117,6 @@ svg {
   border-bottom: 1px solid var(--border);
 }
 
-.brand-mark,
 .copilot-fab,
 .primary-btn,
 .create-btn,
@@ -132,8 +131,9 @@ svg {
   height: 38px;
   flex-shrink: 0;
   place-items: center;
-  border-radius: 12px;
-  box-shadow: 0 14px 34px -18px var(--primary);
+  border-radius: 10px;
+  overflow: hidden;
+  background: transparent;
 }
 
 .brand-title {
@@ -4533,7 +4533,6 @@ body {
   border: 0 !important;
 }
 
-.brand-mark,
 .profile div,
 .tone-icon,
 .copilot-fab {
@@ -4542,6 +4541,13 @@ body {
   background: linear-gradient(135deg, #a78bfa, #7c3aed) !important;
   color: white !important;
   box-shadow: var(--clay-button) !important;
+}
+
+.brand-mark {
+  border: 0 !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 .brand-title,
@@ -6194,6 +6200,519 @@ html.dark body #root .analytics-tabs {
   object-fit: cover;
 }
 
+/* ===========================================================================
+   DOCUMENTCLOUD-STYLE DOCUMENT VIEWER
+   Layout: toolbar (top) + sidebar (left, 280px) + document page (center)
+   =========================================================================== */
+.DV-docViewer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin: 0 auto 40px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--card-bg);
+  box-shadow: var(--shadow-card);
+}
+
+.DV-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.DV-branding {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 800;
+  font-size: 0.8rem;
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+.DV-title {
+  flex: 1;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.DV-viewTabs {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.DV-viewTabs button {
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 140ms ease;
+}
+
+.DV-viewTabs button.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.DV-search {
+  flex-shrink: 0;
+  position: relative;
+}
+
+.DV-search input {
+  width: 180px;
+  padding: 5px 28px 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.78rem;
+  background: var(--bg-subtle);
+  color: var(--foreground);
+}
+
+.DV-searchCancel {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  display: flex;
+  padding: 0;
+}
+
+.DV-zoom {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.DV-zoom button {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.DV-searchBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  background: color-mix(in srgb, var(--primary) 6%, transparent);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.DV-searchBar button {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.DV-pagesArea {
+  display: flex;
+  flex: 1;
+  min-height: 600px;
+  overflow: hidden;
+  gap: 16px;
+  padding: 16px;
+}
+
+.DV-sidebar {
+  width: 340px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card);
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+
+.DV-pageCollection {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  padding: 0;
+}
+
+html.dark .DV-pageCollection {
+  background: var(--card);
+}
+
+/* Comment cards — each annotation is its own card */
+.DV-sidebar .comment-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: box-shadow 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+
+.DV-sidebar .comment-card:hover,
+.DV-sidebar .comment-card.hovered {
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12), 0 0 0 1.5px var(--primary);
+  border-color: var(--primary);
+  transform: translateY(-2px) scale(1.01);
+  background: color-mix(in srgb, var(--primary) 5%, var(--card));
+}
+
+.DV-sidebar .comment-card.active {
+  border-color: var(--primary) !important;
+  border-left-width: 5px !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.14), 0 0 0 2.5px color-mix(in srgb, var(--primary) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--primary) 10%, var(--card)) !important;
+  transform: translateY(-2px) scale(1.02);
+}
+
+@keyframes blipCard {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.85); background: color-mix(in srgb, var(--primary) 30%, var(--card)); }
+  35% { transform: scale(1.04); box-shadow: 0 0 0 16px rgba(99, 102, 241, 0); }
+  70% { transform: scale(0.99); }
+  100% { transform: scale(1); }
+}
+
+@keyframes blipHighlight {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.9); background: color-mix(in srgb, var(--primary) 65%, transparent); }
+  35% { transform: scale(1.08); box-shadow: 0 0 0 18px rgba(99, 102, 241, 0); }
+  100% { transform: scale(1); }
+}
+
+@keyframes dashFlow {
+  to { stroke-dashoffset: -20; }
+}
+
+.comment-card.blipping {
+  animation: blipCard 650ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+}
+
+.highlight.blipping, .pdf-highlight.blipping {
+  animation: blipHighlight 650ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+}
+
+.DV-sidebar .comment-card.high {
+  border-left: 3.5px solid var(--rose);
+}
+
+.DV-sidebar .comment-card.medium {
+  border-left: 3.5px solid var(--amber);
+}
+
+.DV-sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 2px solid var(--border);
+  background: var(--card);
+  flex-shrink: 0;
+}
+
+.DV-sidebar-header strong {
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: var(--foreground);
+  flex: 1;
+}
+
+.DV-sidebar-header svg {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.DV-header-count {
+  font-size: 0.72rem;
+  font-weight: 800;
+  background: var(--primary);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.DV-navControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-subtle);
+  font-size: 0.8rem;
+}
+
+.DV-navControls button {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.DV-navControls button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.DV-pageNumberContainer {
+  flex: 1;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.DV-currentPage {
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.DV-navigation {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 12px;
+}
+
+.DV-description {
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  background: color-mix(in srgb, var(--primary) 4%, transparent);
+  border-bottom: 1px solid var(--border);
+}
+
+.DV-description strong {
+  font-size: 0.76rem;
+  color: var(--primary);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.DV-description p {
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.DV-contentsHeader {
+  padding: 8px 14px 6px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.DV-chaptersContainer {
+  padding: 0 8px;
+}
+
+.DV-noAnnotations {
+  text-align: center;
+  padding: 24px 12px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.DV-annotationMarker {
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 4px;
+  border-left: 3px solid transparent;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.DV-annotationMarker:hover {
+  background: color-mix(in srgb, var(--primary) 5%, transparent);
+}
+
+.DV-annotationMarker.active {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  border-left-color: var(--primary);
+}
+
+.DV-annotationMarker.high {
+  border-left-color: var(--rose);
+}
+
+.DV-annotationMarker.medium {
+  border-left-color: var(--amber);
+}
+
+.DV-navAnnotationTitle {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--foreground);
+  display: block;
+}
+
+.DV-navPageNumber {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.DV-severity.high {
+  background: color-mix(in srgb, var(--rose) 25%, transparent);
+  color: var(--rose);
+}
+
+.DV-severity.medium {
+  background: color-mix(in srgb, var(--amber) 25%, transparent);
+  color: var(--amber);
+}
+
+.DV-annotationExcerpt {
+  font-size: 0.76rem;
+  color: var(--muted);
+  font-style: italic;
+  margin-top: 3px;
+  padding: 3px 6px;
+  background: var(--bg-subtle);
+  border-radius: 4px;
+  line-height: 1.4;
+}
+
+.DV-supplemental {
+  border-top: 1px solid var(--border);
+  padding: 10px 14px;
+  flex-shrink: 0;
+}
+
+.DV-rubricScore {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.DV-rubricScore small {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.DV-rubricScore strong {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.DV-rubricScore span {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.DV-supplementalLink {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.DV-pageCollection .DV-textContents {
+  white-space: pre-wrap;
+  font-family: "DM Sans", sans-serif;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: var(--foreground);
+  max-width: 700px;
+}
+
+.DV-rubricPanel {
+  max-width: 600px;
+  width: 100%;
+  padding: 20px;
+}
+
+.DV-rubricPanel h2 {
+  margin: 0 0 16px;
+  font-size: 1.1rem;
+}
+
+.DV-footer {
+  display: flex;
+  justify-content: center;
+  padding: 8px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--card);
+  flex-shrink: 0;
+}
+
+.DV-footer .DV-navControls {
+  border: none;
+  background: none;
+}
+
+@media (max-width: 900px) {
+  .DV-pagesArea {
+    flex-direction: column;
+  }
+  .DV-sidebar {
+    width: 100%;
+    max-height: 240px;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .DV-search input {
+    width: 120px;
+  }
+}
+
 /* Evaluation Engine Styles */
 .docs-layout {
   display: grid;
@@ -6231,6 +6750,175 @@ html.dark body #root .analytics-tabs {
 html.dark .document-page {
   background: var(--card);
   color: var(--foreground);
+}
+
+/* Render mammoth DOCX HTML as a proper document */
+/* docx-preview renders the original OOXML into this container */
+.docx-container {
+  width: 100%;
+  background: transparent;
+  padding: 16px 0;
+}
+
+.docx-container .docx-wrapper {
+  background: transparent;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.docx-container .docx-wrapper > section.docx {
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08), 0 8px 32px rgba(0,0,0,0.06);
+  margin: 0 auto;
+  background: #ffffff;
+  flex-shrink: 0;
+}
+
+html.dark .docx-container .docx-wrapper > section.docx {
+  background: var(--card);
+}
+
+/* Constrain tables to the page width so they don't bleed outside */
+.docx-container table {
+  max-width: 100% !important;
+  table-layout: auto;
+}
+
+.docx-container td {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Highlight marks inside the natively rendered DOCX */
+.docx-container .highlight {
+  border-radius: 2px;
+  padding: 1px 2px;
+  cursor: pointer;
+  transition: background 140ms ease, outline 140ms ease;
+}
+
+.docx-container .highlight.medium, .document-page .highlight.medium {
+  background: color-mix(in srgb, var(--amber) 35%, transparent);
+  border-bottom: 2px solid var(--amber);
+}
+
+.docx-container .highlight.high, .document-page .highlight.high {
+  background: color-mix(in srgb, var(--rose) 35%, transparent);
+  border-bottom: 2px solid var(--rose);
+}
+
+.docx-container .highlight:hover, .document-page .highlight:hover,
+.docx-container .highlight.hovered, .document-page .highlight.hovered,
+.pdf-highlight:hover, .pdf-highlight.hovered {
+  background: color-mix(in srgb, var(--amber) 58%, transparent);
+  outline: 2px solid var(--amber);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--amber) 50%, transparent);
+  z-index: 25;
+}
+
+.docx-container .highlight.high:hover, .document-page .highlight.high:hover,
+.docx-container .highlight.high.hovered, .document-page .highlight.high.hovered {
+  background: color-mix(in srgb, var(--rose) 58%, transparent);
+  outline: 2px solid var(--rose);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--rose) 50%, transparent);
+  z-index: 25;
+}
+
+.docx-container .highlight.active, .document-page .highlight.active,
+.pdf-highlight.active {
+  outline: 2.5px solid var(--primary) !important;
+  background: color-mix(in srgb, var(--primary) 42%, transparent) !important;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 28%, transparent), 0 4px 16px rgba(0,0,0,0.18) !important;
+  z-index: 30;
+}
+
+.rph-html-document {
+  width: 100%;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: #2d2d34;
+}
+
+.rph-html-document table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+}
+
+.rph-html-document td,
+.rph-html-document th {
+  border: 1px solid #d9d9d9;
+  padding: 6px 10px;
+  font-size: 0.86rem;
+  vertical-align: top;
+}
+
+.rph-html-document th {
+  background: #f5f5f5;
+  font-weight: 700;
+}
+
+.rph-html-document p {
+  margin: 4px 0;
+}
+
+.rph-html-document h1, .rph-html-document h2, .rph-html-document h3 {
+  margin: 12px 0 6px;
+  font-weight: 800;
+}
+
+.rph-html-document strong { font-weight: 700; }
+.rph-html-document em { font-style: italic; }
+.rph-html-document ul, .rph-html-document ol { margin: 4px 0; padding-left: 20px; }
+
+/* Highlight marks inside the DOCX HTML */
+.rph-html-document .highlight {
+  border-radius: 3px;
+  padding: 1px 2px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.rph-html-document .highlight.medium {
+  background: color-mix(in srgb, var(--amber) 40%, transparent);
+}
+
+.rph-html-document .highlight.high {
+  background: color-mix(in srgb, var(--rose) 40%, transparent);
+}
+
+.rph-html-document .highlight.active {
+  outline: 2px solid var(--primary);
+}
+
+/* PDF.js highlight overlays */
+.pdf-highlight {
+  border-radius: 2px;
+  transition: background 140ms ease, outline 140ms ease;
+}
+
+.pdf-highlight.medium {
+  background: color-mix(in srgb, var(--amber) 35%, transparent);
+}
+
+.pdf-highlight.high {
+  background: color-mix(in srgb, var(--rose) 35%, transparent);
+}
+
+.pdf-highlight:hover {
+  background: color-mix(in srgb, var(--amber) 50%, transparent);
+  outline: 2px solid var(--primary);
+}
+
+.pdf-highlight.high:hover {
+  background: color-mix(in srgb, var(--rose) 50%, transparent);
+}
+
+.pdf-highlight.active {
+  outline: 2px solid var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
 }
 
 .document-page .doc-section-header {

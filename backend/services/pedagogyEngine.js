@@ -922,45 +922,83 @@ function normalizeEvaluateResponse(value, lessonPlan, classData = "") {
   return {
     annotations: annotations
       .filter((item) => item && typeof item === "object")
-      .map((item) => ({
-        text: String(item.text || "").trim(),
-        issue: String(item.issue || "Issue"),
-        explanation: String(item.explanation || "This part needs clearer KSSR teaching logic."),
-        suggestion: String(item.suggestion || "Revise with simple instructions, scaffolding, and PBD evidence."),
-        rationale: String(item.rationale || classRationale),
-        attention: String(item.attention || item.issue || "Needs attention"),
-        severity: String(item.severity || "medium").toLowerCase() === "high" ? "high" : "medium",
-        category: String(item.category || item.issue || "KSSR/DSKP Review"),
-      }))
-      .filter((item) => item.text),
+      .map((item) => {
+        const text = String(item.text || "").trim();
+        let start = Number(item.start);
+        let end = Number(item.end);
+        if (!Number.isFinite(start) || !Number.isFinite(end) || start < 0) {
+          if (text) {
+            let idx = lessonPlan.indexOf(text);
+            if (idx < 0) idx = lessonPlan.toLowerCase().indexOf(text.toLowerCase());
+            if (idx >= 0) { start = idx; end = idx + text.length; }
+          }
+        }
+        return {
+          text,
+          start: Number.isFinite(start) ? start : -1,
+          end: Number.isFinite(end) ? end : -1,
+          issue: String(item.issue || "Issue"),
+          explanation: String(item.explanation || "This part needs clearer KSSR teaching logic."),
+          suggestion: String(item.suggestion || "Revise with simple instructions, scaffolding, and PBD evidence."),
+          rationale: String(item.rationale || classRationale),
+          attention: String(item.attention || item.issue || "Needs attention"),
+          severity: String(item.severity || "medium").toLowerCase() === "high" ? "high" : "medium",
+          category: String(item.category || item.issue || "KSSR/DSKP Review"),
+        };
+      })
+      .filter((item) => item.start >= 0 || item.text),
   };
 }
 
 export async function evaluateLesson(lessonPlan, classData = "") {
-  const userPrompt = `Evaluate this Malaysian primary school KSSR lesson plan like a Google Docs reviewer.
+  const userPrompt = `Evaluate this Malaysian primary school KSSR lesson plan like a mentor teacher or lecturer reviewing an RPH.
 
 Return EXACT JSON:
 {
   "annotations": [
     {
-      "text": "Identify correct present continuous sentences",
-      "attention": "what needs attention",
+      "start": 124,
+      "end": 151,
       "issue": "Too generic",
       "explanation": "Does not specify measurable outcome",
       "suggestion": "Add number of sentences required",
       "rationale": "why this matters based on the lesson and class data",
       "severity": "medium",
-      "category": "Learning Objective | KSSR Alignment | HOTS | PBD | Differentiation | Clarity"
+      "category": "Learning Objective | KSSR Alignment | HOTS | PBD | Differentiation | Clarity | Lesson Flow | Timing | Activities | PAK-21 | KBAT | Assessment | Teaching Aids | Classroom Management | Language | Inclusivity | Reflection"
     }
-  ]
+  ],
+  "rubric": {
+    "curriculumAlignment": { "score": 9, "maxScore": 10, "status": "excellent", "note": "CS and LS are well aligned." },
+    "learningObjectives": { "score": 8, "maxScore": 10, "status": "good", "note": "SMART objectives mostly met." },
+    "lessonFlow": { "score": 10, "maxScore": 10, "status": "excellent", "note": "All stages present and well sequenced." },
+    "activities": { "score": 8, "maxScore": 10, "status": "good", "note": "Student-centred and interactive." },
+    "pak21": { "score": 7, "maxScore": 10, "status": "could_improve", "note": "More student voice needed." },
+    "kbatHots": { "score": 6, "maxScore": 10, "status": "could_improve", "note": "Needs more higher-order tasks." },
+    "assessment": { "score": 9, "maxScore": 10, "status": "excellent", "note": "Strong PBD alignment." },
+    "differentiation": { "score": 5, "maxScore": 10, "status": "needs_work", "note": "Add support for mixed abilities." },
+    "teachingAids": { "score": 8, "maxScore": 10, "status": "good", "note": "Materials are practical." },
+    "language": { "score": 9, "maxScore": 10, "status": "excellent", "note": "Clear and professional." },
+    "reflection": { "score": 7, "maxScore": 10, "status": "could_improve", "note": "More specific evidence needed." },
+    "classroomManagement": { "score": 8, "maxScore": 10, "status": "good", "note": "Good grouping strategy." },
+    "inclusivity": { "score": 7, "maxScore": 10, "status": "could_improve", "note": "Consider SEN support." },
+    "timing": { "score": 8, "maxScore": 10, "status": "good", "note": "Time allocation is reasonable." },
+    "overallScore": 81,
+    "overallGrade": "good"
+  }
 }
 
 Rules:
-- The "text" value must be an exact short phrase from the lesson plan.
-- Use "medium" for yellow highlights and "high" for red highlights.
-- Check Content Standard (CS), Learning Standard (LS), Learning Outcomes (LO), measurable objectives, student-centered learning, simple instructions, group work, visual support, and scaffolding.
-- Use the class data to explain rationale and prioritise issues. If class data is thin, say the rationale is based on available lesson evidence.
-- Return 3 to 6 annotations only.
+- "start" and "end" are CHARACTER OFFSETS into the lesson plan text (0-based). They mark the exact span to highlight.
+- The highlighted span must be an exact substring of the lesson plan text, copied character-for-character.
+- Count characters carefully. The first character is offset 0.
+- "end" is exclusive (the index AFTER the last character of the span).
+- Use "medium" severity for yellow highlights and "high" for red highlights.
+- Return 3 to 8 annotations across different categories.
+- Do NOT return a "text" field — only "start", "end", and the issue/explanation fields.
+- The rubric must evaluate ALL 14 dimensions listed above. Score each from 0 to maxScore (10).
+- "status" must be one of: "excellent", "good", "could_improve", "needs_work".
+- "overallScore" is the sum of all category scores out of 100 (since there are 10 categories each worth 10 — wait, there are 14, so scale to 100).
+- "overallGrade" must be one of: "excellent" (85+), "good" (70-84), "could_improve" (50-69), "needs_work" (below 50).
 
 Class data:
 ${classData || "No class records supplied."}
@@ -968,8 +1006,13 @@ ${classData || "No class records supplied."}
 Lesson plan:
 ${lessonPlan}`;
 
-  const ai = await callAI(buildSystemPrompt("evaluate a KSSR lesson document with highlight comments"), userPrompt);
-  return { ...normalizeEvaluateResponse(ai.data, lessonPlan, classData), aiSource: buildAiSource(ai) };
+  const ai = await callAI(buildSystemPrompt("evaluate a KSSR lesson document with highlight comments and rubric scoring"), userPrompt);
+  const result = { ...normalizeEvaluateResponse(ai.data, lessonPlan, classData), aiSource: buildAiSource(ai) };
+  // Extract rubric if the AI returned it.
+  if (ai.data && ai.data.rubric) {
+    result.rubric = ai.data.rubric;
+  }
+  return result;
 }
 
 // ---------------------------------------------------------------------------
