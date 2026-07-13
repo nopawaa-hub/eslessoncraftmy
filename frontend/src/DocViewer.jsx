@@ -63,22 +63,30 @@ export function TextViewer({ text, annotations = [], activeIndex, setActiveIndex
   const ranges = [];
 
   annotations.forEach((ann, annIdx) => {
-    let start = Number(ann.start);
-    let end = Number(ann.end);
+    let start = -1;
+    let end = -1;
     let found = false;
 
-    if (Number.isFinite(start) && start >= 0 && Number.isFinite(end) && end > start && end <= str.length) {
-      ranges.push({ start, end, annIdx, severity: ann.severity || "medium", title: ann.issue || "Pedagogy Note", ann });
-      found = true;
-    }
-
-    if (!found && ann.text && typeof ann.text === "string" && ann.text.trim()) {
+    if (ann.text && typeof ann.text === "string" && ann.text.trim()) {
       const phrase = ann.text.trim();
       let pos = str.indexOf(phrase);
       if (pos < 0) pos = lowerStr.indexOf(phrase.toLowerCase());
+      if (pos < 0 && phrase.length >= 20) pos = lowerStr.indexOf(phrase.slice(0, 24).toLowerCase());
       if (pos >= 0) {
-        ranges.push({ start: pos, end: pos + phrase.length, annIdx, severity: ann.severity || "medium", title: ann.issue || "Pedagogy Note", ann });
+        start = pos;
+        end = pos + Math.min(phrase.length, str.length - pos);
+        found = true;
       }
+    }
+
+    if (!found && Number.isFinite(ann.start) && ann.start >= 0 && Number.isFinite(ann.end) && ann.end > ann.start && ann.end <= str.length) {
+      start = Number(ann.start);
+      end = Number(ann.end);
+      found = true;
+    }
+
+    if (found && start >= 0 && end > start) {
+      ranges.push({ start, end, annIdx, severity: ann.severity || "medium", title: ann.issue || "Pedagogy Note", ann });
     }
   });
 
@@ -206,43 +214,49 @@ export function DocxViewer({ dataUrl, annotations = [], activeIndex, setActiveIn
 
     const textNodes = [];
     const walker = document.createTreeWalker(inner, NodeFilter.SHOW_TEXT, null);
-    let totalChars = 0;
+    let fullDOMText = "";
     while (walker.nextNode()) {
       const node = walker.currentNode;
       if (!node.textContent || !node.textContent.trim()) continue;
-      const len = node.textContent.length;
-      textNodes.push({ node, start: totalChars, end: totalChars + len });
-      totalChars += len;
+      const str = node.textContent;
+      const start = fullDOMText.length;
+      fullDOMText += str + " ";
+      textNodes.push({ node, start, end: start + str.length, text: str });
     }
 
     const validAnns = (annotations || []).map((a, idx) => ({ ...a, origIdx: idx })).filter(
-      (a) => (Number.isFinite(a.start) && a.start >= 0 && Number.isFinite(a.end) && a.end > a.start) || (a.text && typeof a.text === "string" && a.text.trim())
+      (a) => (a.text && typeof a.text === "string" && a.text.trim()) || (Number.isFinite(a.start) && a.start >= 0 && Number.isFinite(a.end) && a.end > a.start)
     );
 
     validAnns.sort((a, b) => (b.start || 0) - (a.start || 0));
 
     for (const ann of validAnns) {
       const annIdx = ann.origIdx;
-      let start = Number(ann.start);
-      let end = Number(ann.end);
+      let start = -1;
+      let end = -1;
 
-      // If start/end invalid or not matching, find by text in DOM text nodes
-      if (!Number.isFinite(start) || start < 0 || !Number.isFinite(end) || end <= start) {
-        if (ann.text) {
-          const phrase = ann.text.trim().toLowerCase();
-          for (const entry of textNodes) {
-            const nodeText = (entry.node.textContent || "").toLowerCase();
-            const pos = nodeText.indexOf(phrase);
-            if (pos >= 0) {
-              start = entry.start + pos;
-              end = start + ann.text.trim().length;
-              break;
-            }
-          }
+      // 1. First search for ann.text in fullDOMText across all text nodes
+      if (ann.text && typeof ann.text === "string" && ann.text.trim().length >= 3) {
+        const phrase = ann.text.trim().toLowerCase();
+        let matchPos = fullDOMText.toLowerCase().indexOf(phrase);
+        if (matchPos < 0 && phrase.length >= 20) {
+          matchPos = fullDOMText.toLowerCase().indexOf(phrase.slice(0, 24));
+        }
+        if (matchPos >= 0) {
+          start = matchPos;
+          end = matchPos + Math.min(phrase.length, fullDOMText.length - matchPos);
         }
       }
 
-      if (!Number.isFinite(start) || start < 0 || !Number.isFinite(end) || end <= start) continue;
+      // 2. Only if exact/fuzzy phrase match wasn't found, try numeric offsets
+      if (start < 0 || end <= start) {
+        if (Number.isFinite(ann.start) && ann.start >= 0 && Number.isFinite(ann.end) && ann.end > ann.start) {
+          start = Number(ann.start);
+          end = Number(ann.end);
+        }
+      }
+
+      if (start < 0 || end <= start) continue;
 
       const severity = ann.severity || "medium";
       const isActive = annIdx === activeIndex;
@@ -372,18 +386,24 @@ export function PdfViewer({ dataUrl, annotations = [], activeIndex, setActiveInd
     const { viewport, charPositions, textItems, fullText } = page;
     if (!annotations || !annotations.length) return null;
     return annotations.map((ann, annIdx) => {
-      let start = ann.start;
-      let end = ann.end;
-      if (!Number.isFinite(start) || !Number.isFinite(end) || start < 0) {
-        if (ann.text) {
-          const pos = fullText.toLowerCase().indexOf(ann.text.toLowerCase());
-          if (pos >= 0) {
-            start = pos;
-            end = pos + ann.text.length;
-          }
+      let start = -1;
+      let end = -1;
+      if (ann.text && typeof ann.text === "string" && ann.text.trim()) {
+        const phrase = ann.text.trim().toLowerCase();
+        let pos = fullText.toLowerCase().indexOf(phrase);
+        if (pos < 0 && phrase.length >= 20) pos = fullText.toLowerCase().indexOf(phrase.slice(0, 24));
+        if (pos >= 0) {
+          start = pos;
+          end = pos + Math.min(phrase.length, fullText.length - pos);
         }
       }
-      if (!Number.isFinite(start) || !Number.isFinite(end) || start < 0) return null;
+      if (start < 0 || end <= start) {
+        if (Number.isFinite(ann.start) && Number.isFinite(ann.end) && ann.start >= 0 && ann.end > ann.start) {
+          start = Number(ann.start);
+          end = Number(ann.end);
+        }
+      }
+      if (start < 0 || end <= start) return null;
 
       const overlappingItems = [];
       charPositions.forEach((cp) => {

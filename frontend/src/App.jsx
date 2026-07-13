@@ -662,58 +662,6 @@ function App() {
   const isDemoUser = currentUser?.email === "demo@test.com" || currentUser?.role === "demo" || String(currentUser?._id) === "000000000000000000000001";
   const liveMode = typeof window !== "undefined" && (window.location.pathname.startsWith("/testing") || window.location.search.includes("live=1") || (currentUser && !isDemoUser));
 
-  // Auto-minimize the sidebar into a circular logo after 2s of no interaction.
-  // Expands back to full width when the mouse hovers over it.
-  const [sidebarIdle, setSidebarIdle] = useState(false);
-  const idleTimerRef = useRef(null);
-
-  useEffect(() => {
-    if (!currentUser || window.innerWidth <= 760) return;
-
-    const IDLE_DELAY = 2000;
-
-    const scheduleMinimize = () => {
-      clearTimeout(idleTimerRef.current);
-      idleTimerRef.current = setTimeout(() => {
-        setSidebarIdle(true);
-      }, IDLE_DELAY);
-    };
-
-    const onActivity = () => {
-      setSidebarIdle(false);
-      scheduleMinimize();
-    };
-
-    // On sidebar hover, cancel idle + expand.
-    const onSidebarMouseEnter = () => {
-      clearTimeout(idleTimerRef.current);
-      setSidebarIdle(false);
-    };
-
-    // Listen on document level (event delegation) so it survives re-renders.
-    const handleMouseEnter = (e) => {
-      const sidebar = e.target.closest?.(".sidebar");
-      if (sidebar) onSidebarMouseEnter();
-    };
-
-    window.addEventListener("mousemove", onActivity);
-    window.addEventListener("keydown", onActivity);
-    window.addEventListener("scroll", onActivity, true);
-    window.addEventListener("touchstart", onActivity, true);
-    document.addEventListener("mouseover", handleMouseEnter);
-
-    scheduleMinimize();
-
-    return () => {
-      clearTimeout(idleTimerRef.current);
-      window.removeEventListener("mousemove", onActivity);
-      window.removeEventListener("keydown", onActivity);
-      window.removeEventListener("scroll", onActivity, true);
-      window.removeEventListener("touchstart", onActivity, true);
-      document.removeEventListener("mouseover", handleMouseEnter);
-    };
-  }, [currentUser]);
-
   const refreshLessons = async () => {
     try {
       const data = await apiRequest("/lesson-plans?subject=English");
@@ -856,7 +804,7 @@ function App() {
 
   return (
     <div className="app-root" data-page={activePage}>
-      <Sidebar activePage={activePage} setActivePage={setActivePage} collapsed={collapsed} setCollapsed={setCollapsed} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} sidebarIdle={sidebarIdle} />
+      <Sidebar activePage={activePage} setActivePage={setActivePage} collapsed={collapsed} setCollapsed={setCollapsed} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
       <div className="main-column">
         <TopBar setMobileOpen={setMobileOpen} setActivePage={setActivePage} backendStatus={backendStatus} theme={theme} setTheme={setTheme} currentUser={currentUser} onLogout={handleLogout} />
         <main className="page-wrap"><ErrorBoundary key={activePage} onGoHome={() => setActivePage("dashboard")}>{renderPage(context)}</ErrorBoundary></main>
@@ -1062,29 +1010,61 @@ function LoginScreen({ backendStatus, onLogin, theme, setTheme, onDemoLogin }) {
 }
 
 function Sidebar({ activePage, setActivePage, collapsed, setCollapsed, mobileOpen, setMobileOpen }) {
+  const [hoveredItem, setHoveredItem] = useState(null);
+  const [hoverRect, setHoverRect] = useState(null);
+  const allItems = navGroups.flatMap((g) => g.items);
+
+  const handleMouseEnter = (item, e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setHoverRect(rect);
+    setHoveredItem(item);
+  };
+
   return (
     <>
       {mobileOpen && <button className="mobile-backdrop" onClick={() => setMobileOpen(false)} aria-label="Close menu" />}
-      <aside className={`sidebar ${collapsed ? "is-collapsed" : ""} ${mobileOpen ? "is-open" : ""}`}>
-        <div className="brand">
-          <div className="brand-mark"><img src="/logo.svg" alt="ESLessonCraft MY" style={{ width: "100%", height: "100%", objectFit: "contain" }} /></div>
-          {!collapsed && <div><p className="brand-title">ESLessonCraft MY</p><p className="brand-subtitle">Teacher OS</p></div>}
+      <aside className={`sidebar sidebar-dock ${mobileOpen ? "is-open" : ""}`}>
+        <div className="dock-logo">
+          <img src="/logo.svg" alt="ESLessonCraft MY" />
         </div>
-        <nav className="nav-list">
-          {collapsed ? navGroups.flatMap((group) => group.items).map((item) => <NavButton key={item.id} item={item} activePage={activePage} setActivePage={setActivePage} setMobileOpen={setMobileOpen} collapsed={collapsed} />) : navGroups.map((group) => {
-            const groupActive = group.items.some((item) => item.id === activePage);
+        <nav className="dock-nav">
+          {allItems.map((item) => {
+            const Icon = item.icon;
+            const active = activePage === item.id;
             return (
-              <details className="nav-group" key={group.label} open={groupActive || group.label === "Workspace"}>
-                <summary>{group.label}</summary>
-                {group.items.map((item) => <NavButton key={item.id} item={item} activePage={activePage} setActivePage={setActivePage} setMobileOpen={setMobileOpen} collapsed={collapsed} />)}
-              </details>
+              <button
+                key={item.id}
+                className={`dock-item ${active ? "active" : ""}`}
+                onClick={() => { setActivePage(item.id); setMobileOpen(false); }}
+                onMouseEnter={(e) => handleMouseEnter(item, e)}
+                onMouseLeave={() => { setHoveredItem(null); setHoverRect(null); }}
+              >
+                <Icon />
+                {item.badge && <b className="dock-badge">{item.badge}</b>}
+              </button>
             );
           })}
         </nav>
-        <div className="sidebar-footer">
-          <button className="collapse-btn" onClick={() => setCollapsed((value) => !value)}><ChevronLeft className={collapsed ? "rotate" : ""} /></button>
-        </div>
       </aside>
+
+      {/* Floating tile — rendered OUTSIDE the clipped sidebar so overflow doesn't hide it */}
+      {hoveredItem && hoverRect && (
+        <div
+          className="dock-tile"
+          style={{
+            position: "fixed",
+            top: hoverRect.top,
+            left: hoverRect.right + 10,
+            zIndex: 200,
+          }}
+        >
+          <span className="dock-tile-icon">
+            {(() => { const I = hoveredItem.icon; return <I />; })()}
+          </span>
+          <span className="dock-tile-label">{hoveredItem.label}</span>
+          {hoveredItem.badge && <span className="dock-tile-badge">{hoveredItem.badge}</span>}
+        </div>
+      )}
     </>
   );
 }
@@ -4237,7 +4217,9 @@ function SvgLineConnector({ targetIdx, containerRef }) {
 
       const x1 = cardRect.right - containerRect.left;
       const y1 = cardRect.top + cardRect.height / 2 - containerRect.top;
-      const x2 = markRect.left - containerRect.left;
+      // Ensure target x2 is inside the visible portion of the highlight mark, never on the divider edge
+      const rawX2 = markRect.left - containerRect.left;
+      const x2 = Math.max(x1 + 35, rawX2 + Math.min(markRect.width / 2, 80));
       const y2 = markRect.top + markRect.height / 2 - containerRect.top;
 
       setCoords({ x1, y1, x2, y2 });
@@ -4255,7 +4237,7 @@ function SvgLineConnector({ targetIdx, containerRef }) {
   if (!coords) return null;
 
   const { x1, y1, x2, y2 } = coords;
-  const dx = Math.abs(x2 - x1) * 0.42;
+  const dx = Math.max(45, Math.abs(x2 - x1) * 0.45);
   const pathData = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
 
   return (
@@ -4329,7 +4311,7 @@ function EvaluatePage({ lessons = [], liveMode = false }) {
     setTimeout(() => {
       const mark = document.querySelector(`mark[data-ann-idx="${idx}"], .pdf-highlight[data-ann-idx="${idx}"]`);
       if (mark) {
-        mark.scrollIntoView({ behavior: "smooth", block: "center" });
+        mark.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
         mark.classList.add("blipping");
         setTimeout(() => mark.classList.remove("blipping"), 1200);
       }

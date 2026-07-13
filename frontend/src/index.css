@@ -1,5 +1,29 @@
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&family=Nunito:wght@700;800;900&display=swap");
 
+/* Thin, subtle scrollbars everywhere */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--muted, #999) 30%, transparent) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--muted, #999) 25%, transparent);
+  border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--muted, #999) 40%, transparent);
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -5097,82 +5121,218 @@ html body #root .hero-panel {
   }
 }
 
-/* Floating navigation overlay: sidebar no longer reserves layout width. */
+/* Floating navigation overlay: sidebar is a dock — circle logo, expands on hover. */
 .app-root {
   display: block !important;
   overflow: visible !important;
 }
 
-.sidebar {
+/* The dock: always starts as a small circle with the logo */
+.sidebar.sidebar-dock {
   position: fixed !important;
-  top: 18px !important;
-  bottom: 18px !important;
-  left: 18px !important;
-  width: 272px !important;
-  height: auto !important;
-  z-index: 90 !important;
+  top: 18px;
+  bottom: 18px;
+  left: 14px;
+  z-index: 90;
+  width: 56px;
+  max-height: 56px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.18), 0 2px 8px rgba(0,0,0,0.06);
   overflow: hidden;
-  transition:
-    width 360ms cubic-bezier(0.22, 1, 0.36, 1),
-    border-radius 360ms cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 360ms ease,
-    background-color 360ms ease,
-    backdrop-filter 360ms ease,
-    transform 360ms cubic-bezier(0.22, 1, 0.36, 1) !important;
-  border-radius: 42px !important;
-  background: rgba(255, 255, 255, 0.54) !important;
-  backdrop-filter: blur(24px);
-  box-shadow:
-    24px 24px 48px rgba(160, 150, 180, 0.24),
-    -12px -12px 28px rgba(255, 255, 255, 0.88),
-    inset 8px 8px 18px rgba(139, 92, 246, 0.04),
-    inset -8px -8px 18px rgba(255, 255, 255, 0.88) !important;
+  transition: max-height 300ms cubic-bezier(0.22, 1, 0.36, 1),
+              border-radius 300ms cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 300ms ease,
+              background 300ms ease;
 }
 
-.sidebar.is-collapsed {
-  left: 14px !important;
-  width: 72px !important;
-  border-radius: 36px !important;
+/* On hover, expand to show all page icons */
+.sidebar.sidebar-dock:hover {
+  max-height: calc(100vh - 36px);
+  border-radius: 28px;
+  padding: 8px 0;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 12px 36px rgba(124, 58, 237, 0.2), 0 4px 12px rgba(0,0,0,0.08);
+  overflow: visible;
 }
 
+html.dark .sidebar.sidebar-dock {
+  background: color-mix(in srgb, var(--card) 82%, transparent);
+}
+
+html.dark .sidebar.sidebar-dock:hover {
+  background: color-mix(in srgb, var(--card) 90%, transparent);
+}
+
+/* Logo circle — always visible */
+.dock-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+}
+
+.dock-logo img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+/* Nav list — hidden via opacity until hover, then fades in */
+.dock-nav {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  flex: 1;
+  padding: 0 6px;
+  overflow-y: auto;
+  overflow-x: visible;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 160ms ease 140ms, visibility 0ms 140ms;
+}
+
+.sidebar.sidebar-dock:hover .dock-nav {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 160ms ease 0ms, visibility 0ms 0ms;
+}
+
+/* Each dock item — icon button */
+.dock-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: 0 auto;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.dock-item svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.dock-item:hover {
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--primary);
+}
+
+.dock-item.active {
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--primary) 30%, transparent);
+}
+
+/* Bigger tile that appears on hover — matches the button height, wider to fit the title */
+.dock-tile {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card, #fff);
+  border: 1px solid var(--border, #e2e2e2);
+  border-radius: 14px;
+  padding: 0 16px;
+  pointer-events: none;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.06);
+  backdrop-filter: blur(14px);
+  animation: dockTileFade 160ms cubic-bezier(0.22, 1, 0.36, 1);
+  white-space: nowrap;
+  width: max-content;
+}
+
+@keyframes dockTileFade {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.dock-tile-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  color: var(--primary);
+}
+
+.dock-tile-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.dock-tile-label {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--foreground, #333);
+}
+
+.dock-tile-badge {
+  font-size: 0.56rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--primary), var(--primary-2));
+  color: white;
+  padding: 2px 5px;
+  border-radius: 6px;
+  line-height: 1;
+}
+
+.dock-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 0.56rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--primary), var(--primary-2));
+  color: white;
+  padding: 1px 4px;
+  border-radius: 6px;
+  line-height: 1;
+}
+
+/* Layout offsets — dock is always 56px wide */
 .main-column {
   width: 100% !important;
   min-width: 0;
 }
 
 .topbar {
-  margin-left: 104px;
+  margin-left: 84px;
 }
 
 .page-wrap {
-  padding-left: 116px;
+  padding-left: 96px;
 }
 
-.app-root:has(.sidebar.is-collapsed) .topbar {
-  margin-left: 104px;
-}
-
-.app-root:has(.sidebar.is-collapsed) .page-wrap {
-  padding-left: 116px;
-}
-
-.sidebar .nav-list {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(124, 58, 237, 0.22) transparent;
-}
-
-.sidebar .nav-list::-webkit-scrollbar {
-  width: 5px;
-}
-
-.sidebar .nav-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.sidebar .nav-list::-webkit-scrollbar-thumb {
-  border: 0;
-  border-radius: 999px;
-  background: rgba(124, 58, 237, 0.22);
+/* Mobile: dock hidden, uses drawer */
+@media (max-width: 760px) {
+  .sidebar.sidebar-dock {
+    transform: translateX(calc(-100% - 24px));
+  }
+  .sidebar.sidebar-dock.is-open {
+    transform: translateX(0);
+    width: 272px;
+    height: auto;
+    bottom: 18px;
+    border-radius: 28px;
+  }
+  .sidebar.sidebar-dock.is-open .dock-nav {
+    display: flex;
+  }
+  .topbar { margin-left: 12px; }
+  .page-wrap { padding-left: 12px; }
 }
 
 .sidebar .nav-list::-webkit-scrollbar-thumb:hover {
