@@ -1,7 +1,7 @@
 @echo off
 setlocal
-set COMMIT_MSG=%~1
-if "%COMMIT_MSG%"=="" set COMMIT_MSG="chore: automated build and online sync"
+set "COMMIT_MSG=%~1"
+if "%COMMIT_MSG%"=="" set "COMMIT_MSG=chore: automated build and online sync"
 
 echo ===============================================
 echo  LessonCraft MY Automated Build ^& Deploy
