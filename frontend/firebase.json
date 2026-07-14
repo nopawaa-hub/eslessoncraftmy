@@ -1,12 +1,45 @@
 {
   "hosting": {
     "public": "dist",
+    "cleanUrls": true,
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
     ],
     "rewrites": [
+      {
+        "source": "/research-data",
+        "destination": "/research-data.html"
+      },
+      {
+        "source": "/research-data/**",
+        "destination": "/research-data.html"
+      },
+      {
+        "source": "/research",
+        "destination": "/research-data.html"
+      },
+      {
+        "source": "/research/**",
+        "destination": "/research-data.html"
+      },
+      {
+        "source": "/data",
+        "destination": "/research-data.html"
+      },
+      {
+        "source": "/data/**",
+        "destination": "/research-data.html"
+      },
+      {
+        "source": "/landing-page",
+        "destination": "/landing.html"
+      },
+      {
+        "source": "/landing-page/**",
+        "destination": "/landing.html"
+      },
       {
         "source": "**",
         "destination": "/index.html"

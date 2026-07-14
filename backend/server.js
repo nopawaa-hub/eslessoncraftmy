@@ -40,6 +40,22 @@ if (fs.existsSync(uploadsPath)) {
   app.use("/uploads", express.static(uploadsPath));
 }
 
+if (fs.existsSync(frontendDistPath)) {
+  app.use(express.static(frontendDistPath));
+  app.get("*", (req, res, next) => {
+    if (
+      req.method === "GET" &&
+      req.headers.accept?.includes("text/html") &&
+      !req.headers.authorization &&
+      !req.path.startsWith("/api/") &&
+      !["/health", "/auth"].some((p) => req.path.startsWith(p))
+    ) {
+      return res.sendFile(path.join(frontendDistPath, "index.html"));
+    }
+    next();
+  });
+}
+
 app.get("/health", (_req, res) => {
   res.json({
     ok: true,
@@ -73,9 +89,8 @@ app.use("/materials", materialsRouter);
 app.use("/copilot", copilotRouter);
 
 if (fs.existsSync(frontendDistPath)) {
-  app.use(express.static(frontendDistPath));
   app.get("*", (req, res, next) => {
-    if (req.path.startsWith("/api/")) return next();
+    if (req.path.startsWith("/api/") || req.headers.authorization) return next();
     return res.sendFile(path.join(frontendDistPath, "index.html"));
   });
 }
@@ -99,8 +114,19 @@ connectDatabase()
     console.warn("Backend started without MongoDB. Persistent endpoints will return JSON errors until MongoDB is available.");
   })
   .finally(() => {
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`ESLessonCraft MY backend running on http://localhost:${PORT}`);
       console.log(`AI provider: ${getConfiguredProvider()}`);
+    });
+    server.on("error", (err) => {
+      if (err.code === "EADDRINUSE") {
+        console.error(`Port ${PORT} is already in use. Retrying in 1s...`);
+        setTimeout(() => {
+          server.close();
+          server.listen(PORT);
+        }, 1000);
+      } else {
+        console.error("Server listen error:", err);
+      }
     });
   });

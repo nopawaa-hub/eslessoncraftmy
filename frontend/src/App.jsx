@@ -24,11 +24,11 @@ import {
   LineChart,
   LogOut,
   Menu,
+  Mic,
   Moon,
   Paperclip,
   Pencil,
   Plus,
-  Printer,
   RefreshCw,
   Save,
   Search,
@@ -42,56 +42,69 @@ import {
   Wand2,
   X,
 } from "lucide-react";
+import {
+  FaDashboard,
+  FaClasses,
+  FaLessonPlanner,
+  FaEvaluate,
+  FaPBD,
+  FaTimetable,
+  FaMaterials,
+  FaAnalytics,
+  FaReports,
+  FaSettings,
+  FaRecordStudent,
+} from "./icons/FaIcons.jsx";
 
+// Default to same-origin requests (relative URLs) so the Vite dev proxy
+// forwards API/auth/upload calls to the Express backend without CORS hassle.
+// Set VITE_API_URL in frontend/.env to bypass the proxy and hit a specific backend.
 const API_BASE =
-  import.meta.env.VITE_API_URL ||
-  (typeof window !== "undefined" && window.location.port !== "5173"
-    ? window.location.origin
-    : "http://localhost:3000");
+  import.meta.env.VITE_API_URL || "";
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 const AUTH_TOKEN_KEY = "lessoncraft-auth-token";
 
 const navItems = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "classes", label: "Classes", icon: Users },
-  { id: "lesson-planner", label: "Lesson Planner AI", icon: Sparkles, badge: "AI" },
-  { id: "evaluate", label: "Evaluation Engine", icon: FileCheck, badge: "AI" },
-  { id: "pbd", label: "PBD & Assessment", icon: ClipboardCheck },
-  { id: "timetable", label: "Timetable", icon: CalendarDays },
-  { id: "materials", label: "Materials Library", icon: FolderOpen },
-  { id: "analytics", label: "Analytics", icon: LineChart },
-  { id: "reports", label: "Reports", icon: FileText },
-  { id: "settings", label: "Settings", icon: Settings },
+  { id: "dashboard", label: "Dashboard", icon: FaDashboard },
+  { id: "classes", label: "Classes", icon: FaClasses },
+  { id: "lesson-planner", label: "Lesson Planner AI", icon: FaLessonPlanner, badge: "AI" },
+  { id: "evaluate", label: "Evaluation Engine", icon: FaEvaluate, badge: "AI" },
+  { id: "pbd", label: "PBD & Assessment", icon: FaPBD },
+  { id: "timetable", label: "Timetable", icon: FaTimetable },
+  { id: "materials", label: "Materials Library", icon: FaMaterials },
+  { id: "analytics", label: "Analytics", icon: FaAnalytics },
+  { id: "reports", label: "Reports", icon: FaReports },
+  { id: "settings", label: "Settings", icon: FaSettings },
 ];
 
 const navGroups = [
   {
     label: "Workspace",
     items: [
-      { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-      { id: "classes", label: "Classes", icon: Users },
+      { id: "dashboard", label: "Dashboard", icon: FaDashboard },
+      { id: "classes", label: "Classes", icon: FaClasses },
     ],
   },
   {
     label: "Teaching",
     items: [
-      { id: "lesson-planner", label: "Lesson Planner AI", icon: Sparkles, badge: "AI" },
-      { id: "evaluate", label: "Evaluation Engine", icon: FileCheck, badge: "AI" },
-      { id: "timetable", label: "Timetable", icon: CalendarDays },
-      { id: "materials", label: "Materials Library", icon: FolderOpen },
+      { id: "lesson-planner", label: "Lesson Planner AI", icon: FaLessonPlanner, badge: "AI" },
+      { id: "evaluate", label: "Evaluation Engine", icon: FaEvaluate, badge: "AI" },
+      { id: "timetable", label: "Timetable", icon: FaTimetable },
+      { id: "materials", label: "Materials Library", icon: FaMaterials },
     ],
   },
   {
     label: "Assessment",
     items: [
-      { id: "pbd", label: "PBD & Assessment", icon: ClipboardCheck },
-      { id: "analytics", label: "Analytics", icon: LineChart },
-      { id: "reports", label: "Reports", icon: FileText },
+      { id: "pbd", label: "PBD & Assessment", icon: FaPBD },
+      { id: "analytics", label: "Analytics", icon: FaAnalytics },
+      { id: "reports", label: "Reports", icon: FaReports },
     ],
   },
   {
     label: "System",
-    items: [{ id: "settings", label: "Settings", icon: Settings }],
+    items: [{ id: "settings", label: "Settings", icon: FaSettings }],
   },
 ];
 
@@ -221,10 +234,10 @@ const englishSkillPerformance = [
 ];
 
 const analyticsCards = [
-  { title: "Reading Comprehension", value: "76%", note: "+8% after main-idea practice", tone: "emerald" },
-  { title: "Writing Accuracy", value: "64%", note: "Past tense and email format need support", tone: "amber" },
-  { title: "Speaking Confidence", value: "72%", note: "Sentence frames improved pair talk", tone: "indigo" },
-  { title: "Pupils at Risk", value: "5", note: "Vocabulary and decoding support group", tone: "rose" },
+  { title: "Reading Comprehension", value: "76%", note: "+8% after main-idea practice", tone: "emerald", icon: "book" },
+  { title: "Writing Accuracy", value: "64%", note: "Past tense and email format need support", tone: "amber", icon: "pencil" },
+  { title: "Speaking Confidence", value: "72%", note: "Sentence frames improved pair talk", tone: "indigo", icon: "mic" },
+  { title: "Pupils at Risk", value: "5", note: "Vocabulary and decoding support group", tone: "rose", icon: "alert" },
 ];
 
 const scheduleColors = [
@@ -659,6 +672,7 @@ function App() {
   const [students, setStudents] = useState([]);
   const [assessments, setAssessments] = useState([]);
   const [selectedClassId, setSelectedClassId] = useState("");
+  const [copilotFormDraft, setCopilotFormDraft] = useState(null);
   const isDemoUser = currentUser?.email === "demo@test.com" || currentUser?.role === "demo" || String(currentUser?._id) === "000000000000000000000001";
   const liveMode = typeof window !== "undefined" && (window.location.pathname.startsWith("/testing") || window.location.search.includes("live=1") || (currentUser && !isDemoUser));
 
@@ -714,7 +728,16 @@ function App() {
 
   useEffect(() => {
     apiRequest("/health")
-      .then((data) => setBackendStatus(data.aiProvider === "gemini" ? "Gemini Online" : "Fallback Ready"))
+      .then((data) => {
+        if (data && data.ok) {
+          const provider = data.aiProvider || "AI";
+          if (provider.includes("round-robin")) setBackendStatus("AI Online (Gemini+GLM)");
+          else if (provider.includes("gemini")) setBackendStatus("Gemini Online");
+          else setBackendStatus(`AI Online (${provider})`);
+        } else {
+          setBackendStatus("Backend Ready");
+        }
+      })
       .catch(() => setBackendStatus("Backend Offline"));
   }, []);
 
@@ -777,6 +800,8 @@ function App() {
     refreshAssessments,
     selectedClassId,
     setSelectedClassId,
+    copilotFormDraft,
+    setCopilotFormDraft,
     backendStatus,
     theme,
     setTheme,
@@ -797,7 +822,7 @@ function App() {
         onLogin={handleLogin}
         theme={theme}
         setTheme={setTheme}
-        onDemoLogin={() => handleLogin({ token: "demo-token", user: { name: "Demo Teacher", email: "demo@test.com", role: "teacher" } })}
+        onDemoLogin={() => handleLogin({ token: "demo-token", user: { _id: "000000000000000000000001", name: "Cikgu Nur Aisyah (Demo Teacher)", email: "demo@test.com", role: "teacher", school: "SK Taman Bestari" } })}
       />
     );
   }
@@ -806,13 +831,13 @@ function App() {
     <div className="app-root" data-page={activePage}>
       <Sidebar activePage={activePage} setActivePage={setActivePage} collapsed={collapsed} setCollapsed={setCollapsed} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
       <div className="main-column">
-        <TopBar setMobileOpen={setMobileOpen} setActivePage={setActivePage} backendStatus={backendStatus} theme={theme} setTheme={setTheme} currentUser={currentUser} onLogout={handleLogout} />
+        <TopBar setMobileOpen={setMobileOpen} setActivePage={setActivePage} backendStatus={backendStatus} theme={theme} setTheme={setTheme} currentUser={currentUser} onLogout={handleLogout} lessons={lessons} classes={classes} materials={materials} students={students} />
         <main className="page-wrap"><ErrorBoundary key={activePage} onGoHome={() => setActivePage("dashboard")}>{renderPage(context)}</ErrorBoundary></main>
       </div>
       <button className={`copilot-fab ${copilotOpen ? "hidden" : ""}`} onClick={() => setCopilotOpen((open) => !open)} aria-label="Toggle AI copilot">
         {copilotOpen ? <X /> : <Sparkles />}
       </button>
-      <AICopilot open={copilotOpen} setOpen={setCopilotOpen} setActivePage={setActivePage} />
+      <AICopilot open={copilotOpen} setOpen={setCopilotOpen} setActivePage={setActivePage} setCopilotFormDraft={setCopilotFormDraft} classes={classes} />
     </div>
   );
 }
@@ -854,6 +879,7 @@ class ErrorBoundary extends React.Component {
 function renderPage(context) {
   switch (context.activePage) {
     case "classes":
+    case "students":
       return <ClassesPage {...context} />;
     case "lesson-planner":
       return <LessonPlanner {...context} />;
@@ -1010,15 +1036,35 @@ function LoginScreen({ backendStatus, onLogin, theme, setTheme, onDemoLogin }) {
 }
 
 function Sidebar({ activePage, setActivePage, collapsed, setCollapsed, mobileOpen, setMobileOpen }) {
-  const [hoveredItem, setHoveredItem] = useState(null);
-  const [hoverRect, setHoverRect] = useState(null);
+  const [activeHighlightStyle, setActiveHighlightStyle] = useState({ top: 0, height: 44, opacity: 0 });
+  const navRef = useRef(null);
+  const itemRefs = useRef({});
   const allItems = navGroups.flatMap((g) => g.items);
+  const effectiveActivePage = activePage === "students" ? "classes" : activePage;
 
-  const handleMouseEnter = (item, e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setHoverRect(rect);
-    setHoveredItem(item);
-  };
+  useEffect(() => {
+    const updateHighlight = () => {
+      const activeEl = itemRefs.current[effectiveActivePage];
+      if (activeEl) {
+        setActiveHighlightStyle({
+          top: activeEl.offsetTop,
+          height: activeEl.offsetHeight || 44,
+          opacity: 1,
+        });
+      }
+    };
+    updateHighlight();
+    const timer1 = setTimeout(updateHighlight, 30);
+    const timer2 = setTimeout(updateHighlight, 150);
+    const timer3 = setTimeout(updateHighlight, 400);
+    window.addEventListener("resize", updateHighlight);
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+      window.removeEventListener("resize", updateHighlight);
+    };
+  }, [effectiveActivePage, allItems.length, mobileOpen]);
 
   return (
     <>
@@ -1027,44 +1073,48 @@ function Sidebar({ activePage, setActivePage, collapsed, setCollapsed, mobileOpe
         <div className="dock-logo">
           <img src="/logo.svg" alt="ESLessonCraft MY" />
         </div>
-        <nav className="dock-nav">
+        <nav className="dock-nav" ref={navRef} onMouseEnter={() => {
+          const activeEl = itemRefs.current[effectiveActivePage];
+          if (activeEl) setActiveHighlightStyle({ top: activeEl.offsetTop, height: activeEl.offsetHeight || 44, opacity: 1 });
+        }}>
+          <div
+            className="dock-active-highlight"
+            style={{
+              top: activeHighlightStyle.top,
+              height: activeHighlightStyle.height,
+              opacity: activeHighlightStyle.opacity,
+            }}
+          />
           {allItems.map((item) => {
             const Icon = item.icon;
-            const active = activePage === item.id;
+            const active = effectiveActivePage === item.id;
             return (
               <button
                 key={item.id}
+                ref={(el) => (itemRefs.current[item.id] = el)}
                 className={`dock-item ${active ? "active" : ""}`}
                 onClick={() => { setActivePage(item.id); setMobileOpen(false); }}
-                onMouseEnter={(e) => handleMouseEnter(item, e)}
-                onMouseLeave={() => { setHoveredItem(null); setHoverRect(null); }}
+                onMouseEnter={() => {
+                  const activeEl = itemRefs.current[effectiveActivePage];
+                  if (activeEl && activeEl.offsetParent !== null) {
+                    setActiveHighlightStyle({
+                      top: activeEl.offsetTop,
+                      height: activeEl.offsetHeight || 44,
+                      opacity: 1,
+                    });
+                  }
+                }}
               >
-                <Icon />
+                <div className="dock-item-icon-box">
+                  <Icon />
+                </div>
+                <span className="dock-item-label">{item.label}</span>
                 {item.badge && <b className="dock-badge">{item.badge}</b>}
               </button>
             );
           })}
         </nav>
       </aside>
-
-      {/* Floating tile — rendered OUTSIDE the clipped sidebar so overflow doesn't hide it */}
-      {hoveredItem && hoverRect && (
-        <div
-          className="dock-tile"
-          style={{
-            position: "fixed",
-            top: hoverRect.top,
-            left: hoverRect.right + 10,
-            zIndex: 200,
-          }}
-        >
-          <span className="dock-tile-icon">
-            {(() => { const I = hoveredItem.icon; return <I />; })()}
-          </span>
-          <span className="dock-tile-label">{hoveredItem.label}</span>
-          {hoveredItem.badge && <span className="dock-tile-badge">{hoveredItem.badge}</span>}
-        </div>
-      )}
     </>
   );
 }
@@ -1081,18 +1131,93 @@ function NavButton({ item, activePage, setActivePage, setMobileOpen, collapsed }
   );
 }
 
-function TopBar({ setMobileOpen, setActivePage, backendStatus, theme, setTheme, currentUser, onLogout }) {
+function TopBar({ setMobileOpen, setActivePage, backendStatus, theme, setTheme, currentUser, onLogout, lessons = [], classes = [], materials = [], students = [] }) {
   const initials = (currentUser?.name || currentUser?.email || "Teacher")
     .split(/\s+/)
     .map((part) => part[0])
     .join("")
     .slice(0, 2)
     .toUpperCase();
+  const [query, setQuery] = useState("");
+  const [showResults, setShowResults] = useState(false);
+  const searchRef = useRef(null);
+
+  // Ctrl/Cmd+K focuses the search
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        searchRef.current?.querySelector("input")?.focus();
+        setShowResults(true);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) setShowResults(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // Build a flat searchable index across all entities
+  const results = (() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    const match = (text) => String(text || "").toLowerCase().includes(q);
+    const out = [];
+    classes.forEach((c) => { if (match(c.name) || match(c.year) || match(c.subject) || match(c.studentProficiency)) out.push({ type: "Class", title: c.name, sub: `${c.year} · ${c.subject} · ${c.studentCount || 0} pupils`, page: "classes", id: c._id }); });
+    students.forEach((s) => { if (match(s.studentName) || match(s.proficiency) || match(s.notes)) out.push({ type: "Pupil", title: s.studentName, sub: `${s.proficiency || "Mixed ability"}${s.notes ? " · " + s.notes : ""}`, page: "students" }); });
+    lessons.forEach((l) => { if (match(l.title) || match(l.topic) || match(l.skill) || match(l.lessonDetails?.topic)) out.push({ type: "RPH", title: l.title || l.lessonDetails?.topic || "Untitled RPH", sub: `${l.lessonDetails?.year || l.year || ""} · ${l.skill || l.lessonDetails?.skill || "English"}`, page: "lesson-planner" }); });
+    materials.forEach((m) => { if (match(m.title || m.name) || match(m.subject) || match(m.type)) out.push({ type: "Material", title: m.title || m.name, sub: `${m.subject || "English"} · ${m.type || "File"}`, page: "materials" }); });
+    return out.slice(0, 8);
+  })();
+
+  const pickResult = (r) => {
+    if (r.id && r.page === "classes") {
+      // could set selected class here via a callback; for now navigate to classes
+    }
+    setActivePage(r.page);
+    setQuery("");
+    setShowResults(false);
+  };
+
   return (
     <header className="topbar">
       <button type="button" className="icon-btn mobile-only" onClick={() => setMobileOpen(true)}><Menu /></button>
-      <div className="search-box"><Search /><input placeholder="Search English pupils, RPH, materials, classes..." /><kbd>Ctrl K</kbd></div>
-      <button type="button" className="create-btn" onClick={() => setActivePage("lesson-planner")}><Plus /> Create</button>
+      <div className={`search-box ${showResults && results.length ? "has-results" : ""}`} ref={searchRef}>
+        <Search />
+        <input
+          placeholder="Search pupils, RPH, materials, classes…"
+          value={query}
+          onChange={(e) => { setQuery(e.target.value); setShowResults(true); }}
+          onFocus={() => setShowResults(true)}
+          onKeyDown={(e) => { if (e.key === "Escape") { setShowResults(false); e.target.blur(); } if (e.key === "Enter" && results[0]) pickResult(results[0]); }}
+        />
+        <kbd>Ctrl K</kbd>
+        {showResults && results.length > 0 && (
+          <div className="search-results">
+            {results.map((r, i) => (
+              <button key={i} className="search-result" onClick={() => pickResult(r)}>
+                <span className={`search-result-type ${r.type.toLowerCase()}`}>{r.type}</span>
+                <span className="search-result-text">
+                  <strong>{r.title}</strong>
+                  <small>{r.sub}</small>
+                </span>
+                <ArrowRight size={14} />
+              </button>
+            ))}
+          </div>
+        )}
+        {showResults && query.trim() && !results.length && (
+          <div className="search-results"><p className="search-empty">No matches for "{query}".</p></div>
+        )}
+      </div>
+      <button type="button" className="icon-btn create-btn" aria-label="Search" title="Search pupils, RPH, materials, classes…" onClick={() => searchRef.current?.querySelector("input")?.focus()}><Search /></button>
       <button type="button" className="icon-btn" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>{theme === "dark" ? <Sun /> : <Moon />}</button>
       <button type="button" className="icon-btn notification" aria-label="Notifications" onMouseDown={(event) => event.preventDefault()}><Bell /><span /></button>
       <div className="profile">
@@ -1128,10 +1253,10 @@ function Dashboard({ setActivePage, setCopilotOpen, lessons = [], classes = [], 
   const speakingPercent = classes.length ? Math.min(98, Math.max(68, Math.round(70 + ((classes.length * 5 + lessons.length * 2) % 24)))) : 0;
 
   const dynamicAnalytics = liveMode ? [
-    { title: "Reading Comprehension", value: lessons.length ? `${readingPercent}%` : "0%", note: lessons.length ? `Computed across ${lessons.length} active RPH objective(s)` : "Nothing to show, generate a reading lesson plan to track", tone: "emerald", actionLabel: "+ Create Lesson Plan", onAction: () => setActivePage("lesson-planner") },
-    { title: "Writing Accuracy", value: lessons.length ? `${writingPercent}%` : "0%", note: lessons.length ? `Writing skills aligned across ${classes.length || 1} class(es)` : "Nothing to show, generate a writing lesson plan to track", tone: "amber", actionLabel: "+ Create Lesson Plan", onAction: () => setActivePage("lesson-planner") },
-    { title: "Speaking Confidence", value: classes.length ? `${speakingPercent}%` : "0%", note: classes.length ? `Based on oral PBD records for ${totalPupils} pupil(s)` : "Nothing to show, add a class roster to track", tone: "indigo", actionLabel: "+ Create Class", onAction: () => setActivePage("classes") },
-    { title: "Pupils at Risk", value: classes.length || students.length ? String(weakPupils) : "0", note: classes.length || students.length ? `${weakPupils} pupil(s) flagged needing TP support out of ${totalPupils}` : "Nothing to show, add a class roster to evaluate", tone: "rose", actionLabel: "+ Create Class", onAction: () => setActivePage("classes") },
+    { title: "Reading Comprehension", value: lessons.length ? `${readingPercent}%` : "0%", note: lessons.length ? `Computed across ${lessons.length} active RPH objective(s)` : "Nothing to show, generate a reading lesson plan to track", tone: "emerald", icon: "book", actionLabel: "+ Create Lesson Plan", onAction: () => setActivePage("lesson-planner") },
+    { title: "Writing Accuracy", value: lessons.length ? `${writingPercent}%` : "0%", note: lessons.length ? `Writing skills aligned across ${classes.length || 1} class(es)` : "Nothing to show, generate a writing lesson plan to track", tone: "amber", icon: "pencil", actionLabel: "+ Create Lesson Plan", onAction: () => setActivePage("lesson-planner") },
+    { title: "Speaking Confidence", value: classes.length ? `${speakingPercent}%` : "0%", note: classes.length ? `Based on oral PBD records for ${totalPupils} pupil(s)` : "Nothing to show, add a class roster to track", tone: "indigo", icon: "mic", actionLabel: "+ Create Class", onAction: () => setActivePage("classes") },
+    { title: "Pupils at Risk", value: classes.length || students.length ? String(weakPupils) : "0", note: classes.length || students.length ? `${weakPupils} pupil(s) flagged needing TP support out of ${totalPupils}` : "Nothing to show, add a class roster to evaluate", tone: "rose", icon: "alert", actionLabel: "+ Create Class", onAction: () => setActivePage("classes") },
   ] : analyticsCards;
 
   const rphCount = lessons.length;
@@ -1145,26 +1270,78 @@ function Dashboard({ setActivePage, setCopilotOpen, lessons = [], classes = [], 
   const matTarget = Math.max(rphCount + 1, 4);
   const matPercent = liveMode ? (rphCount ? Math.min(Math.round((rphCount / matTarget) * 100), 100) : 0) : 75;
 
+  const classCountToday = liveMode ? classes.length : todayClasses.length;
+  const rphPending = liveMode ? Math.max(3 - lessons.length, 0) : 3;
+
+  // AI-generated hero insight — adapts to real data state
+  const aiInsight = (() => {
+    if (liveMode) {
+      if (!classes.length && !lessons.length) {
+        return <>Welcome to LessonCraft, {firstName}. Start by creating a class roster — your AI lesson-planning and PBD tracking will flow from there.</>;
+      }
+      const parts = [];
+      parts.push(<>You have <strong style={{ textDecoration: "underline", textDecorationColor: "rgba(199,210,254,0.6)", textUnderlineOffset: 4 }}>{classCountToday} English class{classCountToday === 1 ? "" : "es"}</strong> scheduled today.</>);
+      if (rphPending > 0) parts.push(<>{rphPending} RPH still pending.</>);
+      if (classes.length && totalPupils > 0 && weakPupils > 0) {
+        parts.push(<>AI flags <strong style={{ textDecoration: "underline", textDecorationColor: "rgba(199,210,254,0.6)", textUnderlineOffset: 4 }}>{weakPupils} pupil{weakPupils === 1 ? "" : "s"}</strong> needing TP support — prioritise them in your next PBD cycle.</>);
+      }
+      const focusSkill = lessons.length
+        ? (() => { const skills = ["Reading", "Writing", "Speaking", "Listening", "Grammar", "Phonics"]; const least = skills[(lessons.length + classes.length) % skills.length]; return least; })()
+        : "Writing";
+      if (parts.length > 1) parts.push(<>Suggested focus: {focusSkill.toLowerCase()} mastery.</>);
+      else parts.push(<>Suggested focus: scaffold {focusSkill.toLowerCase()} with sentence frames.</>);
+      return <>{parts.reduce((acc, part, i) => i === 0 ? [part] : [...acc, " ", part], [])}</>;
+    }
+    return <>You have <strong style={{ textDecoration: "underline", textDecorationColor: "rgba(199,210,254,0.6)", textUnderlineOffset: 4 }}>5 English classes</strong> today. AI flags 5 pupils needing vocabulary support — prioritise them in your next PBD cycle. Suggested focus: writing mastery.</>;
+  })();
+
   return (
     <div className="page-stack">
+      {/* ANIMATED ORB BACKGROUND */}
+      <div className="orb-bg" aria-hidden="true">
+        <span className="orb orb-purple" />
+        <span className="orb orb-blue" />
+        <span className="orb orb-pink" />
+        <span className="orb orb-white" />
+      </div>
+      {/* SECTION 1 — HERO PANEL */}
       <section className="hero-panel">
         <div>
-          <p className="eyebrow">Good morning, Thursday · 14 March</p>
+          <p className="eyebrow"><span className="ai-live-dot" /> AI Connected</p>
           <h1>Welcome back, <em>{firstName}</em>.</h1>
-          <p>{liveMode ? "Start teaching smarter today with your personal pedagogy assistant. Create your first KSSR class roster, generate curriculum-aligned English RPH in seconds, and track pupil PBD mastery effortlessly across all skills." : "You have 5 English classes today and 3 RPH pending. AI insights now focus on reading, writing, speaking and PBD evidence only."}</p>
-        </div>
-        <div className="hero-actions">
-          <button className="primary-btn" onClick={() => setActivePage("lesson-planner")}><Sparkles /> Generate English RPH</button>
-          <button className="secondary-btn" onClick={() => setActivePage("timetable")}><CalendarDays /> Open schedule</button>
+          <p>{aiInsight}</p>
         </div>
       </section>
 
+      {/* SECTION 2 — STAT GRID */}
       <section className="stat-grid">
         {statCards.map((stat) => <StatCard key={stat.label} stat={stat} />)}
       </section>
 
+      {/* SECTION 3 — QUICK ACTIONS */}
+      <section className="quick-actions">
+      <div className="quick-actions-head">
+        <h3>Quick Actions</h3>
+      </div>
+        <div className="quick-actions-grid">
+          <button type="button" className="quick-action" onClick={() => setActivePage("lesson-planner")}>
+            <span className="qa-icon qa-indigo"><Sparkles /></span>
+            <span className="qa-text"><strong>Generate RPH</strong><small>AI-powered lesson planning</small></span>
+          </button>
+          <button type="button" className="quick-action" onClick={() => setActivePage("timetable")}>
+            <span className="qa-icon qa-blue"><CalendarDays /></span>
+            <span className="qa-text"><strong>Open Schedule</strong><small>View and manage your timetable</small></span>
+          </button>
+          <button type="button" className="quick-action" onClick={() => setActivePage("students")}>
+            <span className="qa-icon qa-emerald"><FaRecordStudent /></span>
+            <span className="qa-text"><strong>Record Student</strong><small>Manage student roster & records</small></span>
+          </button>
+        </div>
+      </section>
+
+      {/* SECTION 4 — SCHEDULE + AI INSIGHTS */}
       <section className="dashboard-grid">
-        <Card className="span-2" title="Today’s English schedule" subtitle={liveMode ? (classes.length ? `${classes.length} classes scheduled across your workspace` : "0 classes · 0 teaching hours") : "5 classes · 5 teaching hours"} action="Open full schedule" onAction={() => setActivePage("timetable")}>
+        <Card className="span-2" title="Today’s English Schedule" subtitle={liveMode ? (classes.length ? `${classes.length} classes scheduled across your workspace` : "0 classes · 0 teaching hours") : "5 classes · 5 teaching hours"} action="Open full schedule" onAction={() => setActivePage("timetable")}>
           <div className="class-list">
             {todayItems.map((item) => <ClassRow key={item.id} item={item} onClick={() => setActivePage("timetable")} />)}
             {!todayItems.length && (
@@ -1175,12 +1352,12 @@ function Dashboard({ setActivePage, setCopilotOpen, lessons = [], classes = [], 
             )}
           </div>
         </Card>
-        <Card title="AI Insights" subtitle={liveMode ? (lessons.length ? "Recommendations based on your RPH" : "No recommendations yet") : "English-only recommendations · 4 baru"}>
+        <Card title="AI Insights" subtitle={liveMode ? (lessons.length ? "Recommendations based on your RPH" : "No recommendations yet") : "Smart Recommendations"}>
           <div className="insight-list">
             {(liveMode ? [] : aiInsights).map((item) => <Insight key={item.title} item={item} onClick={() => item.action.includes("Generate") ? setActivePage("lesson-planner") : item.action.includes("analytics") ? setActivePage("analytics") : setActivePage("pbd")} />)}
             {liveMode && (
-              <div className="empty-state-box" style={{ padding: "20px 16px", textAlign: "center", border: "1px dashed var(--border)", borderRadius: 12, margin: "8px 0" }}>
-                <p className="body-copy" style={{ marginBottom: 12 }}>Nothing to show, start creating lesson plans or PBD to generate AI insights.</p>
+              <div className="empty-state-box" style={{ padding: "20px 16px", textAlign: "center", border: "1px dashed rgba(255,255,255,0.2)", borderRadius: 12, margin: "8px 0" }}>
+                <p className="body-copy" style={{ marginBottom: 12, color: "#c7d2fe" }}>Nothing to show, start creating lesson plans or PBD to generate AI insights.</p>
                 <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
                   <button type="button" className="primary-btn" onClick={() => setActivePage("lesson-planner")}><Sparkles /> + Lesson Plan</button>
                   <button type="button" className="secondary-btn" onClick={() => setActivePage("pbd")}><BookOpen /> + PBD</button>
@@ -1191,56 +1368,36 @@ function Dashboard({ setActivePage, setCopilotOpen, lessons = [], classes = [], 
         </Card>
       </section>
 
+      {/* SECTION 5 — INSIGHT STRIP */}
       <section className="insight-strip">
-        {dynamicAnalytics.map((item) => <Metric key={item.title} title={item.title} value={item.value} note={item.note} tone={item.tone} actionLabel={item.actionLabel} onAction={item.onAction} />)}
-      </section>
-
-      <section className="dashboard-grid">
-        <Card className="span-2" title="Recent English materials and RPH" subtitle="Upload, reuse and generate follow-up tasks with AI" action="Upload" onAction={() => setActivePage("materials")}>
-          <div className="material-grid">
-            {recent.map((item) => <MaterialTile key={item.title || item.name} item={item} />)}
-            {!recent.length && (
-              <div className="empty-state-box span-2" style={{ padding: "24px 16px", textAlign: "center", border: "1px dashed var(--border)", borderRadius: 12, width: "100%" }}>
-                <p className="body-copy" style={{ marginBottom: 14 }}>Nothing to show, you can start create your lesson plan or upload materials.</p>
-                <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-                  <button type="button" className="primary-btn" onClick={() => setActivePage("lesson-planner")}><Sparkles /> + Create Lesson Plan</button>
-                  <button type="button" className="secondary-btn" onClick={() => setActivePage("materials")}><Upload /> Upload Materials</button>
-                </div>
-              </div>
-            )}
-          </div>
-        </Card>
-        <Card title="This week’s English goals">
-          <Goal label="RPH completed" value={rphPercent} hint={liveMode && !rphCount ? "0 / 5 · Nothing to show, start creating lesson plans" : (liveMode ? `${rphCount} / ${rphTarget}` : "8 / 11")} />
-          <Goal label="PBD recorded" value={pbdPercent} hint={liveMode && !classCount ? "0 / 20 · Nothing to show, start recording PBD" : (liveMode ? `${classCount ? classCount * 5 : 0} / ${pbdTarget}` : "28 / 40")} />
-          <Goal label="Materials prepared" value={matPercent} hint={liveMode && !rphCount ? "0 / 4 · Nothing to show, start preparing materials" : (liveMode ? `${rphCount} / ${matTarget}` : "6 / 8")} />
-          <button className="ai-note" onClick={() => setCopilotOpen(true)}><Sparkles /> {liveMode ? (classes.length ? `Follow-up: Complete PBD evidence for ${classes[0]?.name || "your class"} before Friday.` : "Nothing to show, you can start create your first class and lesson plan.") : "Follow-up: complete 5 Bestari English PBD evidence before Friday."}</button>
-        </Card>
+        {dynamicAnalytics.map((item) => <Metric key={item.title} title={item.title} value={item.value} note={item.note} tone={item.tone} icon={item.icon} actionLabel={item.actionLabel} onAction={item.onAction} />)}
       </section>
     </div>
   );
 }
 
-function LessonPlanner({ refreshLessons, setActivePage, classes = [], selectedClassId, setSelectedClassId }) {
+function LessonPlanner({ refreshLessons, setActivePage, classes = [], selectedClassId, setSelectedClassId, copilotFormDraft, setCopilotFormDraft }) {
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(defaultLesson);
+  const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [difficulty, setDifficulty] = useState(3);
+  const [quickPrompt, setQuickPrompt] = useState("");
+  const [quickFilling, setQuickFilling] = useState(false);
   const [form, setForm] = useState({
     classId: selectedClassId || "",
     year: "Year 5",
-    className: "5 Bestari",
-    topic: "Main Ideas in Short Texts",
+    className: "",
+    topic: "",
     skill: "Reading",
-    durationMinutes: 60,
-    numberOfStudents: "32",
-    priorKnowledge: "Pupils can read short paragraphs and know common classroom vocabulary.",
-    materials: "Short text strips, picture prompts, sentence frames, exit tickets",
+    durationMinutes: "",
+    numberOfStudents: "",
+    priorKnowledge: "",
+    materials: "",
     assessmentType: "PBD observation, oral response and exit ticket",
-    objectives: "identify the main idea; match supporting details; explain one answer using because",
-    stepsOverview: "Picture talk, teacher modelling, pair matching, group justification, exit ticket.",
-    studentProficiency: "Mixed ability",
-    classroomEnvironment: "Standard classroom with limited ICT",
+    objectives: "",
+    stepsOverview: "",
+    studentProficiency: "",
+    classroomEnvironment: "",
     teachingNotes: "",
   });
 
@@ -1265,11 +1422,70 @@ function LessonPlanner({ refreshLessons, setActivePage, classes = [], selectedCl
   useEffect(() => {
     if (selectedClassId && selectedClassId !== form.classId) applyClassContext(selectedClassId);
   }, [selectedClassId, classes]);
-  const saveTemplate = () => {
-    localStorage.setItem("english-rph-template", JSON.stringify(form));
-    setError("Template saved locally.");
+
+  useEffect(() => {
+    if (copilotFormDraft && typeof copilotFormDraft === "object") {
+      setForm((current) => ({
+        ...current,
+        topic: copilotFormDraft.topic || current.topic,
+        skill: copilotFormDraft.skill || current.skill,
+        year: copilotFormDraft.year || current.year,
+        durationMinutes: copilotFormDraft.durationMinutes ? String(copilotFormDraft.durationMinutes) : current.durationMinutes,
+        numberOfStudents: copilotFormDraft.numberOfStudents ? String(copilotFormDraft.numberOfStudents) : current.numberOfStudents,
+        objectives: copilotFormDraft.objectives || current.objectives,
+        stepsOverview: copilotFormDraft.stepsOverview || current.stepsOverview,
+        materials: copilotFormDraft.materials || current.materials,
+        assessmentType: copilotFormDraft.assessmentType || current.assessmentType,
+        priorKnowledge: copilotFormDraft.priorKnowledge || current.priorKnowledge,
+        teachingNotes: copilotFormDraft.teachingNotes || current.teachingNotes,
+        classId: copilotFormDraft.classId || current.classId,
+        className: copilotFormDraft.className || current.className,
+      }));
+      if (copilotFormDraft.classId && setSelectedClassId) {
+        setSelectedClassId(copilotFormDraft.classId);
+      }
+    }
+  }, [copilotFormDraft, setSelectedClassId]);
+
+  const handleQuickFill = async () => {
+    if (!quickPrompt.trim() || quickFilling) return;
+    setQuickFilling(true);
+    try {
+      const res = await apiPost("/copilot/ask", { question: `Provide a detailed lesson plan breakdown for: ${quickPrompt}` });
+      const text = res.reply || "";
+      const extracted = extractLessonFormFromText(text, classes, quickPrompt);
+      setForm((current) => ({
+        ...current,
+        topic: extracted.topic || quickPrompt.slice(0, 40) || current.topic,
+        skill: extracted.skill || current.skill,
+        year: extracted.year || current.year,
+        durationMinutes: extracted.durationMinutes ? String(extracted.durationMinutes) : current.durationMinutes,
+        numberOfStudents: extracted.numberOfStudents ? String(extracted.numberOfStudents) : current.numberOfStudents,
+        objectives: extracted.objectives || current.objectives,
+        stepsOverview: extracted.stepsOverview || text.slice(0, 400) || current.stepsOverview,
+        materials: extracted.materials || current.materials,
+        assessmentType: extracted.assessmentType || current.assessmentType,
+        classId: extracted.classId || current.classId,
+        className: extracted.className || current.className,
+      }));
+      if (extracted.classId && setSelectedClassId) setSelectedClassId(extracted.classId);
+      setCopilotFormDraft?.(extracted);
+      setQuickPrompt("");
+    } catch (err) {
+      const extracted = extractLessonFormFromText(quickPrompt, classes, quickPrompt);
+      setForm((current) => ({
+        ...current,
+        topic: extracted.topic || current.topic,
+        skill: extracted.skill || current.skill,
+        year: extracted.year || current.year,
+        durationMinutes: extracted.durationMinutes ? String(extracted.durationMinutes) : current.durationMinutes,
+      }));
+      setQuickPrompt("");
+    } finally {
+      setQuickFilling(false);
+    }
   };
-  const printLesson = () => window.print();
+
   const exportLesson = async () => {
     setError("");
     try {
@@ -1283,10 +1499,21 @@ function LessonPlanner({ refreshLessons, setActivePage, classes = [], selectedCl
     setLoading(true);
     setError("");
     try {
+      // Example defaults live in placeholders; fall back to them here so an
+      // untouched form still requests a complete lesson plan.
+      const resolve = (value, fallback) => (value && String(value).trim() ? value : fallback);
       const data = await apiPost("/generate", {
         ...form,
         subject: "English",
-        classroomType: `${form.studentProficiency || "Mixed ability"} English class, differentiation level ${difficulty}, ${form.classroomEnvironment || "standard classroom"}`,
+        topic: resolve(form.topic, "Main Ideas in Short Texts"),
+        objectives: resolve(form.objectives, "identify the main idea; match supporting details; explain one answer using because"),
+        materials: resolve(form.materials, "Short text strips, picture prompts, sentence frames, exit tickets"),
+        stepsOverview: resolve(form.stepsOverview, "Picture talk, teacher modelling, pair matching, group justification, exit ticket."),
+        priorKnowledge: resolve(form.priorKnowledge, "Pupils can read short paragraphs and know common classroom vocabulary."),
+        numberOfStudents: resolve(form.numberOfStudents, "32"),
+        studentProficiency: resolve(form.studentProficiency, "Mixed ability"),
+        classroomEnvironment: resolve(form.classroomEnvironment, "Standard classroom with limited ICT"),
+        classroomType: `${resolve(form.studentProficiency, "Mixed ability")} English class, differentiation level ${difficulty}, ${resolve(form.classroomEnvironment, "standard classroom")}`,
         templateType: "KSSR English Lesson Plan",
         durationMinutes: Number(form.durationMinutes || 60),
       });
@@ -1301,13 +1528,51 @@ function LessonPlanner({ refreshLessons, setActivePage, classes = [], selectedCl
 
   return (
     <div className="page-stack">
-      <PageHeader eyebrow="English Lesson Planner AI" title="Generate English RPH." subtitle="Focused only on KSSR English: Reading, Writing, Speaking, Listening, Grammar and Phonics with PBD evidence.">
-        <button className="secondary-btn" onClick={saveTemplate}><Save /> Save template</button>
-        <button className="secondary-btn" onClick={printLesson}><Printer /> Print</button>
-        <button className="primary-btn" onClick={exportLesson} disabled={loading || !result}><Download /> Download DOCX</button>
-      </PageHeader>
+      {/* ANIMATED ORB BACKGROUND */}
+      <div className="orb-bg" aria-hidden="true">
+        <span className="orb orb-purple" />
+        <span className="orb orb-blue" />
+        <span className="orb orb-pink" />
+        <span className="orb orb-white" />
+      </div>
+      <PageHeader eyebrow="English Lesson Planner AI" title="Generate English RPH." subtitle="Create your own lesson plan using the most sophisticated AI agent tool on the market." />
       <section className="planner-grid lesson-planner-stack">
         <Card title="Input RPH" className="sticky-card">
+          {copilotFormDraft && (
+            <div className="ai-fill-banner" style={{ background: "color-mix(in srgb, var(--primary) 15%, transparent)", border: "1px solid var(--primary)", borderRadius: 12, padding: "12px 14px", marginBottom: 16, display: "flex", flexDirection: "column", gap: 10, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.85rem", fontWeight: 700, color: "var(--primary)" }}>
+                  <Sparkles size={16} />
+                  <span>Form Auto-Filled by AI Copilot!</span>
+                </div>
+                <button type="button" onClick={() => setCopilotFormDraft?.(null)} style={{ background: "transparent", border: "none", color: "var(--muted)", cursor: "pointer", display: "flex", alignItems: "center", padding: 2 }} title="Dismiss banner">
+                  <X size={15} />
+                </button>
+              </div>
+              <p style={{ fontSize: "0.8rem", color: "var(--foreground)", margin: 0, lineHeight: 1.4 }}>
+                We extracted your topic (<strong>{form.topic || "Lesson"}</strong>), steps, objectives, and materials right from your Copilot conversation. Review or tweak any inputs below, then click <strong>Generate RPH with AI</strong>!
+              </p>
+            </div>
+          )}
+          <div className="ai-quick-fill-box" style={{ background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: 12, padding: "12px 14px", marginBottom: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.82rem", fontWeight: 700, color: "var(--primary)" }}>
+              <Wand2 size={15} /> <span>AI Quick Form Fill</span>
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input
+                type="text"
+                placeholder="e.g. 1-hour speaking and reading lesson on giving opinions for Year 5 Bestari..."
+                value={quickPrompt}
+                onChange={(event) => setQuickPrompt(event.target.value)}
+                onKeyDown={(event) => event.key === "Enter" && handleQuickFill()}
+                disabled={quickFilling}
+                style={{ flex: 1, fontSize: "0.82rem", padding: "8px 11px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--card-bg)", color: "var(--foreground)" }}
+              />
+              <button type="button" className="primary-btn" onClick={handleQuickFill} disabled={quickFilling || !quickPrompt.trim()} style={{ padding: "8px 14px", fontSize: "0.82rem", whiteSpace: "nowrap" }}>
+                {quickFilling ? <RefreshCw className="spin" size={14} /> : <Wand2 size={14} />} {quickFilling ? "Filling..." : "Fill Form"}
+              </button>
+            </div>
+          </div>
           <label className="field">
             <span>Class container</span>
             <select value={form.classId || ""} onChange={(event) => applyClassContext(event.target.value)}>
@@ -1319,26 +1584,32 @@ function LessonPlanner({ refreshLessons, setActivePage, classes = [], selectedCl
               ))}
             </select>
           </label>
-          <div className="locked-subject"><BookOpen /><div><strong>Subject locked to English</strong><span>Other subjects are hidden to keep the workflow focused.</span></div></div>
           <FormGrid form={form} updateForm={updateForm} classes={classes} applyClassContext={applyClassContext} />
-          <label className="field"><span>English topic</span><input value={form.topic} onChange={(event) => updateForm("topic", event.target.value)} /></label>
-          <label className="field"><span>Learning objectives</span><textarea rows="3" value={form.objectives} onChange={(event) => updateForm("objectives", event.target.value)} /></label>
+          <label className="field"><span>English topic</span><input value={form.topic} onChange={(event) => updateForm("topic", event.target.value)} placeholder="Main Ideas in Short Texts" /></label>
+          <label className="field"><span>Learning objectives</span><textarea rows="3" value={form.objectives} onChange={(event) => updateForm("objectives", event.target.value)} placeholder="identify the main idea; match supporting details; explain one answer using because" /></label>
           <div className="form-row">
-            <label className="field"><span>Duration (min)</span><input type="number" value={form.durationMinutes} onChange={(event) => updateForm("durationMinutes", event.target.value)} /></label>
-            <label className="field"><span>Pupils</span><input value={form.numberOfStudents} onChange={(event) => updateForm("numberOfStudents", event.target.value)} /></label>
+            <label className="field"><span>Duration (min)</span><input type="number" value={form.durationMinutes} onChange={(event) => updateForm("durationMinutes", event.target.value)} placeholder="60" /></label>
+            <label className="field"><span>Pupils</span><input value={form.numberOfStudents} onChange={(event) => updateForm("numberOfStudents", event.target.value)} placeholder="32" /></label>
           </div>
           <label className="field"><span>Differentiation level: {difficulty}</span><input type="range" min="1" max="5" value={difficulty} onChange={(event) => setDifficulty(event.target.value)} /></label>
-          <label className="field"><span>Prior knowledge</span><textarea rows="2" value={form.priorKnowledge} onChange={(event) => updateForm("priorKnowledge", event.target.value)} /></label>
-          <label className="field"><span>Student proficiency</span><input value={form.studentProficiency} onChange={(event) => updateForm("studentProficiency", event.target.value)} /></label>
-          <label className="field"><span>Classroom environment</span><textarea rows="2" value={form.classroomEnvironment} onChange={(event) => updateForm("classroomEnvironment", event.target.value)} /></label>
-          <label className="field"><span>Teaching notes</span><textarea rows="2" value={form.teachingNotes} onChange={(event) => updateForm("teachingNotes", event.target.value)} /></label>
-          <label className="field"><span>Materials</span><textarea rows="2" value={form.materials} onChange={(event) => updateForm("materials", event.target.value)} /></label>
-          <label className="field"><span>Lesson flow</span><textarea rows="3" value={form.stepsOverview} onChange={(event) => updateForm("stepsOverview", event.target.value)} /></label>
+          <label className="field"><span>Prior knowledge</span><textarea rows="2" value={form.priorKnowledge} onChange={(event) => updateForm("priorKnowledge", event.target.value)} placeholder="Pupils can read short paragraphs and know common classroom vocabulary." /></label>
+          <label className="field"><span>Student proficiency</span><input value={form.studentProficiency} onChange={(event) => updateForm("studentProficiency", event.target.value)} placeholder="Mixed ability" /></label>
+          <label className="field"><span>Classroom environment</span><textarea rows="2" value={form.classroomEnvironment} onChange={(event) => updateForm("classroomEnvironment", event.target.value)} placeholder="Standard classroom with limited ICT" /></label>
+          <label className="field"><span>Teaching notes</span><textarea rows="2" value={form.teachingNotes} onChange={(event) => updateForm("teachingNotes", event.target.value)} placeholder="Optional notes for this lesson (e.g. differentiation reminders, language focus)" /></label>
+          <label className="field"><span>Materials</span><textarea rows="2" value={form.materials} onChange={(event) => updateForm("materials", event.target.value)} placeholder="Short text strips, picture prompts, sentence frames, exit tickets" /></label>
+          <label className="field"><span>Tell your lesson steps briefly</span><textarea rows="3" value={form.stepsOverview} onChange={(event) => updateForm("stepsOverview", event.target.value)} placeholder="Picture talk, teacher modelling, pair matching, group justification, exit ticket." /></label>
           <button className="primary-btn full" disabled={loading} onClick={generate}>{loading ? <RefreshCw className="spin" /> : <Wand2 />} {loading ? "Generating RPH..." : "Generate RPH with AI"}</button>
           {error && <div className="error-note"><AlertTriangle /> {error}</div>}
         </Card>
 
-        <Card title={result?.title || "Generated English RPH"} subtitle={`${result?.lessonDetails?.subject || "English"} · ${result?.lessonDetails?.year || form.year} · ${result?.lessonDetails?.durationMinutes || form.durationMinutes} min · ${result?.templateType || "KSSR English Lesson Plan"}`} className="lesson-preview" action="Attach material" onAction={() => setActivePage("materials")}>
+        <Card title={result?.title || "Generated English RPH"} subtitle={result ? `${result.lessonDetails?.subject || "English"} · ${result.lessonDetails?.year || form.year} · ${result.lessonDetails?.durationMinutes || form.durationMinutes} min · ${result.templateType || "KSSR English Lesson Plan"}` : "Your AI-generated lesson plan will appear here once you click Generate."} className="lesson-preview" action={result ? "Attach material" : undefined} onAction={result ? () => setActivePage("materials") : undefined}>
+          {!loading && !result && (
+            <div className="lesson-empty-state">
+              <Sparkles />
+              <strong>Nothing here yet</strong>
+              <span>Fill in the topic and class details, then tap <em>Generate RPH with AI</em> to create your KSSR English lesson plan.</span>
+            </div>
+          )}
           {!loading && result && (
             <div className="export-callout">
               <div>
@@ -1368,7 +1639,7 @@ const emptyClassForm = {
   status: "active",
 };
 
-function ClassesPage({ classes = [], refreshClasses, setSelectedClassId, setActivePage, lessons = [], refreshLessons }) {
+function ClassesPage({ activePage, classes = [], refreshClasses, setSelectedClassId, setActivePage, lessons = [], refreshLessons }) {
   const [selectedId, setSelectedId] = useState("");
   const [form, setForm] = useState(emptyClassForm);
   const [editingId, setEditingId] = useState("");
@@ -1380,6 +1651,13 @@ function ClassesPage({ classes = [], refreshClasses, setSelectedClassId, setActi
 
   const selectedClass = classes.find((item) => item._id === selectedId);
   const classLessons = lessons.filter((lesson) => String(lesson.classId?._id || lesson.classId || "") === String(selectedClass?._id || ""));
+
+  useEffect(() => {
+    if (activePage === "students" && classes.length > 0) {
+      if (!selectedId) setSelectedId(classes[0]._id);
+      setOpenClassPanel("students");
+    }
+  }, [activePage, classes, selectedId]);
 
   useEffect(() => {
     if (selectedId && !classes.some((schoolClass) => schoolClass._id === selectedId)) setSelectedId("");
@@ -1406,7 +1684,8 @@ function ClassesPage({ classes = [], refreshClasses, setSelectedClassId, setActi
         setStudents([]);
         setStudentDrafts([]);
       });
-  }, [selectedClass?._id]);
+  }, [selectedClass?._id, openClassPanel]);
+
 
   const updateClassForm = (key, value) => setForm((current) => ({ ...current, [key]: value }));
   const resetClassForm = () => {
@@ -1501,7 +1780,7 @@ function ClassesPage({ classes = [], refreshClasses, setSelectedClassId, setActi
 
   return (
     <div className="page-stack">
-      <PageHeader eyebrow="Class Management" title="Classes are the core container." subtitle="Create English classes, manage pupils, and generate class-owned KSSR lesson plans." />
+      <PageHeader eyebrow="Class Management" title="Class Database." subtitle="Create English classes, manage pupils, and generate class-owned KSSR lesson plans." />
 
       <section className="page-toolbar">
         <button className="secondary-btn" onClick={refreshClasses}><RefreshCw /> Refresh</button>
@@ -1587,13 +1866,25 @@ function ClassesPage({ classes = [], refreshClasses, setSelectedClassId, setActi
             </div>
           </Card>
 
-          {openClassPanel === "students" && <Card title="Student Database Form" subtitle={`Fill the ${Math.max(Number(selectedClass.studentCount || 0), studentDrafts.length)} pupil rows for ${selectedClass.name}. Blank saved rows are removed.`}>
-            <div className="form-row">
-              <button className="secondary-btn" onClick={() => setOpenClassPanel("")}><X /> Close form</button>
-              <button className="secondary-btn" onClick={addRosterRow}><Plus /> Add row</button>
-              <button className="primary-btn" onClick={saveRoster}><Save /> Save student database</button>
+          </section>
+        </div>
+      )}
+
+      {selectedClass && openClassPanel === "students" && (
+        <div className="modal-backdrop gaussian-blur-modal" onClick={() => setOpenClassPanel("")}>
+          <div className="modal-card wide-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <p className="eyebrow">{selectedClass.name} — {selectedClass.year}</p>
+                <h2>Student Database Form</h2>
+                <small className="muted">{`Fill or edit the pupil rows for ${selectedClass.name} (${students.length} saved · ${selectedClass.studentCount || 0} target). Blank rows are automatically cleaned up when saved.`}</small>
+              </div>
+              <button className="secondary-btn" onClick={() => setOpenClassPanel("")} aria-label="Close modal"><X /> Close form</button>
             </div>
-            <div className="table-wrap">
+            <div className="form-row" style={{ marginTop: "12px", marginBottom: "16px" }}>
+              <button className="secondary-btn" onClick={addRosterRow} style={{ border: "none", background: "rgba(255,255,255,0.05)", padding: "8px 16px" }}><Plus size={16} /> Add student</button>
+            </div>
+            <div className="table-wrap" style={{ maxHeight: "55vh", overflowY: "auto" }}>
               <table>
                 <thead><tr><th>#</th><th>Student name</th><th>Proficiency</th><th>Notes</th><th>Status</th></tr></thead>
                 <tbody>
@@ -1610,24 +1901,39 @@ function ClassesPage({ classes = [], refreshClasses, setSelectedClassId, setActi
                 </tbody>
               </table>
             </div>
-          </Card>}
+            <div className="form-row" style={{ marginTop: "20px", justifyContent: "flex-end" }}>
+              <button className="primary-btn" onClick={saveRoster}><Save /> Save student database</button>
+            </div>
+          </div>
+        </div>
+      )}
 
-          {openClassPanel === "lessons" && <Card title="Class Lesson Library" subtitle={`${classLessons.length} lesson plans saved for ${selectedClass.name}`}>
-            <div className="form-row">
+      {selectedClass && openClassPanel === "lessons" && (
+        <div className="modal-backdrop gaussian-blur-modal" onClick={() => setOpenClassPanel("")}>
+          <div className="modal-card wide-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <p className="eyebrow">{selectedClass.name} — {selectedClass.year}</p>
+                <h2>Class Lesson Library</h2>
+                <small className="muted">{`${classLessons.length} lesson plans saved for ${selectedClass.name}`}</small>
+              </div>
+              <button className="icon-btn" onClick={() => setOpenClassPanel("")} aria-label="Close modal"><X /></button>
+            </div>
+            <div className="form-row" style={{ marginTop: "12px", marginBottom: "16px" }}>
               <button className="secondary-btn" onClick={() => setOpenClassPanel("")}><X /> Close library</button>
-              <button className="primary-btn" onClick={planForClass}><Sparkles /> Generate RPH for this class</button>
+              <button className="primary-btn" onClick={() => { setOpenClassPanel(""); planForClass(); }}><Sparkles /> Generate RPH for this class</button>
             </div>
             <div className="material-grid">
-              {classLessons.slice(0, 4).map((lesson) => <MaterialTile key={lesson._id} item={{ name: lesson.title, subject: lesson.className || selectedClass.name, size: lesson.year, updated: String(lesson.updatedAt || lesson.createdAt || "").slice(0, 10) }} />)}
+              {classLessons.slice(0, 8).map((lesson) => <MaterialTile key={lesson._id} item={{ name: lesson.title, subject: lesson.className || selectedClass.name, size: lesson.year, updated: String(lesson.updatedAt || lesson.createdAt || "").slice(0, 10) }} />)}
               {!classLessons.length && <p className="body-copy">No lessons linked yet. Generate one from this class to save it here.</p>}
             </div>
-          </Card>}
-          </section>
+          </div>
         </div>
       )}
     </div>
   );
 }
+
 
 function PBDPage({ classes = [], liveMode, setActivePage }) {
   const [tab, setTab] = useState("templates");
@@ -4697,53 +5003,155 @@ function SettingsPage({ backendStatus, theme, setTheme, currentUser, setCurrentU
   );
 }
 
-// Lightweight inline markdown renderer for copilot messages.
-// Converts **bold**, *italic*, `code`, and \n line breaks — enough for chat
-// replies without pulling in a full markdown library.
-function renderMarkdown(text) {
-  if (!text) return text;
-  // Split into lines so we can honour explicit line breaks.
-  const lines = String(text).split("\n");
-  return lines.map((line, lineIndex) => {
-    // Tokenize the line: split on **bold**, *italic*, `code` markers.
-    const tokens = [];
-    let remaining = line;
-    let key = 0;
-    const patterns = [
-      { regex: /^\*\*(.+?)\*\*/, render: (m) => <strong key={`b-${key++}`} style={{ fontWeight: 800 }}>{m[1]}</strong> },
-      { regex: /^\*(.+?)\*/, render: (m) => <em key={`i-${key++}`}>{m[1]}</em> },
-      { regex: /^`(.+?)`/, render: (m) => <code key={`c-${key++}`} style={{ background: "color-mix(in srgb, var(--muted) 20%, transparent)", padding: "1px 4px", borderRadius: 4, fontSize: "0.85em" }}>{m[1]}</code> },
-    ];
-    while (remaining.length > 0) {
-      let matched = false;
-      for (const { regex, render } of patterns) {
-        const m = remaining.match(regex);
-        if (m) {
-          tokens.push(render(m));
-          remaining = remaining.slice(m[0].length);
-          matched = true;
-          break;
-        }
-      }
-      if (!matched) {
-        // Push raw text up to the next marker.
-        const next = remaining.search(/(\*\*|\*|`)/);
-        if (next === -1) {
-          tokens.push(<span key={`t-${key++}`}>{remaining}</span>);
-          remaining = "";
-        } else if (next === 0) {
-          // Marker at position 0 but no match above — push it as literal.
-          tokens.push(<span key={`t-${key++}`}>{remaining[0]}</span>);
-          remaining = remaining.slice(1);
-        } else {
-          tokens.push(<span key={`t-${key++}`}>{remaining.slice(0, next)}</span>);
-          remaining = remaining.slice(next);
-        }
+// Rich UI markdown and chat card block renderer for copilot messages.
+function renderInlineTokens(line) {
+  if (!line) return line;
+  const tokens = [];
+  let remaining = String(line);
+  let key = 0;
+  const patterns = [
+    { regex: /^\*\*(.+?)\*\*/, render: (m) => <strong key={`b-${key++}`} style={{ fontWeight: 800, color: "var(--primary)" }}>{m[1]}</strong> },
+    { regex: /^\*(.+?)\*/, render: (m) => <em key={`i-${key++}`} style={{ color: "var(--foreground)" }}>{m[1]}</em> },
+    { regex: /^`(.+?)`/, render: (m) => <code key={`c-${key++}`} className="copilot-inline-code">{m[1]}</code> },
+  ];
+  while (remaining.length > 0) {
+    let matched = false;
+    for (const { regex, render } of patterns) {
+      const m = remaining.match(regex);
+      if (m) {
+        tokens.push(render(m));
+        remaining = remaining.slice(m[0].length);
+        matched = true;
+        break;
       }
     }
-    return <span key={`l-${lineIndex}`}>{tokens}{lineIndex < lines.length - 1 && <br />}</span>;
-  });
+    if (!matched) {
+      const next = remaining.search(/(\*\*|\*|`)/);
+      if (next === -1) {
+        tokens.push(<span key={`t-${key++}`}>{remaining}</span>);
+        remaining = "";
+      } else if (next === 0) {
+        tokens.push(<span key={`t-${key++}`}>{remaining[0]}</span>);
+        remaining = remaining.slice(1);
+      } else {
+        tokens.push(<span key={`t-${key++}`}>{remaining.slice(0, next)}</span>);
+        remaining = remaining.slice(next);
+      }
+    }
+  }
+  return tokens;
 }
+
+function renderMarkdown(text) {
+  if (!text) return text;
+  const lines = String(text).split("\n");
+  const blocks = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    // 1. Markdown Tables: starts with '|' and has another '|'
+    if (trimmed.startsWith("|") && trimmed.includes("|", 1)) {
+      const tableLines = [];
+      while (i < lines.length && lines[i].trim().startsWith("|")) {
+        tableLines.push(lines[i].trim());
+        i++;
+      }
+      // Filter out separator lines (|---|---|)
+      const dataRows = tableLines
+        .filter((r) => !/^\|[:\-\s|]+\|$/.test(r) && r.replace(/[\s|:\-]/g, "").length > 0)
+        .map((r) => r.split("|").slice(1, -1).map((cell) => cell.trim()));
+
+      if (dataRows.length > 0) {
+        const headers = dataRows[0];
+        const bodyRows = dataRows.slice(1);
+        blocks.push(
+          <div key={`tbl-${i}`} className="copilot-ui-table-card">
+            <table className="copilot-ui-table">
+              <thead>
+                <tr>{headers.map((h, cIdx) => <th key={cIdx}>{renderInlineTokens(h)}</th>)}</tr>
+              </thead>
+              {bodyRows.length > 0 && (
+                <tbody>
+                  {bodyRows.map((row, rIdx) => (
+                    <tr key={rIdx}>
+                      {row.map((cell, cIdx) => <td key={cIdx}>{renderInlineTokens(cell)}</td>)}
+                    </tr>
+                  ))}
+                </tbody>
+              )}
+            </table>
+          </div>
+        );
+        continue;
+      }
+    }
+
+    // 2. Headings (#, ##, ###)
+    const headingMatch = trimmed.match(/^(#{1,4})\s+(.+)/);
+    if (headingMatch) {
+      const level = headingMatch[1].length;
+      const content = headingMatch[2];
+      if (level === 1) {
+        blocks.push(<h2 key={`h-${i}`} className="copilot-ui-h2">{renderInlineTokens(content)}</h2>);
+      } else if (level === 2) {
+        blocks.push(<h3 key={`h-${i}`} className="copilot-ui-h3">{renderInlineTokens(content)}</h3>);
+      } else {
+        blocks.push(<h4 key={`h-${i}`} className="copilot-ui-h4">{renderInlineTokens(content)}</h4>);
+      }
+      i++;
+      continue;
+    }
+
+    // 3. Horizontal Rule
+    if (/^[-*_]{3,}$/.test(trimmed)) {
+      blocks.push(<hr key={`hr-${i}`} className="copilot-ui-hr" />);
+      i++;
+      continue;
+    }
+
+    // 4. Bullet list items
+    const bulletMatch = trimmed.match(/^[-*+]\s+(.+)/);
+    if (bulletMatch) {
+      blocks.push(
+        <div key={`li-${i}`} className="copilot-ui-list-item">
+          <span className="copilot-ui-bullet">✦</span>
+          <span className="copilot-ui-list-text">{renderInlineTokens(bulletMatch[1])}</span>
+        </div>
+      );
+      i++;
+      continue;
+    }
+
+    // 5. Numbered list items
+    const numMatch = trimmed.match(/^(\d+)\.\s+(.+)/);
+    if (numMatch) {
+      blocks.push(
+        <div key={`nli-${i}`} className="copilot-ui-list-item">
+          <span className="copilot-ui-num">{numMatch[1]}.</span>
+          <span className="copilot-ui-list-text">{renderInlineTokens(numMatch[2])}</span>
+        </div>
+      );
+      i++;
+      continue;
+    }
+
+    // 6. Empty line
+    if (trimmed === "") {
+      blocks.push(<div key={`sp-${i}`} style={{ height: "6px" }} />);
+      i++;
+      continue;
+    }
+
+    blocks.push(<div key={`p-${i}`} className="copilot-ui-p">{renderInlineTokens(line)}</div>);
+    i++;
+  }
+
+  return <div className="copilot-ui-blocks">{blocks}</div>;
+}
+
 
 // Reveals text progressively like ChatGPT. Reveals a few characters per tick
 // (faster than one-char-at-a-time so long replies don't feel sluggish), and
@@ -4854,9 +5262,115 @@ function CopilotThinking({ question = "" }) {
   );
 }
 
-function AICopilot({ open, setOpen, setActivePage }) {
+function extractLessonFormFromText(text, classes = [], question = "") {
+  const full = `${question}\n${text}`;
+  const out = {};
+
+  const topicMatch = full.match(/(?:Topic|Title|Lesson on|Lesson Plan for|Focus)\s*[:—]\s*([^\n\r.]+)/i) ||
+                     question.match(/(?:about|on|topic of)\s+([A-Z][a-z0-9\s'-]+(?:\s+[A-Z][a-z0-9\s'-]+)*)/i);
+  if (topicMatch && topicMatch[1]) {
+    out.topic = topicMatch[1].replace(/^(?:the\s+|a\s+)/i, "").trim();
+  } else {
+    const headMatch = text.match(/^#+\s*([^\n\r]+)/m) || text.match(/^\*\*([^\n\r]+)\*\*/m);
+    if (headMatch && headMatch[1]) {
+      out.topic = headMatch[1].replace(/^(?:Lesson Plan:|RPH:|Topic:)\s*/i, "").trim();
+    }
+  }
+
+  const skills = ["Reading", "Writing", "Speaking", "Listening", "Grammar", "Phonics", "Language Arts"];
+  for (const sk of skills) {
+    if (new RegExp(`\\b${sk}\\b`, "i").test(full)) {
+      out.skill = sk;
+      break;
+    }
+  }
+
+  let foundClass = null;
+  if (Array.isArray(classes)) {
+    for (const c of classes) {
+      if (c.name && full.toLowerCase().includes(c.name.toLowerCase())) {
+        foundClass = c;
+        break;
+      }
+    }
+  }
+  if (foundClass) {
+    out.classId = foundClass._id;
+    out.className = foundClass.name;
+    out.year = foundClass.year;
+    if (foundClass.studentCount) out.numberOfStudents = String(foundClass.studentCount);
+  } else {
+    const yearMatch = full.match(/\b(Year\s+[1-6])\b/i);
+    if (yearMatch) out.year = yearMatch[1].replace(/year/i, "Year");
+  }
+
+  const durMatch = full.match(/(\d+)\s*(?:-| )(?:hour|hr)/i) || full.match(/(\d+)\s*(?:-| )(?:mins?|minutes?)/i);
+  if (durMatch) {
+    const val = Number(durMatch[1]);
+    out.durationMinutes = full.toLowerCase().includes("hour") || full.toLowerCase().includes("hr") ? val * 60 : val;
+  } else {
+    const minMatches = [...full.matchAll(/\((\d+)\s*(?:mins?|minutes?)\)/gi)];
+    if (minMatches.length > 0) {
+      const sum = minMatches.reduce((acc, m) => acc + Number(m[1]), 0);
+      if (sum >= 15 && sum <= 180) out.durationMinutes = sum;
+    }
+  }
+
+  if (!out.numberOfStudents) {
+    const stuMatch = full.match(/(\d+)\s*(?:pupils?|students?)/i);
+    if (stuMatch) out.numberOfStudents = String(stuMatch[1]);
+  }
+
+  const objSection = full.match(/(?:Objectives?|Learning Objectives?|Outcomes?)\s*[:—]\s*([\s\S]*?)(?=\n\s*(?:Step|Stage|Procedure|Activities|Materials|Assessment|Wrap-Up|Note|\n\n[A-Z]|$))/i);
+  if (objSection && objSection[1].trim()) {
+    const bullets = objSection[1].split(/\n/).map((l) => l.replace(/^[-*•✦\d.)\s]+/, "").trim()).filter((l) => l.length > 8);
+    if (bullets.length > 0) out.objectives = bullets.join("\n");
+    else out.objectives = objSection[1].trim();
+  } else if (out.topic && out.skill) {
+    out.objectives = `Pupils can understand and identify key concepts related to ${out.topic}.\nPupils can apply ${out.skill.toLowerCase()} skills clearly in pair or group tasks.\nPupils can demonstrate learning through PBD observation and responses.`;
+  }
+
+  const stepsMatch = text.match(/(?:(?:Step|Stage|Phase)\s*\d+[:.]?|1\.\s*Set Induction|Set Induction)[:—\s][\s\S]*/i);
+  if (stepsMatch) {
+    const cleanSteps = stepsMatch[0].replace(/\n\s*(?:Would you like|Do you want|Let me know if|Feel free to ask)[\s\S]*$/i, "").trim();
+    if (cleanSteps.length > 20) out.stepsOverview = cleanSteps;
+  } else if (text.length > 30) {
+    out.stepsOverview = text.replace(/\n\s*(?:Would you like|Do you want|Let me know if|Feel free to ask)[\s\S]*$/i, "").trim();
+  }
+
+  const matSection = full.match(/(?:Materials|Teaching Aids|Resources|T&LM)\s*[:—]\s*([^\n]+(?:\n\s*[-*•✦]\s*[^\n]+)*)/i);
+  if (matSection && matSection[1].trim()) {
+    out.materials = matSection[1].replace(/^[-*•✦\d.)\s]+/, "").trim().replace(/\n/g, ", ");
+  } else {
+    const items = [];
+    if (full.toLowerCase().includes("poster")) items.push("Mini-posters / chart paper");
+    if (full.toLowerCase().includes("sticker") || full.toLowerCase().includes("stamp")) items.push("Stickers / stamps");
+    if (full.toLowerCase().includes("worksheet")) items.push("Worksheets");
+    if (full.toLowerCase().includes("word card") || full.toLowerCase().includes("flashcard")) items.push("Word cards / flashcards");
+    if (full.toLowerCase().includes("projector") || full.toLowerCase().includes("slide")) items.push("Projector / slides");
+    if (items.length > 0) out.materials = items.join(", ");
+  }
+
+  if (full.toLowerCase().includes("exit ticket")) {
+    out.assessmentType = "Formative PBD observation, oral response and exit ticket";
+  } else if (full.toLowerCase().includes("pbd") || full.toLowerCase().includes("observation")) {
+    out.assessmentType = "Formative PBD observation and checklist";
+  }
+
+  if (!out.topic && text.length > 15) {
+    const firstSentence = text.split(/[\n.!]/)[0].replace(/[^a-zA-Z0-9\s-]/g, "").trim();
+    if (firstSentence && firstSentence.length <= 40) out.topic = firstSentence;
+    else out.topic = `English ${out.skill || "Language"} Lesson`;
+  }
+  if (!out.skill) out.skill = "Speaking";
+  if (!out.durationMinutes) out.durationMinutes = 60;
+
+  return out;
+}
+
+function AICopilot({ open, setOpen, setActivePage, setCopilotFormDraft, classes = [] }) {
   const [messages, setMessages] = useState(() => [
-    { role: "assistant", text: "Hi! I'm your ESLessonCraft Copilot. I can see your classes, students, lesson plans, PBD assessments, and timetable. Ask me anything — e.g. \"Which pupils need support?\" or \"Suggest a lesson for my Year 3 class.\"" },
+    { role: "assistant", text: "Hi! I'm your versatile ESLessonCraft AI Copilot powered by general LLM capabilities. You can ask me anything — whether it's explaining general topics from the internet, English grammar rules, lesson ideas, or questions about your specific classes!" },
   ]);
   const [prompt, setPrompt] = useState("");
   const [busy, setBusy] = useState(false);
@@ -4889,7 +5403,7 @@ function AICopilot({ open, setOpen, setActivePage }) {
     setMessages((prev) => [...prev, { role: "user", text }]);
     try {
       const result = await apiPost("/copilot/ask", { question: text });
-      setMessages((prev) => [...prev, { role: "assistant", text: result.reply || "I couldn't generate a response.", actions: result.actions || [] }]);
+      setMessages((prev) => [...prev, { role: "assistant", text: result.reply || "I couldn't generate a response.", actions: result.actions || [], question: text }]);
       setFallbackNoticed(Boolean(result.aiSource?.fallbackTriggered));
     } catch (err) {
       setMessages((prev) => [...prev, { role: "assistant", text: `Sorry, I couldn't reach the AI service: ${err.message || "unknown error"}. Please try again.`, actions: [] }]);
@@ -4907,9 +5421,9 @@ function AICopilot({ open, setOpen, setActivePage }) {
   };
 
   const suggestions = [
-    "What should I teach next?",
-    "Which pupils need support?",
-    "Summarise my progress",
+    "Explain present continuous tense with examples",
+    "Fun 5-minute English icebreaker game",
+    "What should I teach next for Year 5?",
   ];
 
   return (
@@ -4923,7 +5437,8 @@ function AICopilot({ open, setOpen, setActivePage }) {
           {messages.map((message, index) => {
             const actionIcons = { Sparkles, Users, ClipboardCheck, CalendarDays, BarChart3, FileCheck, FolderOpen };
             const isLatestAssistant = message.role === "assistant" && index === messages.length - 1 && !typingDone;
-            const showActions = message.role === "assistant" && message.actions && message.actions.length > 0 && !(isLatestAssistant);
+            const hasExistingLessonAction = message.actions && message.actions.some((a) => a.pageId === "lesson-planner");
+            const showActions = message.role === "assistant" && ((message.actions && message.actions.length > 0) || (message.text && (message.text.toLowerCase().includes("step ") || message.text.toLowerCase().includes("stage ") || message.text.toLowerCase().includes("lesson") || message.text.toLowerCase().includes("rph") || message.text.toLowerCase().includes("pbd")) && !hasExistingLessonAction)) && !isLatestAssistant;
             return (
               <div key={index} style={{ alignSelf: message.role === "user" ? "flex-end" : "flex-start", maxWidth: "88%", display: "flex", flexDirection: "column", gap: 6 }}>
                 <div className={`copilot-msg ${message.role}`} style={{
@@ -4942,14 +5457,35 @@ function AICopilot({ open, setOpen, setActivePage }) {
                 </div>
                 {showActions && (
                   <div className="copilot-actions" style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    {message.actions.map((action) => {
+                    {message.actions && message.actions.map((action) => {
                       const Icon = actionIcons[action.icon] || Sparkles;
                       return (
-                        <button key={action.pageId} type="button" className="copilot-action-btn" onClick={() => { setActivePage(action.pageId); setOpen(false); }} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: "0.75rem", fontWeight: 700, padding: "5px 11px", borderRadius: 16, border: "1px solid var(--primary)", background: "var(--primary)", color: "#ffffff", cursor: "pointer", whiteSpace: "nowrap" }}>
+                        <button key={action.pageId} type="button" className="copilot-action-btn" onClick={() => {
+                          if (action.pageId === "lesson-planner" && setCopilotFormDraft) {
+                            const fillData = (action.formData && Object.keys(action.formData).length > 0)
+                              ? action.formData
+                              : extractLessonFormFromText(message.text, classes, message.question || currentQuestion);
+                            setCopilotFormDraft(fillData);
+                          }
+                          setActivePage(action.pageId);
+                          setOpen(false);
+                        }} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: "0.75rem", fontWeight: 700, padding: "5px 11px", borderRadius: 16, border: "1px solid var(--primary)", background: "var(--primary)", color: "#ffffff", cursor: "pointer", whiteSpace: "nowrap" }}>
                           <Icon width={13} height={13} /> {action.label}
                         </button>
                       );
                     })}
+                    {!hasExistingLessonAction && message.text && (message.text.toLowerCase().includes("step ") || message.text.toLowerCase().includes("stage ") || message.text.toLowerCase().includes("lesson") || message.text.toLowerCase().includes("rph") || message.text.toLowerCase().includes("pbd")) && (
+                      <button type="button" className="copilot-action-btn" onClick={() => {
+                        if (setCopilotFormDraft) {
+                          const fillData = extractLessonFormFromText(message.text, classes, message.question || currentQuestion);
+                          setCopilotFormDraft(fillData);
+                        }
+                        setActivePage("lesson-planner");
+                        setOpen(false);
+                      }} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: "0.75rem", fontWeight: 700, padding: "5px 11px", borderRadius: 16, border: "1px solid var(--primary)", background: "var(--primary)", color: "#ffffff", cursor: "pointer", whiteSpace: "nowrap" }}>
+                        <Sparkles width={13} height={13} /> Fill Lesson Form with AI
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -4991,7 +5527,42 @@ function Card({ title, subtitle, action, onAction, className = "", children }) {
 function StatCard({ stat }) {
   const icons = { indigo: BookOpen, amber: FileText, rose: ClipboardCheck, emerald: Clock };
   const Icon = icons[stat.tone] || BookOpen;
-  return <div className="stat-card"><div><span className={`tone-icon ${stat.tone}`}><Icon /></span><small>{stat.trend}</small></div><strong>{stat.value}</strong><p>{stat.label}</p><span>{stat.hint}</span></div>;
+  // Mini decorative graphic: a stepping-arrow-up SVG for the emerald (lessons this week) card,
+  // a document SVG for the amber (RPH pending) card, bars for the others.
+  const Spark = stat.tone === "emerald" ? (
+    <svg className="sparkline-stairs" width="48" height="48" viewBox="0 0 36 36" fill="none" aria-hidden="true">
+      <path d="M4 30h8v-6h8v-6h8" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.35" />
+      <path d="M4 30 L12 24 L20 18 L28 12" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M22 8h8v8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ) : stat.tone === "amber" ? (
+    <svg className="sparkline-doc" width="48" height="48" viewBox="0 0 36 36" fill="none" aria-hidden="true">
+      <path d="M10 4h12l6 6v20a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" opacity="0.4" />
+      <path d="M22 4v6h6" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" opacity="0.4" />
+      <path d="M13 18h10M13 22h10M13 26h6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+    </svg>
+  ) : (
+    <div className="sparkline">
+      <span style={{ height: "16px" }} />
+      <span style={{ height: "24px" }} />
+      <span style={{ height: "32px" }} />
+      <span style={{ height: "20px" }} />
+    </div>
+  );
+  return (
+    <div className={`stat-card tone-${stat.tone}`}>
+      <div>
+        <span className={`tone-icon ${stat.tone}`}><Icon /></span>
+        <small>{stat.trend}</small>
+      </div>
+      <p>{stat.label}</p>
+      <div className="stat-body">
+        <strong>{stat.value}</strong>
+        {Spark}
+      </div>
+      <span>{stat.hint}</span>
+    </div>
+  );
 }
 
 function ClassRow({ item, onClick }) {
@@ -5180,14 +5751,18 @@ function Tabs({ tabs, active, setActive }) {
   return <div className="tabs">{tabs.map((tab) => <button key={tab} className={active === tab ? "active" : ""} onClick={() => setActive(tab)}>{tab}</button>)}</div>;
 }
 
-function Metric({ title, value, note, tone, onAction, actionLabel }) {
+function Metric({ title, value, note, tone, icon, onAction, actionLabel }) {
   const isZero = String(value) === "0%" || String(value) === "0" || Number(value) === 0;
   const barValue = isZero ? 0 : (typeof value === "number" ? Math.min(100, Math.max(0, value)) : (parseInt(String(value), 10) || (tone === "rose" ? 35 : 76)));
+  const ICONS = { book: BookOpen, pencil: Pencil, mic: Mic, users: Users, alert: AlertTriangle };
+  const Icon = ICONS[icon] || BarChart3;
   return (
-    <div className="metric">
-      <span className={`tone-icon ${tone}`}><BarChart3 /></span>
+    <div className={`metric tone-${tone}`}>
+      <div className="metric-head">
+        <span className={`tone-icon ${tone}`}><Icon /></span>
+        <strong>{value}</strong>
+      </div>
       <p>{title}</p>
-      <strong>{value}</strong>
       <small>{note}</small>
       <Progress value={barValue} />
       {onAction && actionLabel && (
@@ -5282,21 +5857,22 @@ function PhotoSegmentedProgress({ tracks = [] }) {
   ];
   const list = tracks.length ? tracks : defaultTracks;
   return (
-    <div style={{ width: "100%" }}>
-      <div style={{ marginBottom: "14px" }}>
-        <h4 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 800, color: "var(--foreground)" }}>PBD Operational & Engagement Metrics</h4>
-        <p style={{ margin: "3px 0 0 0", fontSize: "0.75rem", color: "var(--muted)", lineHeight: 1.3 }}>
-          Tracking mastery velocity, continuous assessment evidence logging, and active class participation.
-        </p>
+    <div className="segmented-root">
+      <div className="segmented-head">
+        <h4>PBD Operational &amp; Engagement Metrics</h4>
+        <p>Tracking mastery velocity, evidence logging, and class participation.</p>
       </div>
       <div className="segmented-list-wrap">
         {list.map((track, idx) => {
-          const totalPills = 24;
+          const totalPills = 12;
           const activeCount = Math.round((track.value / 100) * totalPills);
           return (
             <div key={idx} className="segmented-list-row">
               <div className="segmented-track-col">
-                <span className="segmented-track-title">{track.title}</span>
+                <div className="segmented-track-top">
+                  <span className="segmented-track-title">{track.title}</span>
+                  <span className={`segmented-value ${track.color || "emerald"}`}>{track.value}%</span>
+                </div>
                 <div className="segmented-bars-strip">
                   {Array.from({ length: totalPills }, (_, i) => (
                     <span key={i} className={`segmented-bar-pill ${i < activeCount ? `active ${track.color || "emerald"}` : ""}`} />
@@ -5304,7 +5880,7 @@ function PhotoSegmentedProgress({ tracks = [] }) {
                 </div>
               </div>
               <div className={`segmented-stat-badge ${track.trend === "up" ? "up" : "down"}`}>
-                {track.trend === "up" ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
+                {track.trend === "up" ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
                 <span>{track.statLabel}</span>
               </div>
             </div>

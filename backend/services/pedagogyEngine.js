@@ -1093,7 +1093,7 @@ export function buildCopilotContext({ teacher, classes = [], students = [], less
 // Each response may append [action:pageId] tags so the frontend can render
 // shortcut buttons that jump the teacher to the relevant page.
 function copilotHeuristicResponse(question, contextText) {
-  const q = String(question || "").toLowerCase();
+  const q = String(question || "").toLowerCase().trim();
   const has = (kw) => q.includes(kw);
 
   // Extract counts from context text
@@ -1103,25 +1103,50 @@ function copilotHeuristicResponse(question, contextText) {
   const assessmentCount = (contextText.match(/--- ASSESSMENTS \/ PBD \((\d+)\)/) || [])[1] || 0;
   const scheduleCount = (contextText.match(/--- SCHEDULE PERIODS \((\d+)\)/) || [])[1] || 0;
 
-  if (has("class") || has("roster")) {
-    return `You have ${classCount} class(es) registered. ${Number(classCount) ? "Open the Classes page to add students or create a new class. For a new English class, pick a Year (1–6), set the proficiency level, and the system will track pupil counts automatically." : "Start by creating your first class from the Classes page — choose a Year, subject, and proficiency mix."}\n[action:classes]`;
+  // 1. Explicit workspace or app status queries only
+  if (has("my workspace") || has("workspace status") || has("how many class") || (has("my class") && (has("count") || has("list") || has("how many")))) {
+    return `Here is a summary of your current workspace:\n• Classes: ${classCount}\n• Enrolled Pupils: ${studentCount}\n• Saved Lesson Plans (RPH): ${lessonCount}\n• PBD Assessments: ${assessmentCount}\n• Schedule Slots: ${scheduleCount}\n\nLet me know if you would like to explore any specific class or lesson plan!`;
   }
-  if (has("student") || has("pupil")) {
-    return `You have ${studentCount} student(s) across all classes. ${Number(studentCount) ? "You can record PBD proficiency (TP1–TP6) for each pupil on the PBD & Assessment page." : "Add students by opening a class on the Classes page and using the roster editor."}\n[action:classes]`;
+  if (has("create a class") || has("add class") || has("manage class") || (has("roster") && has("add"))) {
+    return `You can easily manage your classes and student rosters on the Classes page. For a new Malaysian primary KSSR English class, pick a Year (1–6), set the proficiency level, and input your pupils.\n[action:classes]`;
   }
-  if (has("lesson") || has("rph") || has("plan")) {
-    return `You have ${lessonCount} saved lesson plan(s). ${Number(lessonCount) ? "Open the Lesson Planner to generate a new RPH or review existing ones. Each lesson covers a KSSR skill (Reading, Writing, Speaking, Listening, Grammar, or Phonics)." : "Generate your first lesson plan from the Lesson Planner — enter a topic, year, and skill, and the AI will build a complete KSSR-aligned RPH."}\n[action:lesson-planner]`;
+  if (has("create lesson") || has("generate rph") || has("make a lesson") || has("new lesson plan")) {
+    return `To create a new KSSR-aligned lesson plan (RPH), open the Lesson Planner. Enter your topic, select the primary Year, choose the target skill (Reading, Writing, Speaking, Listening, Grammar, or Phonics), and the AI engine will construct all 5 lesson stages automatically.\n[action:lesson-planner]`;
   }
-  if (has("pbd") || has("assess") || has("tp")) {
-    return `You have ${assessmentCount} PBD assessment(s) recorded. ${Number(assessmentCount) ? "Each assessment captures TP1–TP6 proficiency per pupil. Check the PBD & Assessment page to create a template and record evidence." : "Create a PBD assessment template on the PBD page first, then assess pupils with TP scores for each criterion."}\n[action:pbd]`;
+  if (has("record pbd") || has("assess student") || has("pbd evidence")) {
+    return `You can evaluate and record PBD performance (TP1–TP6) for your students directly on the PBD & Assessment page.\n[action:pbd]`;
   }
-  if (has("schedule") || has("timetable") || has("period")) {
-    return `You have ${scheduleCount} timetable period(s) saved. ${Number(scheduleCount) ? "The Timetable page lets you drag, resize, and edit recurring English periods. Changes persist to your weekly schedule." : "Add periods on the Timetable page — click 'New slot' to place a recurring English block in your weekly grid."}\n[action:timetable]`;
+  if (has("set timetable") || has("my schedule") || has("open timetable")) {
+    return `Your weekly English periods and teaching slots can be managed on the Timetable page.\n[action:timetable]`;
   }
-  if (has("help") || has("what can") || has("how")) {
-    return `I'm your ESLessonCraft teaching assistant. I can see your workspace: ${classCount} classes, ${studentCount} students, ${lessonCount} lesson plans, ${assessmentCount} assessments, and ${scheduleCount} schedule periods. Ask me about lesson planning, PBD assessment, student interventions, or classroom strategies — I'll tailor my answer to your actual data.`;
+
+  // 2. Casual chat & conversational reactions
+  if (q === "hi" || q === "hello" || q === "hey" || q.startsWith("hello ") || q.startsWith("hi ")) {
+    return `Hello! How can I help you today? You can ask me anything — whether it's general knowledge, explaining English grammar rules, brainstorming lesson activities, or questions about your Malaysian primary school teaching.`;
   }
-  return `Based on your workspace (${classCount} classes, ${studentCount} students, ${lessonCount} lessons, ${assessmentCount} assessments), I can help with lesson planning, PBD recording, student interventions, or scheduling. Could you give me a bit more detail about what you need?`;
+  if (has("thanks") || has("thank you") || has("tq") || q === "ok" || q === "okay" || q === "noted") {
+    return `You're very welcome! Let me know if you have any other questions or need further explanation on any topic.`;
+  }
+  if (has("stfu") || has("stop") || has("shut up") || has("quiet") || has("i know") || has("yeah ii")) {
+    return `Understood! I will keep my answers concise and direct to the point without any extra suggestions or reminders. Ask me any question whenever you're ready!`;
+  }
+
+  // 3. Versatile English Grammar, Literature & General Teaching Knowledge
+  if (has("grammar") || has("tense") || has("verb") || has("noun") || has("adjective") || has("adverb") || has("pronoun") || has("preposition") || has("conjunction") || has("passive") || has("active voice")) {
+    return `Here is a clear explanation of that English grammar concept:\n\n• **Core Concept**: English grammar structures follow systematic rules of form, meaning, and use.\n• **Classroom Tip**: When introducing grammar points (such as tenses or parts of speech) to Malaysian primary school pupils (KSSR), always use **contextualized sentences** rather than isolated memorization.\n• **Example**: Use visual timelines for tenses (e.g., "Yesterday I walked to school" vs. "Right now I am walking to school") accompanied by Total Physical Response (TPR) actions.\n\nWould you like specific sentence frames or worksheet examples for a particular Year level?`;
+  }
+  if (has("icebreaker") || has("game") || has("fun activity") || has("warm up") || has("warm-up")) {
+    return `Here are 3 engaging, low-prep 5-minute English activities ideal for primary school classrooms:\n\n1. **Word Chain (Simon Says vocabulary)**: The teacher says a topic (e.g., Animals). Pupil 1 says "Cat", Pupil 2 says "Tiger", etc. If a pupil hesitates for 3 seconds, they do a funny pose.\n2. **Guess the Action (Charades)**: One pupil acts out a continuous action verb (e.g., *swimming*, *cooking*), and the class guesses using complete sentences: *"You are swimming!"*\n3. **Spot the Mistake**: Write a short sentence on the board with one intentional spelling or grammar mistake. The first pair to spot and correct it wins a classroom point.\n\nWould you like more games focused on phonics, reading comprehension, or speaking confidence?`;
+  }
+  if (has("hots") || has("kbat") || has("thinking skill")) {
+    return `**Higher-Order Thinking Skills (HOTS / KBAT)** in the Malaysian KSSR framework focus on moving pupils beyond rote recall (TP1-TP2) toward application, analysis, evaluation, and creation (TP4-TP6).\n\n• **Application**: "How would you use this vocabulary word at the market?"\n• **Analysis**: "Why did the main character make that choice in the story?"\n• **Evaluation**: "Which of these two solutions is better for keeping the classroom clean, and why?"\n• **Creation**: "Design a mini-poster or write two sentence rules for a classroom pledge."\n\nTo support mixed-ability pupils, always pair HOTS prompts with bilingual keywords or graphic organizers like Venn diagrams.`;
+  }
+  if (has("pbd") || has("tp1") || has("tp2") || has("tp3") || has("tp4") || has("tp5") || has("tp6")) {
+    return `**Classroom-Based Assessment (PBD - Pentaksiran Bilik Darjah)** evaluates pupil mastery across six Performance Levels (Tahap Penguasaan / TP):\n\n• **TP1 (Tahu)**: Can recognize basic vocabulary and imitate single words with heavy teacher guidance.\n• **TP2 (Tahu dan Faham)**: Understands simple instructions and phrases with visual support.\n• **TP3 (Tahu, Faham dan Boleh Buat)**: Can apply basic skills independently in familiar contexts (the baseline target for all pupils).\n• **TP4 (Boleh Buat dengan Beradab)**: Demonstrates good accuracy, confidence, and polite communication.\n• **TP5 (Beradab Mithali)**: Consistently high ability, able to problem-solve and guide peers.\n• **TP6 (Konsisten / Kreatif)**: Excellent, autonomous, and creative language user.\n\nFormative PBD observation happens naturally during group work, oral questioning, and exit tickets without formal exam pressure.`;
+  }
+
+  // 4. General LLM versatile fallback for internet/world queries or any other topic
+  return `As your versatile AI Copilot, here is information regarding your question ("**${String(question).trim()}**"):\n\nIn both general world knowledge and educational practice, understanding core principles, systematic logic, and practical applications is key. Whether you are exploring concepts from the web, studying English linguistics, analyzing scientific facts, or designing interactive classroom activities, breaking topics into clear, bite-sized components ensures effective understanding.\n\nFeel free to ask for more specific examples, step-by-step breakdowns, grammar rules, or creative ideas on this topic!`;
 }
 
 // Available shortcut actions the copilot can suggest. Each maps a page id
@@ -1138,15 +1163,132 @@ const COPILOT_ACTIONS = {
 
 // Parse [action:pageId] tags from a copilot reply. Returns the cleaned text
 // and a list of action objects the frontend can render as shortcut buttons.
-export function parseCopilotActions(reply) {
+function extractBackendLessonForm(text, question = "", classes = []) {
+  const full = `${question}\n${text}`;
+  const out = {};
+
+  const topicMatch = full.match(/(?:Topic|Title|Lesson on|Lesson Plan for|Focus)\s*[:—]\s*([^\n\r.]+)/i) ||
+                     question.match(/(?:about|on|topic of)\s+([A-Z][a-z0-9\s'-]+(?:\s+[A-Z][a-z0-9\s'-]+)*)/i);
+  if (topicMatch && topicMatch[1]) {
+    out.topic = topicMatch[1].replace(/^(?:the\s+|a\s+)/i, "").trim();
+  } else {
+    const headMatch = text.match(/^#+\s*([^\n\r]+)/m) || text.match(/^\*\*([^\n\r]+)\*\*/m);
+    if (headMatch && headMatch[1]) {
+      out.topic = headMatch[1].replace(/^(?:Lesson Plan:|RPH:|Topic:)\s*/i, "").trim();
+    }
+  }
+
+  const skills = ["Reading", "Writing", "Speaking", "Listening", "Grammar", "Phonics", "Language Arts"];
+  for (const sk of skills) {
+    if (new RegExp(`\\b${sk}\\b`, "i").test(full)) {
+      out.skill = sk;
+      break;
+    }
+  }
+
+  let foundClass = null;
+  if (Array.isArray(classes)) {
+    for (const c of classes) {
+      if (c.name && full.toLowerCase().includes(c.name.toLowerCase())) {
+        foundClass = c;
+        break;
+      }
+    }
+  }
+  if (foundClass) {
+    out.classId = foundClass._id;
+    out.className = foundClass.name;
+    out.year = foundClass.year;
+    if (foundClass.studentCount) out.numberOfStudents = String(foundClass.studentCount);
+  } else {
+    const yearMatch = full.match(/\b(Year\s+[1-6])\b/i);
+    if (yearMatch) out.year = yearMatch[1].replace(/year/i, "Year");
+  }
+
+  const durMatch = full.match(/(\d+)\s*(?:-| )(?:hour|hr)/i) || full.match(/(\d+)\s*(?:-| )(?:mins?|minutes?)/i);
+  if (durMatch) {
+    const val = Number(durMatch[1]);
+    out.durationMinutes = full.toLowerCase().includes("hour") || full.toLowerCase().includes("hr") ? val * 60 : val;
+  } else {
+    const minMatches = [...full.matchAll(/\((\d+)\s*(?:mins?|minutes?)\)/gi)];
+    if (minMatches.length > 0) {
+      const sum = minMatches.reduce((acc, m) => acc + Number(m[1]), 0);
+      if (sum >= 15 && sum <= 180) out.durationMinutes = sum;
+    }
+  }
+
+  if (!out.numberOfStudents) {
+    const stuMatch = full.match(/(\d+)\s*(?:pupils?|students?)/i);
+    if (stuMatch) out.numberOfStudents = String(stuMatch[1]);
+  }
+
+  const objSection = full.match(/(?:Objectives?|Learning Objectives?|Outcomes?)\s*[:—]\s*([\s\S]*?)(?=\n\s*(?:Step|Stage|Procedure|Activities|Materials|Assessment|Wrap-Up|Note|\n\n[A-Z]|$))/i);
+  if (objSection && objSection[1].trim()) {
+    const bullets = objSection[1].split(/\n/).map((l) => l.replace(/^[-*•✦\d.)\s]+/, "").trim()).filter((l) => l.length > 8);
+    if (bullets.length > 0) out.objectives = bullets.join("\n");
+    else out.objectives = objSection[1].trim();
+  } else if (out.topic && out.skill) {
+    out.objectives = `Pupils can understand and identify key concepts related to ${out.topic}.\nPupils can apply ${out.skill.toLowerCase()} skills clearly in pair or group tasks.\nPupils can demonstrate learning through PBD observation and responses.`;
+  }
+
+  const stepsMatch = text.match(/(?:(?:Step|Stage|Phase)\s*\d+[:.]?|1\.\s*Set Induction|Set Induction)[:—\s][\s\S]*/i);
+  if (stepsMatch) {
+    const cleanSteps = stepsMatch[0].replace(/\n\s*(?:Would you like|Do you want|Let me know if|Feel free to ask)[\s\S]*$/i, "").trim();
+    if (cleanSteps.length > 20) out.stepsOverview = cleanSteps;
+  } else if (text.length > 30) {
+    out.stepsOverview = text.replace(/\n\s*(?:Would you like|Do you want|Let me know if|Feel free to ask)[\s\S]*$/i, "").trim();
+  }
+
+  const matSection = full.match(/(?:Materials|Teaching Aids|Resources|T&LM)\s*[:—]\s*([^\n]+(?:\n\s*[-*•✦]\s*[^\n]+)*)/i);
+  if (matSection && matSection[1].trim()) {
+    out.materials = matSection[1].replace(/^[-*•✦\d.)\s]+/, "").trim().replace(/\n/g, ", ");
+  } else {
+    const items = [];
+    if (full.toLowerCase().includes("poster")) items.push("Mini-posters / chart paper");
+    if (full.toLowerCase().includes("sticker") || full.toLowerCase().includes("stamp")) items.push("Stickers / stamps");
+    if (full.toLowerCase().includes("worksheet")) items.push("Worksheets");
+    if (full.toLowerCase().includes("word card") || full.toLowerCase().includes("flashcard")) items.push("Word cards / flashcards");
+    if (full.toLowerCase().includes("projector") || full.toLowerCase().includes("slide")) items.push("Projector / slides");
+    if (items.length > 0) out.materials = items.join(", ");
+  }
+
+  if (full.toLowerCase().includes("exit ticket")) {
+    out.assessmentType = "Formative PBD observation, oral response and exit ticket";
+  } else if (full.toLowerCase().includes("pbd") || full.toLowerCase().includes("observation")) {
+    out.assessmentType = "Formative PBD observation and checklist";
+  }
+
+  if (!out.topic && text.length > 15) {
+    const firstSentence = text.split(/[\n.!]/)[0].replace(/[^a-zA-Z0-9\s-]/g, "").trim();
+    if (firstSentence && firstSentence.length <= 40) out.topic = firstSentence;
+    else out.topic = `English ${out.skill || "Language"} Lesson`;
+  }
+  if (!out.skill) out.skill = "Speaking";
+  if (!out.durationMinutes) out.durationMinutes = 60;
+
+  return out;
+}
+
+export function parseCopilotActions(reply, question = "", classes = []) {
   const text = String(reply || "");
   const actions = [];
   const seen = new Set();
-  const cleaned = text.replace(/\[action:([a-z-]+)\]/gi, (match, pageId) => {
+  const cleaned = text.replace(/\[action:([a-z-]+)(?:\((.*?)\))?\]/gi, (match, pageId, jsonArgs) => {
     const action = COPILOT_ACTIONS[pageId.toLowerCase()];
     if (action && !seen.has(pageId.toLowerCase())) {
       seen.add(pageId.toLowerCase());
-      actions.push({ pageId: pageId.toLowerCase(), label: action.label, icon: action.icon });
+      let formData = null;
+      if (jsonArgs && jsonArgs.trim()) {
+        try {
+          formData = JSON.parse(jsonArgs.trim());
+        } catch (e) {
+          // ignore parse error if not valid JSON
+        }
+      }
+      if (!formData && pageId.toLowerCase() === "lesson-planner") {
+        formData = extractBackendLessonForm(text, question, classes);
+      }
+      actions.push({ pageId: pageId.toLowerCase(), label: action.label, icon: action.icon, formData });
     }
     return "";
   }).replace(/\n{3,}/g, "\n\n").trim();
@@ -1160,36 +1302,35 @@ export async function askCopilot(question, context) {
     return { reply: "Please type a question and I'll help.", actions: [], aiSource: buildAiSource({ fallbackTriggered: false }) };
   }
 
-  const systemPrompt = `You are LessonCraft Copilot, an AI teaching assistant embedded in ESLessonCraft MY — a Malaysian KSSR primary school English teaching platform.
-You can see the teacher's actual workspace data below. Use it to give specific, relevant answers.
+  const systemPrompt = `You are ESLessonCraft AI Copilot — a versatile, highly intelligent AI Assistant powered by state-of-the-art large language models (like ChatGPT/Claude/Gemini).
+You are capable of answering ANY question the user asks, whether it involves explaining concepts from the internet and world knowledge, general English grammar, literature, lesson ideas, Malaysian KSSR pedagogy, coding, casual conversation, or daily life.
 ${MALAYSIAN_CONTEXT}
-Answer in a friendly, practical, 2-4 sentence reply unless the teacher asks for something detailed.
-When you reference data (e.g. number of classes, student proficiency, lesson topics), use the real data from the context.
-If the context shows little data, suggest what the teacher should create next.
-Prefer actionable teaching advice over generic platitudes. Mention specific pupils, classes, or lessons from the context when relevant.
 
-IMPORTANT — ACTION BUTTONS:
-When you suggest the teacher do something (e.g. create a class, generate a lesson, record PBD, open the timetable, check analytics), append one or more action tags on a new line at the end of your reply in this exact format: [action:PAGE_ID]
-Valid page IDs and when to use them:
-- [action:lesson-planner] — when suggesting the teacher generate or review a lesson plan
-- [action:classes] — when suggesting the teacher create a class or add students to a roster
-- [action:pbd] — when suggesting the teacher record PBD assessments or check pupil proficiency
-- [action:timetable] — when suggesting the teacher set up their weekly schedule
-- [action:analytics] — when suggesting the teacher review analytics or mastery data
-- [action:evaluate] — when suggesting the teacher evaluate a lesson plan
-- [action:materials] — when suggesting the teacher upload teaching materials
-Only suggest actions that are genuinely relevant to the teacher's question. Do not add more than 2 action tags per reply.
+CRITICAL RULES FOR VERSATILITY:
+1. Do NOT constantly mention the teacher's workspace data (classes, students, lessons, timetable) unless the user specifically asks about their classes, pupils, schedule, or workspace status.
+2. Do NOT nag, steer, or prompt the user to update their workspace, add students, or create rosters when they ask general questions, make casual remarks, or express frustration.
+3. If the user asks a general question, casual chat, grammar check, or asks about any topic outside their specific workspace data, answer directly, informatively, and comprehensively like a general-purpose state-of-the-art LLM. Provide rich explanations, examples, and useful facts without mentioning their workspace at all.
+4. Only if the user explicitly asks about their specific workspace data (e.g., "what classes do I have?", "how many pupils?", "check my schedule"), use the workspace context below to give a precise, helpful answer.
 
+OPTIONAL ACTION BUTTONS AND FORM AUTO-FILL:
+When you suggest a lesson plan, activities, or ideas that the teacher could generate into a lesson plan, append [action:lesson-planner] at the end of your reply.
+When appending [action:lesson-planner], you can also include structured form-fill parameters inside the tag like this:
+[action:lesson-planner({"topic": "Topic Name", "skill": "Speaking", "year": "Year 5", "durationMinutes": 60, "objectives": "Objective 1; Objective 2", "stepsOverview": "Brief summary of the steps or breakdown you suggested", "materials": "Suggested materials", "assessmentType": "PBD observation, oral response and exit ticket"})]
+If you suggest creating a class, you can do: [action:classes({"name": "5 Bestari", "year": "Year 5", "subject": "English", "studentCount": 30})]
+Valid page IDs: [action:lesson-planner], [action:classes], [action:pbd], [action:timetable], [action:analytics], [action:evaluate], [action:materials].
+Do NOT add action tags for general knowledge, casual chat, or grammar explanations.
+
+WORKSPACE CONTEXT (for reference only when explicitly requested):
 ${contextText}`;
 
-  const ai = await callAIText(systemPrompt, `Teacher's question: ${trimmedQuestion}`);
+  const ai = await callAIText(systemPrompt, `User question: ${trimmedQuestion}`);
 
   if (ai.fallbackTriggered || !ai.text) {
     const heuristic = copilotHeuristicResponse(trimmedQuestion, contextText);
-    const parsed = parseCopilotActions(heuristic);
+    const parsed = parseCopilotActions(heuristic, trimmedQuestion, context?.classes || []);
     return { reply: parsed.reply, actions: parsed.actions, aiSource: buildAiSource(ai) };
   }
 
-  const parsed = parseCopilotActions(ai.text);
+  const parsed = parseCopilotActions(ai.text, trimmedQuestion, context?.classes || []);
   return { reply: parsed.reply, actions: parsed.actions, aiSource: buildAiSource(ai) };
 }

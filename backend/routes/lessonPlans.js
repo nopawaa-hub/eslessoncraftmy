@@ -1,58 +1,13 @@
 import { Router } from "express";
 import LessonPlan from "../models/LessonPlan.js";
 import { requireDatabase } from "../services/db.js";
+import { ensureDemoDataSeeded } from "../services/demoSeeder.js";
 
 const router = Router();
 
 router.get("/", requireDatabase, async (req, res, next) => {
   try {
-    const isDemoTeacher = String(req.user._id) === "000000000000000000000001" || req.user.email === "demo@test.com";
-    if (isDemoTeacher) {
-      const existingCount = await LessonPlan.countDocuments({ userId: req.user._id });
-      if (existingCount === 0) {
-        await LessonPlan.create({
-          userId: req.user._id,
-          title: "Year 5 English Reading Lesson: Main Ideas in Short Texts",
-          year: "Year 5",
-          subject: "English",
-          topic: "Main Ideas in Short Texts",
-          className: "5 Bestari",
-          skill: "Reading",
-          contentStandard: "2.1 Communicate simple information intelligibly",
-          learningStandard: "2.1.1 Explain simple content and main ideas from short texts",
-          objectives: [
-            "identify the main idea in a short text with guidance.",
-            "match supporting details to the correct main idea.",
-            "explain one answer using a simple sentence frame."
-          ],
-          activities: [
-            "Picture talk and keyword prediction.",
-            "Teacher models how to underline repeated ideas.",
-            "Pairs match text strips to main idea cards.",
-            "Groups justify one answer using sentence frames.",
-            "Exit ticket: one main idea and one supporting detail."
-          ],
-          assessments: [
-            "Teacher checklist for identifying main ideas.",
-            "Pair discussion sampling.",
-            "Exit ticket sorted into reteach, on-track and extension groups."
-          ],
-          reflection: "Pupils responded well to the picture talk prediction. Support group needed extra time with vocabulary strips.",
-          status: "completed",
-          templateType: "KSSR English Lesson Plan",
-          lessonDetails: {
-            subject: "English",
-            year: "Year 5",
-            className: "5 Bestari",
-            durationMinutes: 60,
-            topic: "Main Ideas in Short Texts",
-            skill: "Reading",
-            materials: "Short text strips, picture prompts, sentence frames, exit ticket",
-            assessmentType: "PBD observation, oral response, exit ticket"
-          }
-        });
-      }
-    }
+    await ensureDemoDataSeeded(req.user._id);
 
     const query = { userId: req.user._id };
     if (req.query.year) query.year = req.query.year;

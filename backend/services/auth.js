@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import User from "../models/User.js";
+import { ensureDemoDataSeeded } from "./demoSeeder.js";
 
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 
@@ -57,7 +58,9 @@ export async function requireAuth(req, res, next) {
   try {
     const token = readBearerToken(req);
     if (token === "demo-token" || token === "demo") {
-      req.user = { _id: "000000000000000000000001", name: "Demo Teacher", email: "demo@test.com", role: "teacher" };
+      const demoUser = { _id: "000000000000000000000001", name: "Cikgu Nur Aisyah (Demo Teacher)", email: "demo@test.com", role: "teacher", school: "SK Taman Bestari" };
+      req.user = demoUser;
+      await ensureDemoDataSeeded(demoUser._id);
       return next();
     }
     const claims = verifySessionToken(token);
@@ -65,6 +68,9 @@ export async function requireAuth(req, res, next) {
     const user = await User.findById(claims.sub);
     if (!user) return res.status(401).json({ error: "Account not found. Please sign in again." });
     req.user = user;
+    if (String(user._id) === "000000000000000000000001" || user.email === "demo@test.com") {
+      await ensureDemoDataSeeded(user._id);
+    }
     return next();
   } catch (error) {
     return next(error);

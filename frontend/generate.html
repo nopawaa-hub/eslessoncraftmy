@@ -4,41 +4,526 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LessonCraft MY | Generate Lesson</title>
-    <link rel="stylesheet" href="style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Plus Jakarta Sans", "ui-sans-serif", "system-ui", "sans-serif"],
+              display: ["Outfit", "Plus Jakarta Sans", "sans-serif"],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      :root {
+        --primary: #6366f1;
+        --primary-dark: #4f46e5;
+        --secondary: #8b5cf6;
+        --accent: #f43f5e;
+      }
+
+      body {
+        font-family: "Plus Jakarta Sans", sans-serif;
+        margin: 0;
+      }
+
+      /* ===== Animated gradient backdrop (dashboard theme) ===== */
+      .animated-bg {
+        background: linear-gradient(-45deg, #e9d5ff, #fbcfe8, #dbeafe, #dcfce7);
+        background-size: 400% 400%;
+        animation: gradientMove 20s ease infinite;
+      }
+      @keyframes gradientMove {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+
+      @keyframes subtle-bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+      }
+      .animate-subtle-bounce { animation: subtle-bounce 3s ease-in-out infinite; }
+
+      .sidebar-link-active {
+        background: #6366f1;
+        color: #ffffff !important;
+        box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
+      }
+
+      .glass-card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+      }
+
+      .hero-gradient {
+        background: radial-gradient(circle at top left, #4f46e5 0%, #6366f1 40%, #8b5cf6 100%);
+      }
+
+      /* ===== Output area (rendered by script.js) ===== */
+      #output {
+        color: #334155;
+        line-height: 1.6;
+        display: grid;
+        gap: 12px;
+        font-size: 0.95rem;
+      }
+      #output.empty {
+        color: #94a3b8;
+        font-style: italic;
+      }
+      .result-section {
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 16px;
+        background: #f8fafc;
+        animation: rise 180ms ease;
+      }
+      @keyframes rise {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .result-section h3 {
+        margin: 0 0 8px;
+        font-weight: 800;
+        color: #0f172a;
+        font-size: 1rem;
+      }
+      .result-section p { margin: 0.25rem 0; }
+      #output ul {
+        list-style: disc;
+        padding-left: 1.25rem;
+        margin: 0.25rem 0;
+        color: #475569;
+      }
+      #output ul li { margin: 0.15rem 0; }
+
+      .pill {
+        display: inline-flex;
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-weight: 700;
+        font-size: 0.75rem;
+      }
+      .pill.low { background: #fff1ed; color: #b42318; }
+      .pill.medium { background: #fff8e1; color: #a15c07; }
+      .pill.high { background: #ecfdf3; color: #147a42; }
+
+      .hidden { display: none !important; }
+
+      .spinner {
+        width: 22px;
+        height: 22px;
+        border: 3px solid #e0e7ff;
+        border-top-color: #6366f1;
+        border-radius: 50%;
+        animation: spin 800ms linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      .score-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .score-card {
+        border-radius: 18px;
+        padding: 14px;
+      }
+      .score-card.violet { background: #f5f3ff; border: 1px solid #ede9fe; }
+      .score-card.green { background: #ecfdf5; border: 1px solid #bbf7d0; }
+      .score-card small {
+        display: block;
+        color: #64748b;
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+      .score-card strong { display: block; margin-top: 4px; font-size: 1.4rem; }
+
+      @keyframes genAiPulse {
+        0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6); }
+        70% { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+      }
+      .ai-dot { animation: genAiPulse 2s ease-out infinite; }
+    </style>
   </head>
-  <body data-page="generate">
-    <div class="app-shell">
-      <aside class="sidebar">
-        <a class="brand" href="index.html"><span>✎</span><strong>LessonCraft <em>MY</em></strong></a>
-        <nav>
-          <a href="index.html">Dashboard</a>
-          <a class="active" href="generate.html">Generate Lesson</a>
-          <a href="analyze.html">Analyze Lesson</a>
-          <a href="improve.html">Improve Lesson</a>
-          <a href="simulate.html">Simulate Classroom</a>
-          <a href="evaluate.html">Evaluate Lesson</a>
-          <a href="history.html">History Vault</a>
-          <a href="schedule.html">Schedule</a>
-          <a href="assessment.html">Assessment</a>
+  <body class="animated-bg" data-page="generate">
+    <div class="min-h-screen flex">
+      <!-- ===== LEFT SIDEBAR ===== -->
+      <aside
+        class="w-[280px] h-screen sticky top-0 bg-white/90 backdrop-blur-xl border-r border-slate-200/50 flex flex-col z-40 shrink-0"
+      >
+        <div class="p-8 flex items-center gap-3">
+          <div
+            class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200"
+          >
+            <iconify-icon icon="lucide:book-open-check" class="text-2xl"></iconify-icon>
+          </div>
+          <h1 class="text-xl font-extrabold tracking-tight text-slate-900 uppercase">
+            Lesson<span class="text-indigo-600">Craft</span> <span class="text-rose-500">MY</span>
+          </h1>
+        </div>
+
+        <nav class="flex-1 px-4 py-4 space-y-1.5 overflow-y-auto">
+          <a href="index.html" class="flex items-center gap-4 px-4 py-3.5 rounded-2xl font-bold text-slate-500 hover:bg-slate-50 hover:text-indigo-600 transition-all">
+            <iconify-icon icon="lucide:layout-dashboard" class="text-xl"></iconify-icon>
+            <span>Dashboard</span>
+          </a>
+          <a href="generate.html" class="sidebar-link-active flex items-center gap-4 px-4 py-3.5 rounded-2xl font-bold transition-all">
+            <iconify-icon icon="lucide:sparkles" class="text-xl"></iconify-icon>
+            <span>Generate Lesson</span>
+          </a>
+          <a href="analyze.html" class="flex items-center gap-4 px-4 py-3.5 rounded-2xl font-semibold text-slate-500 hover:bg-slate-50 hover:text-indigo-600 transition-all">
+            <iconify-icon icon="lucide:scan-search" class="text-xl"></iconify-icon>
+            <span>Analyze Lesson</span>
+          </a>
+          <a href="improve.html" class="flex items-center gap-4 px-4 py-3.5 rounded-2xl font-semibold text-slate-500 hover:bg-slate-50 hover:text-indigo-600 transition-all">
+            <iconify-icon icon="lucide:wand-2" class="text-xl"></iconify-icon>
+            <span>Improve Lesson</span>
+          </a>
+          <a href="simulate.html" class="flex items-center gap-4 px-4 py-3.5 rounded-2xl font-semibold text-slate-500 hover:bg-slate-50 hover:text-indigo-600 transition-all">
+            <iconify-icon icon="lucide:users-round" class="text-xl"></iconify-icon>
+            <span>Simulate Classroom</span>
+          </a>
+          <a href="evaluate.html" class="flex items-center gap-4 px-4 py-3.5 rounded-2xl font-semibold text-slate-500 hover:bg-slate-50 hover:text-indigo-600 transition-all">
+            <iconify-icon icon="lucide:clipboard-check" class="text-xl"></iconify-icon>
+            <span>Evaluate Lesson</span>
+          </a>
+          <a href="history.html" class="flex items-center gap-4 px-4 py-3.5 rounded-2xl font-semibold text-slate-500 hover:bg-slate-50 hover:text-indigo-600 transition-all">
+            <iconify-icon icon="lucide:archive" class="text-xl"></iconify-icon>
+            <span>History Vault</span>
+          </a>
+          <a href="schedule.html" class="flex items-center gap-4 px-4 py-3.5 rounded-2xl font-semibold text-slate-500 hover:bg-slate-50 hover:text-indigo-600 transition-all">
+            <iconify-icon icon="lucide:calendar-clock" class="text-xl"></iconify-icon>
+            <span>Schedule</span>
+          </a>
+          <a href="assessment.html" class="flex items-center gap-4 px-4 py-3.5 rounded-2xl font-semibold text-slate-500 hover:bg-slate-50 hover:text-indigo-600 transition-all">
+            <iconify-icon icon="lucide:file-bar-chart" class="text-xl"></iconify-icon>
+            <span>Assessment</span>
+          </a>
         </nav>
-        <div class="status-card"><small>Gemini AI</small><strong id="apiStatus">Checking...</strong></div>
-      </aside>
-      <main class="page">
-        <header class="page-header"><p class="eyebrow">Create</p><h1>Generate Lesson</h1><p>Build a primary school KSSR lesson plan with simple instructions, group work, visual support, and scaffolded learning.</p></header>
-        <section class="two-column">
-          <form class="panel form-card" id="generateForm">
-            <label>Topic<input id="topic" placeholder="Example: Parts of plants" required /></label>
-            <label>Subject<select id="subject"><option>Bahasa Melayu</option><option selected>English</option><option>Mathematics</option><option>Science</option><option>History</option><option>Islamic Education</option><option>Moral Education</option></select></label>
-            <div class="form-row">
-              <label>Year<select id="year"><option>Year 1</option><option>Year 2</option><option>Year 3</option><option selected>Year 4</option><option>Year 5</option><option>Year 6</option></select></label>
-              <label>Skill<select id="skill"><option>Reading</option><option>Writing</option><option>Speaking</option><option>Listening</option></select></label>
+
+        <div class="p-6 border-t border-slate-100">
+          <div class="bg-indigo-50 p-4 rounded-2xl border border-indigo-100/50">
+            <p class="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-1">Account</p>
+            <div class="flex items-center gap-3">
+              <img
+                src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah"
+                class="w-10 h-10 rounded-full border border-white bg-white"
+                alt="User avatar"
+              />
+              <div class="min-w-0 flex-1">
+                <p class="text-sm font-bold text-slate-900 truncate">Cikgu Sarah</p>
+                <p class="text-[10px] text-slate-500 uppercase font-bold">SK Taman Melawati</p>
+              </div>
             </div>
-            <label>Classroom Type<select id="classroomType"><option>Mixed ability class</option><option>Large class with limited ICT</option><option>Low proficiency pupils</option><option>Active group-learning class</option></select></label>
-            <button class="primary-btn" type="submit">Generate Lesson</button>
-          </form>
-          <section class="panel output-card"><div class="output-head"><h2>Lesson Plan</h2><span class="spinner hidden" id="spinner"></span></div><div id="output" class="output empty">Your generated lesson appears here.</div></section>
-        </section>
-      </main>
+            <div class="mt-3 flex items-center gap-2 text-xs">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 ai-dot"></span>
+              <span class="text-slate-500 font-semibold">Gemini AI:</span>
+              <strong id="apiStatus" class="text-slate-800">Checking…</strong>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ===== MAIN CONTENT ===== -->
+      <div class="flex-1 flex flex-col min-w-0">
+        <!-- Top toolbar -->
+        <header
+          class="h-20 flex items-center justify-between px-8 bg-white/40 backdrop-blur-md border-b border-white/50 sticky top-0 z-30"
+        >
+          <div class="flex items-center gap-2">
+            <a href="index.html" class="text-slate-400 font-medium hover:text-indigo-600 transition-colors">Home</a>
+            <iconify-icon icon="lucide:chevron-right" class="text-slate-300 text-sm"></iconify-icon>
+            <span class="text-slate-900 font-bold">Generate Lesson</span>
+          </div>
+          <div class="flex items-center gap-4">
+            <div class="hidden md:flex items-center gap-2 bg-white/60 border border-slate-200/50 px-4 py-2 rounded-xl">
+              <iconify-icon icon="lucide:search" class="text-slate-400"></iconify-icon>
+              <input
+                type="text"
+                placeholder="Search topics, classes…"
+                class="bg-transparent border-none outline-none text-sm font-medium text-slate-600 w-64 placeholder:text-slate-400"
+              />
+            </div>
+            <button class="p-2.5 bg-white rounded-xl border border-slate-200/50 text-slate-500 hover:text-indigo-600 hover:border-indigo-100 transition-all">
+              <iconify-icon icon="lucide:bell" class="text-xl"></iconify-icon>
+            </button>
+            <button class="p-2.5 bg-white rounded-xl border border-slate-200/50 text-slate-500 hover:text-indigo-600 hover:border-indigo-100 transition-all">
+              <iconify-icon icon="lucide:settings" class="text-xl"></iconify-icon>
+            </button>
+          </div>
+        </header>
+
+        <main class="flex-1 px-8 py-8 space-y-8 max-w-[1440px] mx-auto w-full relative">
+          <!-- ===== HERO PANEL ===== -->
+          <section
+            class="hero-gradient rounded-[2.5rem] p-10 text-white relative overflow-hidden shadow-2xl shadow-indigo-200/50"
+          >
+            <div class="relative z-10">
+              <div class="flex flex-col md:flex-row md:items-center justify-between gap-8">
+                <div class="space-y-4">
+                  <div
+                    class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full text-sm font-semibold"
+                  >
+                    <span class="flex h-2 w-2 rounded-full bg-emerald-400 ai-dot"></span>
+                    AI Lesson Studio • KSSR
+                  </div>
+                  <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight">Generate your RPH lesson plan.</h2>
+                  <p class="text-lg text-indigo-100 max-w-2xl font-medium leading-relaxed">
+                    Build a primary school KSSR lesson with simple instructions, group work, visual support,
+                    and scaffolded learning — tailored to your class and skill focus.
+                  </p>
+                </div>
+                <div class="hidden md:flex shrink-0 items-center justify-center">
+                  <iconify-icon icon="lucide:sparkles" class="text-7xl text-white/80"></iconify-icon>
+                </div>
+              </div>
+            </div>
+            <div class="absolute -right-20 -top-20 w-80 h-80 bg-white/10 rounded-full blur-3xl"></div>
+            <div class="absolute -left-20 -bottom-20 w-80 h-80 bg-indigo-900/20 rounded-full blur-3xl"></div>
+          </section>
+
+          <!-- ===== STAT GRID ===== -->
+          <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="glass-card p-6 rounded-3xl shadow-sm hover:shadow-md transition-shadow group">
+              <div class="flex justify-between items-start mb-4">
+                <div class="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                  <iconify-icon icon="lucide:users-2" class="text-2xl"></iconify-icon>
+                </div>
+                <div class="text-emerald-500 flex items-center gap-1 text-sm font-bold">
+                  <iconify-icon icon="lucide:trending-up"></iconify-icon>
+                  <span>+2</span>
+                </div>
+              </div>
+              <p class="text-slate-500 text-sm font-semibold uppercase tracking-wider">Classes Today</p>
+              <h3 class="text-3xl font-extrabold text-slate-900 mt-1">04</h3>
+            </div>
+
+            <div class="glass-card p-6 rounded-3xl shadow-sm hover:shadow-md transition-shadow group">
+              <div class="flex justify-between items-start mb-4">
+                <div class="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-500 group-hover:bg-rose-500 group-hover:text-white transition-colors">
+                  <iconify-icon icon="lucide:file-warning" class="text-2xl"></iconify-icon>
+                </div>
+                <div class="text-rose-500 font-bold text-xs uppercase bg-rose-50 px-2 py-0.5 rounded-md">High Priority</div>
+              </div>
+              <p class="text-slate-500 text-sm font-semibold uppercase tracking-wider">RPH Pending</p>
+              <h3 class="text-3xl font-extrabold text-slate-900 mt-1">02</h3>
+            </div>
+
+            <div class="glass-card p-6 rounded-3xl shadow-sm hover:shadow-md transition-shadow group">
+              <div class="flex justify-between items-start mb-4">
+                <div class="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500 group-hover:bg-amber-500 group-hover:text-white transition-colors">
+                  <iconify-icon icon="lucide:clipboard-check" class="text-2xl"></iconify-icon>
+                </div>
+                <div class="text-amber-500 font-bold text-xs uppercase bg-amber-50 px-2 py-0.5 rounded-md">PBD Cycle 2</div>
+              </div>
+              <p class="text-slate-500 text-sm font-semibold uppercase tracking-wider">PBD Pending</p>
+              <h3 class="text-3xl font-extrabold text-slate-900 mt-1">12</h3>
+            </div>
+
+            <div class="glass-card p-6 rounded-3xl shadow-sm hover:shadow-md transition-shadow group">
+              <div class="flex justify-between items-start mb-4">
+                <div class="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                  <iconify-icon icon="lucide:calendar-check" class="text-2xl"></iconify-icon>
+                </div>
+                <div class="text-emerald-500 flex items-center gap-1 text-sm font-bold">
+                  <iconify-icon icon="lucide:check-circle"></iconify-icon>
+                  <span>On track</span>
+                </div>
+              </div>
+              <p class="text-slate-500 text-sm font-semibold uppercase tracking-wider">Lessons Weekly</p>
+              <h3 class="text-3xl font-extrabold text-slate-900 mt-1">18</h3>
+            </div>
+          </section>
+
+          <!-- ===== FORM + OUTPUT (two column) ===== -->
+          <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- GENERATE FORM -->
+            <div class="glass-card rounded-3xl shadow-sm overflow-hidden flex flex-col">
+              <div class="p-6 border-b border-white/50 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
+                    <iconify-icon icon="lucide:file-edit" class="text-xl"></iconify-icon>
+                  </div>
+                  <h3 class="text-xl font-bold text-slate-900">Lesson Details</h3>
+                </div>
+                <span class="text-xs font-bold text-slate-400 uppercase">Butiran Pelan</span>
+              </div>
+
+              <form id="generateForm" class="p-6 grid gap-4 flex-1">
+                <label class="block">
+                  <span class="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">Topic</span>
+                  <input
+                    id="topic"
+                    type="text"
+                    placeholder="Example: Parts of plants"
+                    required
+                    class="w-full min-h-[44px] rounded-xl border border-slate-200 bg-white/70 px-3.5 text-sm font-medium text-slate-700 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition"
+                  />
+                </label>
+
+                <label class="block">
+                  <span class="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">Subject</span>
+                  <select
+                    id="subject"
+                    class="w-full min-h-[44px] rounded-xl border border-slate-200 bg-white/70 px-3.5 text-sm font-medium text-slate-700 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition"
+                  >
+                    <option>Bahasa Melayu</option>
+                    <option selected>English</option>
+                    <option>Mathematics</option>
+                    <option>Science</option>
+                    <option>History</option>
+                    <option>Islamic Education</option>
+                    <option>Moral Education</option>
+                  </select>
+                </label>
+
+                <div class="grid grid-cols-2 gap-4">
+                  <label class="block">
+                    <span class="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">Year</span>
+                    <select
+                      id="year"
+                      class="w-full min-h-[44px] rounded-xl border border-slate-200 bg-white/70 px-3.5 text-sm font-medium text-slate-700 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition"
+                    >
+                      <option>Year 1</option>
+                      <option>Year 2</option>
+                      <option>Year 3</option>
+                      <option selected>Year 4</option>
+                      <option>Year 5</option>
+                      <option>Year 6</option>
+                    </select>
+                  </label>
+
+                  <label class="block">
+                    <span class="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">Skill</span>
+                    <select
+                      id="skill"
+                      class="w-full min-h-[44px] rounded-xl border border-slate-200 bg-white/70 px-3.5 text-sm font-medium text-slate-700 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition"
+                    >
+                      <option>Reading</option>
+                      <option>Writing</option>
+                      <option>Speaking</option>
+                      <option>Listening</option>
+                    </select>
+                  </label>
+                </div>
+
+                <label class="block">
+                  <span class="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">Classroom Type</span>
+                  <select
+                    id="classroomType"
+                    class="w-full min-h-[44px] rounded-xl border border-slate-200 bg-white/70 px-3.5 text-sm font-medium text-slate-700 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition"
+                  >
+                    <option>Mixed ability class</option>
+                    <option>Large class with limited ICT</option>
+                    <option>Low proficiency pupils</option>
+                    <option>Active group-learning class</option>
+                  </select>
+                </label>
+
+                <button
+                  type="submit"
+                  class="mt-2 w-full min-h-[50px] rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-white font-bold shadow-lg shadow-indigo-300/50 hover:-translate-y-0.5 active:translate-y-0 transition-all inline-flex items-center justify-center gap-2"
+                >
+                  <iconify-icon icon="lucide:sparkles"></iconify-icon>
+                  <span>Generate Lesson</span>
+                </button>
+              </form>
+            </div>
+
+            <!-- OUTPUT CARD -->
+            <div class="glass-card rounded-3xl shadow-sm overflow-hidden flex flex-col">
+              <div class="p-6 border-b border-white/50 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
+                    <iconify-icon icon="lucide:notebook-pen" class="text-xl"></iconify-icon>
+                  </div>
+                  <h3 class="text-xl font-bold text-slate-900">Lesson Plan</h3>
+                </div>
+                <span class="spinner hidden" id="spinner"></span>
+              </div>
+              <div class="p-6 flex-1">
+                <div id="output" class="output empty">Your generated lesson plan will appear here ✨</div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ===== AI INSIGHTS / TEACHING TIPS ===== -->
+          <section
+            class="bg-indigo-900 rounded-[2rem] p-8 text-white shadow-2xl shadow-indigo-400/30 flex flex-col"
+          >
+            <div class="flex items-center gap-3 mb-8">
+              <div class="w-12 h-12 bg-indigo-400/20 rounded-2xl flex items-center justify-center text-indigo-300">
+                <iconify-icon icon="lucide:brain-circuit" class="text-2xl"></iconify-icon>
+              </div>
+              <div>
+                <h3 class="text-xl font-bold">AI Teaching Tips</h3>
+                <p class="text-indigo-400 text-[10px] font-bold uppercase tracking-[0.2em]">Smart Recommendations</p>
+              </div>
+            </div>
+            <div class="grid gap-8 flex-1 md:grid-cols-3">
+              <div class="flex gap-4">
+                <div class="shrink-0 w-2 h-2 mt-2 rounded-full bg-rose-400"></div>
+                <div>
+                  <p class="text-sm font-bold leading-snug">Scaffold small steps</p>
+                  <p class="text-xs text-indigo-300/80 mt-1">Break tasks into small steps and provide sentence frames so all 28 pupils can participate confidently.</p>
+                </div>
+              </div>
+              <div class="flex gap-4">
+                <div class="shrink-0 w-2 h-2 mt-2 rounded-full bg-amber-400"></div>
+                <div>
+                  <p class="text-sm font-bold leading-snug">Add visual support</p>
+                  <p class="text-xs text-indigo-300/80 mt-1">Use flashcards and pictures for low-to-mid proficiency pupils to aid comprehension before writing.</p>
+                </div>
+              </div>
+              <div class="flex gap-4">
+                <div class="shrink-0 w-2 h-2 mt-2 rounded-full bg-emerald-400"></div>
+                <div>
+                  <p class="text-sm font-bold leading-snug">Capture PBD evidence</p>
+                  <p class="text-xs text-indigo-300/80 mt-1">Observe group work checkpoints to gather PBD evidence during the lesson, not after.</p>
+                </div>
+              </div>
+            </div>
+            <a href="evaluate.html" class="w-full mt-8 py-4 bg-white/10 hover:bg-white/20 transition-all border border-white/10 rounded-2xl text-sm font-bold text-center">
+              View Analysis Details
+            </a>
+          </section>
+
+          <!-- ===== FLOATING AI CHATBOX BUTTON ===== -->
+          <button
+            class="fixed bottom-8 right-8 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-2xl shadow-indigo-400/50 flex items-center justify-center z-50 hover:scale-110 active:scale-95 transition-all animate-subtle-bounce group"
+            aria-label="Open AI assistant"
+          >
+            <iconify-icon icon="lucide:brain-circuit" class="text-2xl group-hover:rotate-12 transition-transform"></iconify-icon>
+            <span class="absolute -top-2 -right-2 bg-rose-500 w-5 h-5 rounded-full border-2 border-white text-[10px] flex items-center justify-center font-bold">1</span>
+          </button>
+        </main>
+
+        <footer class="px-8 py-8 mt-auto">
+          <div class="max-w-[1440px] mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-slate-500 text-xs font-medium">
+            <p>© 2024 LessonCraft MY • KSSR English Syllabus Support</p>
+            <div class="flex items-center gap-6">
+              <a href="#" class="hover:text-indigo-600 transition-colors">Privacy Policy</a>
+              <a href="#" class="hover:text-indigo-600 transition-colors">Terms</a>
+              <a href="#" class="hover:text-indigo-600 transition-colors">Help Center</a>
+            </div>
+          </div>
+        </footer>
+      </div>
     </div>
     <script src="script.js"></script>
   </body>

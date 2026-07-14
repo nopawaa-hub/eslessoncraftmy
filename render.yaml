@@ -1,0 +1,50 @@
+# Render Blueprint for ESLessonCraft MY backend.
+# Docs: https://render.com/docs/blueprint-spec
+#
+# Deploys the Express API as a Web Service from the backend/ subdirectory.
+# The frontend is hosted separately (Firebase Hosting) and calls this API
+# cross-origin (CORS is enabled in backend/server.js; auth is a Bearer header,
+# so no cookie/SameSite concerns).
+#
+# Before deploying, set these Environment Variables in the Render dashboard
+# (Dashboard → your service → Environment), or let Render import them from a
+# .env file you upload:
+#   MONGO_URI          — MongoDB Atlas connection string (REQUIRED)
+#   GEMINI_API_KEY     — Google Gemini API key (REQUIRED for lesson generation)
+#   GOOGLE_CLIENT_ID   — Google OAuth client ID (for Google Sign-In)
+#   SESSION_SECRET     — random string for signing auth tokens
+#   AI_PROVIDER        — "gemini" (default) — optional overrides below
+#
+# PORT is provided by Render automatically (do not set it).
+
+services:
+  - type: web
+    name: eslessoncraft-backend
+    runtime: node
+    rootDir: backend
+    plan: free
+    # backend/package.json "start": "node server.js"
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      # Required secrets — set these in the Render dashboard (敏感 values),
+      # not in this file:
+      - key: MONGO_URI
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      # Optional non-secret defaults:
+      - key: AI_PROVIDER
+        value: gemini
+      - key: GEMINI_MODEL
+        value: gemini-1.5-flash
+      - key: GEMINI_API_VERSION
+        value: v1beta
+      - key: NODE_ENV
+        value: production

@@ -378,6 +378,93 @@ svg {
   padding: 3px 6px;
 }
 
+/* ===== Functional search dropdown ===== */
+.search-box.has-results input,
+.search-box:focus-within input {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+.search-results {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: var(--card);
+  backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+  overflow: hidden;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.search-result {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms ease;
+  border-bottom: 1px solid var(--border);
+}
+.search-result:last-child { border-bottom: 0; }
+.search-result:hover { background: color-mix(in srgb, var(--primary) 8%, transparent); }
+
+.search-result-type {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 8px;
+  border-radius: 6px;
+  min-width: 60px;
+  text-align: center;
+}
+.search-result-type.class { color: #6366f1; background: #eef2ff; }
+.search-result-type.pupil { color: #059669; background: #ecfdf5; }
+.search-result-type.rph { color: #d97706; background: #fffbeb; }
+.search-result-type.material { color: #e11d48; background: #fff1f2; }
+
+.search-result-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.search-result-text strong {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.search-result-text small {
+  font-size: 0.75rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.search-result > svg { color: var(--muted); flex-shrink: 0; }
+
+.search-empty {
+  padding: 16px 14px;
+  margin: 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
 .create-btn,
 .primary-btn {
   box-shadow: 0 15px 35px -22px var(--primary);
@@ -1009,6 +1096,43 @@ svg {
   min-height: 680px;
 }
 
+/* Empty state before a lesson is generated */
+.lesson-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 320px;
+  margin: 8px 0;
+  padding: 40px 24px;
+  border: 1px dashed var(--border);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--accent, #eef2ff) 30%, transparent);
+  color: var(--muted);
+  text-align: center;
+}
+.lesson-empty-state svg {
+  width: 36px;
+  height: 36px;
+  color: var(--primary);
+  opacity: 0.85;
+}
+.lesson-empty-state strong {
+  font-size: 1.05rem;
+  color: var(--ink);
+}
+.lesson-empty-state span {
+  max-width: 36ch;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+.lesson-empty-state em {
+  font-style: normal;
+  font-weight: 700;
+  color: var(--primary);
+}
+
 .export-callout {
   display: flex;
   align-items: center;
@@ -1281,7 +1405,7 @@ html body #root .lesson-preview .procedure-list {
   inset: -40%;
   background: linear-gradient(115deg, transparent 34%, rgba(255, 255, 255, 0.72) 48%, transparent 62%);
   transform: translateX(-55%);
-  animation: ai-shimmer 1.7s ease-in-out infinite;
+  animation: ai-shimmer 2s linear infinite;
   pointer-events: none;
 }
 
@@ -1376,7 +1500,7 @@ html body #root .lesson-preview .procedure-list {
   background:
     linear-gradient(90deg, rgba(196, 181, 253, 0.55), rgba(255, 255, 255, 0.9), rgba(196, 181, 253, 0.55));
   background-size: 220% 100%;
-  animation: ai-line-flow 1.35s ease-in-out infinite;
+  animation: ai-line-flow 1.55s linear infinite;
 }
 
 .skeleton-block span:nth-of-type(1) {
@@ -1393,9 +1517,10 @@ html body #root .lesson-preview .procedure-list {
 }
 
 @keyframes ai-shimmer {
-  0% { transform: translateX(-58%); opacity: 0.25; }
-  50% { opacity: 0.8; }
-  100% { transform: translateX(58%); opacity: 0.25; }
+  0% { transform: translateX(-58%); opacity: 0; }
+  20% { opacity: 0.8; }
+  80% { opacity: 0.8; }
+  100% { transform: translateX(58%); opacity: 0; }
 }
 
 @keyframes ai-line-flow {
@@ -2082,6 +2207,27 @@ tbody tr:hover {
   box-shadow: 0 28px 80px rgba(31, 25, 52, 0.32);
   padding: 22px;
 }
+
+.modal-backdrop.gaussian-blur-modal {
+  background: rgba(14, 18, 30, 0.58) !important;
+  backdrop-filter: blur(24px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+  filter: none !important;
+}
+
+html.dark body #root .modal-backdrop.gaussian-blur-modal {
+  background: rgba(8, 10, 18, 0.68) !important;
+}
+
+.modal-card.wide-modal {
+  width: min(980px, 94vw) !important;
+  max-height: min(90vh, 900px) !important;
+  border: 1px solid color-mix(in srgb, var(--primary) 32%, var(--border)) !important;
+  box-shadow: 0 32px 95px rgba(6, 10, 24, 0.5) !important;
+  background: var(--card) !important;
+  filter: none !important;
+}
+
 
 .modal-header {
   display: flex;
@@ -3761,12 +3907,109 @@ tbody tr:hover {
   padding: 18px;
 }
 
+.copilot-ui-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.copilot-ui-p {
+  margin: 0;
+  line-height: 1.55;
+  color: inherit;
+}
+
+.copilot-ui-h2,
+.copilot-ui-h3,
+.copilot-ui-h4 {
+  margin: 6px 0 2px;
+  font-weight: 700;
+  color: var(--foreground);
+  line-height: 1.35;
+}
+
+.copilot-ui-h2 { font-size: 1.15rem; }
+.copilot-ui-h3 { font-size: 1.05rem; }
+.copilot-ui-h4 { font-size: 0.95rem; }
+
+.copilot-ui-hr {
+  border: 0;
+  height: 1px;
+  background: color-mix(in srgb, var(--border) 70%, transparent);
+  margin: 6px 0;
+}
+
+.copilot-ui-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 3px;
+  line-height: 1.5;
+}
+
+.copilot-ui-bullet {
+  color: var(--primary);
+  font-size: 0.85em;
+  line-height: 1.6;
+  flex-shrink: 0;
+}
+
+.copilot-ui-num {
+  font-weight: 700;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.copilot-ui-table-card {
+  margin: 6px 0;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  border-radius: 12px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--card) 60%, var(--bg-subtle));
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+
+.copilot-ui-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  text-align: left;
+}
+
+.copilot-ui-table th {
+  background: color-mix(in srgb, var(--primary) 12%, var(--card));
+  color: var(--foreground);
+  font-weight: 700;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.copilot-ui-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+  color: inherit;
+}
+
+.copilot-ui-table tr:last-child td {
+  border-bottom: none;
+}
+
+.copilot-inline-code {
+  background: color-mix(in srgb, var(--muted) 20%, transparent);
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 0.86em;
+  font-family: ui-monospace, monospace;
+}
+
 @keyframes copilotBlink {
   0%, 100% { opacity: 0.3; }
   50% { opacity: 1; }
 }
 
 @keyframes copilotShimmer {
+
   0% { opacity: 0.35; }
   50% { opacity: 0.7; }
   100% { opacity: 0.35; }
@@ -4860,7 +5103,7 @@ html body #root .hero-panel {
   max-width: 980px;
   font-size: clamp(34px, 5vw, 52px);
   line-height: 1.08;
-  color: #332f3a !important;
+  color: #000000 !important;
 }
 
 .hero-panel h1 em,
@@ -4868,15 +5111,16 @@ html body #root .hero-panel {
   background: linear-gradient(90deg, #332f3a 18%, #7c3aed 58%, #db2777);
   -webkit-background-clip: text;
   background-clip: text;
-  color: transparent;
+  color: transparent !important;
   font-style: normal;
 }
 
 .hero-panel p,
 .hero-panel p:last-child,
+.hero-panel .eyebrow,
 .page-header p,
 .page-header .eyebrow {
-  color: #635f69 !important;
+  color: #000000 !important;
   font-weight: 700;
 }
 
@@ -5128,33 +5372,41 @@ html body #root .hero-panel {
 }
 
 /* The dock: always starts as a small circle with the logo */
+html body #root .app-root .sidebar.sidebar-dock,
+html body #root .sidebar.sidebar-dock,
 .sidebar.sidebar-dock {
   position: fixed !important;
-  top: 18px;
-  bottom: 18px;
-  left: 14px;
-  z-index: 90;
-  width: 56px;
-  max-height: 56px;
-  border-radius: 50%;
+  top: 10px !important;
+  bottom: 10px !important;
+  left: 14px !important;
+  z-index: 9999 !important;
+  width: 54px;
+  max-height: calc(100vh - 20px);
+  border-radius: 22px !important;
   background: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(20px);
   box-shadow: 0 8px 24px rgba(124, 58, 237, 0.18), 0 2px 8px rgba(0,0,0,0.06);
-  overflow: hidden;
-  transition: max-height 300ms cubic-bezier(0.22, 1, 0.36, 1),
+  overflow: visible !important;
+  pointer-events: auto !important;
+  transition: width 240ms cubic-bezier(0.22, 1, 0.36, 1),
+              max-height 300ms cubic-bezier(0.22, 1, 0.36, 1),
               border-radius 300ms cubic-bezier(0.22, 1, 0.36, 1),
               box-shadow 300ms ease,
               background 300ms ease;
 }
 
-/* On hover, expand to show all page icons */
-.sidebar.sidebar-dock:hover {
-  max-height: calc(100vh - 36px);
-  border-radius: 28px;
-  padding: 8px 0;
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow: 0 12px 36px rgba(124, 58, 237, 0.2), 0 4px 12px rgba(0,0,0,0.08);
-  overflow: visible;
+/* On desktop (.sidebar.sidebar-dock:not(.is-open)), container ALWAYS stays 54px and NEVER expands on sidebar hover! */
+html body #root .app-root .sidebar.sidebar-dock:not(.is-open),
+html body #root .sidebar.sidebar-dock:not(.is-open),
+.sidebar.sidebar-dock:not(.is-open),
+html body #root .app-root .sidebar.sidebar-dock:not(.is-open):hover,
+html body #root .sidebar.sidebar-dock:not(.is-open):hover,
+.sidebar.sidebar-dock:not(.is-open):hover {
+  width: 54px !important;
+  max-height: calc(100vh - 20px);
+  border-radius: 22px !important;
+  overflow: visible !important;
+  z-index: 9999 !important;
 }
 
 html.dark .sidebar.sidebar-dock {
@@ -5162,7 +5414,32 @@ html.dark .sidebar.sidebar-dock {
 }
 
 html.dark .sidebar.sidebar-dock:hover {
-  background: color-mix(in srgb, var(--card) 90%, transparent);
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+}
+
+/* Mobile open state — expand the dock fully and show nav + labels */
+.sidebar.sidebar-dock.is-open {
+  max-height: calc(100vh - 20px);
+  border-radius: 22px !important;
+  padding: 8px 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  width: 220px !important;
+}
+.sidebar.sidebar-dock.is-open .dock-nav {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Reveal labels in mobile open state or when hovering sidebar */
+@media (max-width: 768px) {
+  .sidebar.sidebar-dock {
+    left: -80px;
+    transition: left 300ms cubic-bezier(0.22, 1, 0.36, 1), max-height 300ms ease;
+  }
+  .sidebar.sidebar-dock.is-open {
+    left: 14px;
+  }
 }
 
 /* Logo circle — always visible */
@@ -5170,8 +5447,9 @@ html.dark .sidebar.sidebar-dock:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
+  width: 54px;
+  height: 54px;
+  border-radius: 22px !important;
   flex-shrink: 0;
 }
 
@@ -5181,112 +5459,166 @@ html.dark .sidebar.sidebar-dock:hover {
   object-fit: contain;
 }
 
-/* Nav list — hidden via opacity until hover, then fades in */
+/* Nav list */
 .dock-nav {
+  position: relative;
   display: flex;
   flex-direction: column;
   justify-content: space-evenly;
+  align-items: flex-start;
   flex: 1;
-  padding: 0 6px;
-  overflow-y: auto;
-  overflow-x: visible;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 160ms ease 140ms, visibility 0ms 140ms;
-}
-
-.sidebar.sidebar-dock:hover .dock-nav {
+  padding: 0 5px;
+  overflow: visible !important;
   opacity: 1;
   visibility: visible;
-  transition: opacity 160ms ease 0ms, visibility 0ms 0ms;
 }
 
-/* Each dock item — icon button */
+/* Sliding active highlight indicator inside dock-nav */
+.dock-active-highlight {
+  position: absolute;
+  left: 5px;
+  width: calc(100% - 10px);
+  border-radius: 14px;
+  background: var(--primary);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--primary) 38%, transparent);
+  transition: top 360ms cubic-bezier(0.34, 1.56, 0.64, 1), height 360ms ease, opacity 200ms ease, width 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Each dock item — starts as a single 44px round button */
+html body #root .sidebar.sidebar-dock .dock-item,
 .dock-item {
-  position: relative;
+  position: relative !important;
+  z-index: 10 !important;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 44px;
   height: 44px;
-  margin: 0 auto;
+  margin: 0 !important;
+  left: 0;
   border: 0;
   border-radius: 14px;
   background: transparent;
   color: var(--muted);
-  cursor: pointer;
-  transition: background 140ms ease, color 140ms ease;
+  cursor: pointer !important;
+  overflow: hidden;
+  pointer-events: auto !important;
+  transition: width 240ms cubic-bezier(0.22, 1, 0.36, 1), background 180ms ease, color 240ms ease, justify-content 240ms ease, padding 240ms ease, border-radius 240ms ease, box-shadow 240ms ease;
+}
+
+html body #root .sidebar.sidebar-dock .dock-item *,
+.dock-item * {
+  pointer-events: none !important;
+}
+
+/* When sidebar expands in mobile open state (.is-open), expand all buttons */
+html body #root .sidebar.sidebar-dock.is-open .dock-item,
+.sidebar.sidebar-dock.is-open .dock-item {
+  width: calc(100% - 8px);
+  margin: 0 4px !important;
+  justify-content: flex-start;
+  padding: 0 12px;
+  gap: 14px;
+}
+
+/* INDIVIDUAL ITEM HOVER ON DESKTOP: ONLY the hovered icon pops rightward as an individual pill! */
+html body #root .sidebar.sidebar-dock:not(.is-open) .dock-item:hover,
+.sidebar.sidebar-dock:not(.is-open) .dock-item:hover {
+  width: max-content !important;
+  min-width: 195px !important;
+  max-width: 280px !important;
+  height: 44px !important;
+  border-radius: 999px !important;
+  padding: 0 18px 0 11px !important;
+  justify-content: flex-start !important;
+  gap: 12px !important;
+  overflow: visible !important;
+  background: linear-gradient(135deg, #3b82f6, #6366f1) !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.42), 0 2px 8px rgba(0,0,0,0.18) !important;
+  z-index: 100000 !important;
+}
+
+.dock-item-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  z-index: 1;
+  pointer-events: none !important;
+  flex-shrink: 0;
 }
 
 .dock-item svg {
   width: 22px;
   height: 22px;
   flex-shrink: 0;
+  pointer-events: none !important;
+  transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.dock-item:hover {
+.dock-item .dock-item-label {
+  display: none;
+  font-size: 0.9rem;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none !important;
+  color: var(--foreground);
+}
+
+.sidebar.sidebar-dock.is-open .dock-item .dock-item-label {
+  display: inline;
+}
+
+/* Show label when individual dock item is hovered on desktop */
+html body #root .sidebar.sidebar-dock:not(.is-open) .dock-item:hover .dock-item-label,
+.sidebar.sidebar-dock:not(.is-open) .dock-item:hover .dock-item-label {
+  display: inline-flex !important;
+  color: #ffffff !important;
+  opacity: 1 !important;
+  font-weight: 700 !important;
+  font-size: 0.94rem !important;
+  white-space: nowrap !important;
+}
+
+html body #root .sidebar.sidebar-dock:not(.is-open) .dock-item:hover svg,
+.sidebar.sidebar-dock:not(.is-open) .dock-item:hover svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+  transform: scale(1.12);
+}
+
+/* Position badge neatly inside the popped-out pill on hover */
+html body #root .sidebar.sidebar-dock:not(.is-open) .dock-item:hover .dock-badge,
+.sidebar.sidebar-dock:not(.is-open) .dock-item:hover .dock-badge {
+  position: absolute !important;
+  top: 6px !important;
+  right: 14px !important;
+  background: rgba(255, 255, 255, 0.28) !important;
+  color: #ffffff !important;
+  font-size: 0.62rem !important;
+  padding: 2px 6px !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+}
+
+.dock-item:hover:not(.active):not(:has(.dock-item-label:hover)) {
   background: color-mix(in srgb, var(--primary) 12%, transparent);
   color: var(--primary);
 }
 
 .dock-item.active {
   background: var(--primary);
-  color: white;
+  color: #ffffff;
   box-shadow: 0 4px 12px color-mix(in srgb, var(--primary) 30%, transparent);
 }
 
-/* Bigger tile that appears on hover — matches the button height, wider to fit the title */
-.dock-tile {
-  height: 44px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--card, #fff);
-  border: 1px solid var(--border, #e2e2e2);
-  border-radius: 14px;
-  padding: 0 16px;
-  pointer-events: none;
-  box-shadow: 0 8px 28px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.06);
-  backdrop-filter: blur(14px);
-  animation: dockTileFade 160ms cubic-bezier(0.22, 1, 0.36, 1);
-  white-space: nowrap;
-  width: max-content;
-}
-
-@keyframes dockTileFade {
-  from { opacity: 0; transform: translateX(-8px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-.dock-tile-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
-  color: var(--primary);
-}
-
-.dock-tile-icon svg {
-  width: 22px;
-  height: 22px;
-}
-
-.dock-tile-label {
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: var(--foreground, #333);
-}
-
-.dock-tile-badge {
-  font-size: 0.56rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, var(--primary), var(--primary-2));
-  color: white;
-  padding: 2px 5px;
-  border-radius: 6px;
-  line-height: 1;
+.dock-item.active .dock-item-label {
+  color: #ffffff;
 }
 
 .dock-badge {
@@ -5463,9 +5795,9 @@ html body #root .app-root {
    Add 18px gap → topbar left = 104px when collapsed. */
 html body #root .app-root .topbar {
   position: fixed !important;
-  top: 14px !important;
+  top: 10px !important;
   right: 18px !important;
-  left: 308px !important;
+  left: 84px !important;
   z-index: 80 !important;
   margin-left: 0 !important;
   width: auto !important;
@@ -5477,16 +5809,40 @@ html body #root .app-root .topbar {
 }
 
 html body #root .app-root .page-wrap {
-  padding-left: 320px !important;
-  padding-top: 110px !important;
+  padding-left: 84px !important;
+  padding-right: 18px !important;
+  padding-top: 84px !important;
 }
 
-/* When sidebar is collapsed: offset shrinks to match 72px sidebar */
-html body #root .app-root:has(.sidebar.is-collapsed) .topbar {
+/* When sidebar-dock is present: ensure topbar starts at left 84px and page content uses all screen width */
+html body #root .app-root:has(.sidebar.sidebar-dock) .topbar {
+  left: 84px !important;
+  right: 18px !important;
+}
+
+html body #root .app-root:has(.sidebar.sidebar-dock) .page-wrap {
+  padding-left: 84px !important;
+  padding-right: 18px !important;
+  padding-top: 84px !important;
+}
+
+html body #root .app-root:has(.sidebar.sidebar-dock) .page-wrap .page-stack,
+html body #root .app-root:has(.sidebar.sidebar-dock) .page-wrap .lesson-layout,
+html body #root .app-root:has(.sidebar.sidebar-dock) .page-wrap .analytics-grid,
+html body #root .app-root:has(.sidebar.sidebar-dock) .page-wrap .classes-grid,
+html body #root .app-root:has(.sidebar.sidebar-dock) .page-wrap > div {
+  max-width: 100% !important;
+  width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* When sidebar is collapsed without sidebar-dock */
+html body #root .app-root:has(.sidebar.is-collapsed:not(.sidebar-dock)) .topbar {
   left: 104px !important;
 }
 
-html body #root .app-root:has(.sidebar.is-collapsed) .page-wrap {
+html body #root .app-root:has(.sidebar.is-collapsed:not(.sidebar-dock)) .page-wrap {
   padding-left: 116px !important;
 }
 
@@ -5680,10 +6036,10 @@ html.dark body #root .insight,
 html.dark body #root .metric,
 html.dark body #root .modal-card,
 html.dark body #root .copilot {
-  background: rgba(35, 28, 49, 0.76) !important;
-  color: #f7f2ff !important;
-  border-color: rgba(196, 181, 253, 0.18) !important;
-  box-shadow: var(--clay-card) !important;
+  background: rgba(30, 41, 59, 0.6) !important;
+  color: #e2e8f0 !important;
+  border-color: rgba(99, 102, 241, 0.18) !important;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2) !important;
 }
 
 html.dark body #root .hero-panel {
@@ -5699,7 +6055,6 @@ html.dark body #root .page-header {
     linear-gradient(135deg, rgba(35, 28, 49, 0.88), rgba(27, 23, 40, 0.92)) !important;
 }
 
-html.dark body #root .hero-panel h1,
 html.dark body #root .page-header h1,
 html.dark body #root .card h2,
 html.dark body #root .card h3,
@@ -5709,6 +6064,13 @@ html.dark body #root .page-stack h1,
 html.dark body #root .page-stack h2,
 html.dark body #root .page-stack h3 {
   color: #f7f2ff !important;
+}
+
+html.dark body #root .hero-panel h1,
+html.dark body #root .hero-panel p,
+html.dark body #root .hero-panel p:last-child,
+html.dark body #root .hero-panel .eyebrow {
+  color: #ffffff !important;
 }
 
 html.dark body #root .hero-panel h1 em,
@@ -5722,7 +6084,6 @@ html.dark body #root .page-header h1 em {
 html.dark body #root p,
 html.dark body #root small,
 html.dark body #root .eyebrow,
-html.dark body #root .hero-panel p,
 html.dark body #root .page-header p,
 html.dark body #root .page-header .eyebrow,
 html.dark body #root .card p,
@@ -5737,10 +6098,10 @@ html.dark body #root .search-box input,
 html.dark body #root input,
 html.dark body #root select,
 html.dark body #root textarea {
-  background: rgba(22, 17, 33, 0.72) !important;
-  color: #f7f2ff !important;
-  border-color: rgba(196, 181, 253, 0.18) !important;
-  box-shadow: var(--clay-pressed) !important;
+  background: rgba(15, 23, 42, 0.6) !important;
+  color: #e2e8f0 !important;
+  border-color: rgba(99, 102, 241, 0.2) !important;
+  box-shadow: none !important;
 }
 
 html.dark body #root input::placeholder,
@@ -5946,48 +6307,36 @@ html:not(.dark) body #root .chart-legend i {
   background: linear-gradient(90deg, var(--page-a), var(--page-b)) !important;
 }
 
-html:not(.dark) body #root .dashboard-grid > .card:nth-child(6n + 1),
-html:not(.dark) body #root .planner-grid > .card:nth-child(6n + 1),
 html:not(.dark) body #root .report-grid > .card:nth-child(6n + 1),
 html:not(.dark) body #root .analytics-tab-grid > .analysis-card:nth-child(6n + 1),
 html:not(.dark) body #root .material-grid > .material-tile:nth-child(6n + 1) {
   background: color-mix(in srgb, #eff6ff 74%, white) !important;
 }
 
-html:not(.dark) body #root .dashboard-grid > .card:nth-child(6n + 2),
-html:not(.dark) body #root .planner-grid > .card:nth-child(6n + 2),
 html:not(.dark) body #root .report-grid > .card:nth-child(6n + 2),
 html:not(.dark) body #root .analytics-tab-grid > .analysis-card:nth-child(6n + 2),
 html:not(.dark) body #root .material-grid > .material-tile:nth-child(6n + 2) {
   background: color-mix(in srgb, #ecfdf5 76%, white) !important;
 }
 
-html:not(.dark) body #root .dashboard-grid > .card:nth-child(6n + 3),
-html:not(.dark) body #root .planner-grid > .card:nth-child(6n + 3),
 html:not(.dark) body #root .report-grid > .card:nth-child(6n + 3),
 html:not(.dark) body #root .analytics-tab-grid > .analysis-card:nth-child(6n + 3),
 html:not(.dark) body #root .material-grid > .material-tile:nth-child(6n + 3) {
   background: color-mix(in srgb, #fff7ed 76%, white) !important;
 }
 
-html:not(.dark) body #root .dashboard-grid > .card:nth-child(6n + 4),
-html:not(.dark) body #root .planner-grid > .card:nth-child(6n + 4),
 html:not(.dark) body #root .report-grid > .card:nth-child(6n + 4),
 html:not(.dark) body #root .analytics-tab-grid > .analysis-card:nth-child(6n + 4),
 html:not(.dark) body #root .material-grid > .material-tile:nth-child(6n + 4) {
   background: color-mix(in srgb, #fdf2f8 74%, white) !important;
 }
 
-html:not(.dark) body #root .dashboard-grid > .card:nth-child(6n + 5),
-html:not(.dark) body #root .planner-grid > .card:nth-child(6n + 5),
 html:not(.dark) body #root .report-grid > .card:nth-child(6n + 5),
 html:not(.dark) body #root .analytics-tab-grid > .analysis-card:nth-child(6n + 5),
 html:not(.dark) body #root .material-grid > .material-tile:nth-child(6n + 5) {
   background: color-mix(in srgb, #f0fdfa 76%, white) !important;
 }
 
-html:not(.dark) body #root .dashboard-grid > .card:nth-child(6n + 6),
-html:not(.dark) body #root .planner-grid > .card:nth-child(6n + 6),
 html:not(.dark) body #root .report-grid > .card:nth-child(6n + 6),
 html:not(.dark) body #root .analytics-tab-grid > .analysis-card:nth-child(6n + 6),
 html:not(.dark) body #root .material-grid > .material-tile:nth-child(6n + 6) {
@@ -6077,12 +6426,10 @@ html.dark body #root .analytics-tab-grid > .analysis-card,
 html.dark body #root .material-grid > .material-tile,
 html.dark body #root .modal-card,
 html.dark body #root .copilot {
-  background:
-    radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--page-b) 10%, transparent), transparent 32%),
-    linear-gradient(145deg, rgba(35, 28, 49, 0.9), rgba(24, 19, 35, 0.88)) !important;
-  color: #f7f2ff !important;
-  border-color: rgba(196, 181, 253, 0.18) !important;
-  box-shadow: var(--clay-card) !important;
+  background: rgba(30, 41, 59, 0.55) !important;
+  color: #e2e8f0 !important;
+  border-color: rgba(99, 102, 241, 0.18) !important;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2) !important;
 }
 
 html.dark body #root .lesson-preview,
@@ -6131,9 +6478,16 @@ html.dark body #root input,
 html.dark body #root select,
 html.dark body #root textarea,
 html.dark body #root .search-box input {
-  background: rgba(14, 11, 22, 0.7) !important;
-  color: #f7f2ff !important;
-  border-color: rgba(196, 181, 253, 0.16) !important;
+  background: rgba(15, 23, 42, 0.6) !important;
+  color: #e2e8f0 !important;
+  border-color: rgba(99, 102, 241, 0.2) !important;
+}
+html.dark body #root .search-box input::placeholder { color: #64748b !important; }
+html.dark body #root .search-box svg { color: #64748b !important; }
+html.dark body #root .search-box kbd {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #94a3b8 !important;
 }
 
 html.dark body #root .lesson-section li::marker {
@@ -7493,13 +7847,36 @@ html.dark body #root .feedback-tabs {
   text-align: center;
 }
 
-/* Top Middle: Segmented Progress List with Arrows */
+/* Top Middle: Segmented Progress List with Arrows — cleaned up */
+.segmented-root {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.segmented-head {
+  margin-bottom: 16px;
+}
+.segmented-head h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--foreground);
+  letter-spacing: -0.01em;
+}
+.segmented-head p {
+  margin: 4px 0 0 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
 .segmented-list-wrap {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
   justify-content: center;
-  height: 100%;
+  flex: 1;
 }
 
 .segmented-list-row {
@@ -7512,48 +7889,71 @@ html.dark body #root .feedback-tabs {
 .segmented-track-col {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+  min-width: 0;
+}
+
+.segmented-track-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .segmented-track-title {
-  font-size: 0.72rem;
-  font-weight: 800;
+  font-size: 0.7rem;
+  font-weight: 700;
   color: #64748b;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
+.segmented-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.segmented-value.emerald { color: #10b981; }
+.segmented-value.indigo  { color: #6366f1; }
+.segmented-value.cyan    { color: #06b6d4; }
+.segmented-value.rose    { color: #ec4899; }
+.segmented-value.amber   { color: #f59e0b; }
+
 .segmented-bars-strip {
   display: flex;
-  gap: 3px;
+  gap: 4px;
   align-items: center;
 }
 
 .segmented-bar-pill {
-  height: 10px;
+  height: 8px;
   flex: 1;
-  border-radius: 2px;
+  border-radius: 4px;
   background: #e2e8f0;
   transition: background 0.3s ease;
 }
 
 .segmented-bar-pill.active.emerald { background: #10b981; }
-.segmented-bar-pill.active.indigo { background: #6366f1; }
-.segmented-bar-pill.active.cyan { background: #06b6d4; }
-.segmented-bar-pill.active.rose { background: #ec4899; }
-.segmented-bar-pill.active.amber { background: #f59e0b; }
+.segmented-bar-pill.active.indigo  { background: #6366f1; }
+.segmented-bar-pill.active.cyan    { background: #06b6d4; }
+.segmented-bar-pill.active.rose    { background: #ec4899; }
+.segmented-bar-pill.active.amber   { background: #f59e0b; }
 
 .segmented-stat-badge {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 1.15rem;
-  font-weight: 800;
-  color: #0f172a;
+  gap: 5px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
 }
 
-.segmented-stat-badge.up { color: #10b981; }
-.segmented-stat-badge.down { color: #ec4899; }
+.segmented-stat-badge.up   { color: #059669; background: #ecfdf5; }
+.segmented-stat-badge.down { color: #e11d48; background: #fff1f2; }
 
 /* Top Right: Mini Column Strip */
 .mini-strip-grid {
@@ -7953,5 +8353,1229 @@ html.dark body #root .step-badge-circle.active {
   background: rgba(236, 72, 153, 0.2) !important;
   border-color: #ec4899 !important;
   color: #f472b6 !important;
+}
+
+/* ============================================================
+   DASHBOARD REDESIGN — per author design-system spec
+   Scoped to [data-page="dashboard"] only.
+   Palette: Indigo #6366f1 / #4f46e5, Rose #f43f5e, Emerald/Rose/Amber/Blue accents
+   Fonts: Plus Jakarta Sans (700/800 headings, 400/500/600 body)
+   Background: animated linear-gradient pastels
+   ============================================================ */
+
+@keyframes sdGradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes sdFloat {
+  0%, 100% { transform: translate(0, 0); }
+  50%      { transform: translate(0, -10px); }
+}
+/* Orb drift + pulse animation */
+@keyframes sdOrb1 {
+  0%   { transform: translate(0, 0) scale(1);   }
+  33%  { transform: translate(80px, 120px) scale(1.3); }
+  66%  { transform: translate(-60px, 60px) scale(0.85); }
+  100% { transform: translate(0, 0) scale(1);   }
+}
+@keyframes sdOrb2 {
+  0%   { transform: translate(0, 0) scale(1);   }
+  33%  { transform: translate(-100px, 80px) scale(0.8); }
+  66%  { transform: translate(70px, -50px) scale(1.25); }
+  100% { transform: translate(0, 0) scale(1);   }
+}
+@keyframes sdOrb3 {
+  0%   { transform: translate(0, 0) scale(1);    }
+  33%  { transform: translate(60px, -90px) scale(1.35); }
+  66%  { transform: translate(-80px, 40px) scale(0.9); }
+  100% { transform: translate(0, 0) scale(1);    }
+}
+@keyframes sdOrb4 {
+  0%   { transform: translate(0, 0) scale(1);    }
+  33%  { transform: translate(-70px, -60px) scale(1.2); }
+  66%  { transform: translate(90px, 70px) scale(0.75); }
+  100% { transform: translate(0, 0) scale(1);    }
+}
+
+/* 1 — LIGHT MODE (default): white base + soft pastel blurred orbs on the dashboard page */
+.app-root[data-page="dashboard"] {
+  background: #ffffff !important;
+  position: relative;
+  overflow-x: hidden;
+}
+.app-root[data-page="dashboard"] .orb-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.app-root[data-page="dashboard"] .orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.35;
+  will-change: transform;
+}
+.app-root[data-page="dashboard"] .orb-purple {
+  width: 600px; height: 600px;
+  top: 2%; left: 4%;
+  background: #a855f7;
+  animation: sdOrb1 18s ease-in-out infinite;
+}
+.app-root[data-page="dashboard"] .orb-blue {
+  width: 550px; height: 550px;
+  top: 55%; right: 2%;
+  background: #3b82f6;
+  animation: sdOrb2 22s ease-in-out infinite;
+}
+.app-root[data-page="dashboard"] .orb-pink {
+  width: 520px; height: 520px;
+  bottom: -5%; left: 35%;
+  background: #ec4899;
+  animation: sdOrb3 20s ease-in-out infinite;
+}
+.app-root[data-page="dashboard"] .orb-white {
+  width: 480px; height: 480px;
+  top: 30%; left: 60%;
+  background: #ffffff;
+  opacity: 0.45;
+  animation: sdOrb4 16s ease-in-out infinite;
+}
+
+/* DARK MODE: deep base + glowing jewel-toned orbs */
+html.dark .app-root[data-page="dashboard"] {
+  background: #0f0a1e !important;
+}
+html.dark .app-root[data-page="dashboard"] .orb {
+  opacity: 0.5;
+  mix-blend-mode: screen;
+  filter: blur(90px);
+}
+html.dark .app-root[data-page="dashboard"] .orb-purple { background: #6d28d9; }
+html.dark .app-root[data-page="dashboard"] .orb-blue   { background: #1e40af; }
+html.dark .app-root[data-page="dashboard"] .orb-pink    { background: #9d174d; }
+html.dark .app-root[data-page="dashboard"] .orb-white   { background: #4338ca; opacity: 0.6; }
+/* Keep all dashboard content above the orb background */
+.app-root[data-page="dashboard"] .main-column { position: relative; z-index: 10; }
+/* Copilot panel + FAB stay fixed-pinned to viewport, above the orbs */
+.app-root[data-page="dashboard"] .copilot,
+.app-root[data-page="dashboard"] .copilot-fab { z-index: 60; }
+
+/* 2 — Force all middle layers transparent so the orbs show through + sit above */
+.app-root[data-page="dashboard"] .main-column,
+.app-root[data-page="dashboard"] .page-wrap,
+.app-root[data-page="dashboard"] .page-stack {
+  background: transparent !important;
+  position: relative;
+  z-index: 10;
+}
+.app-root[data-page="dashboard"] .page-wrap { padding: 32px; }
+.app-root[data-page="dashboard"] .page-stack { gap: 28px; max-width: 1440px; }
+
+.app-root[data-page="dashboard"] .topbar {
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(14px) saturate(160%);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+  z-index: 35;
+}
+
+/* 3 — Typography: Plus Jakarta Sans everywhere on dashboard, solid readable colors */
+.app-root[data-page="dashboard"] .page-wrap,
+.app-root[data-page="dashboard"] .page-stack {
+  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif !important;
+  color: #1e293b !important;
+}
+.app-root[data-page="dashboard"] .page-wrap p,
+.app-root[data-page="dashboard"] .page-stack p,
+.app-root[data-page="dashboard"] .body-copy {
+  color: #334155 !important;
+}
+.app-root[data-page="dashboard"] h1,
+.app-root[data-page="dashboard"] h2,
+.app-root[data-page="dashboard"] h3,
+.app-root[data-page="dashboard"] h4 {
+  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif !important;
+  letter-spacing: -0.02em;
+  color: #0f172a !important;
+}
+.app-root[data-page="dashboard"] .page-wrap span,
+.app-root[data-page="dashboard"] .page-stack span {
+  color: #475569;
+}
+.app-root[data-page="dashboard"] .page-wrap small,
+.app-root[data-page="dashboard"] .page-stack small {
+  color: #64748b;
+}
+
+/* 4 — Hero panel: clean glass gradient + black text in light mode */
+html body #root .app-root[data-page="dashboard"] .hero-panel,
+html:not(.dark) body #root .app-root[data-page="dashboard"] .hero-panel,
+.app-root[data-page="dashboard"] .hero-panel {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(139, 92, 246, 0.18) !important;
+  border-radius: 2.5rem !important;
+  padding: 40px !important;
+  background:
+    radial-gradient(circle at 84% 14%, rgba(167, 139, 250, 0.28), transparent 34%),
+    radial-gradient(circle at 76% 92%, rgba(14, 165, 233, 0.18), transparent 30%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(250, 245, 255, 0.96) 100%) !important;
+  box-shadow: 0 16px 40px rgba(124, 58, 237, 0.14) !important;
+  color: #000000 !important;
+}
+
+html body #root .app-root[data-page="dashboard"] .hero-panel::before,
+html body #root .app-root[data-page="dashboard"] .hero-panel::after,
+.app-root[data-page="dashboard"] .hero-panel::before,
+.app-root[data-page="dashboard"] .hero-panel::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
+  z-index: 0;
+}
+.app-root[data-page="dashboard"] .hero-panel::before {
+  width: 320px; height: 320px;
+  top: -80px; right: -80px;
+  background: rgba(196, 181, 253, 0.25);
+}
+.app-root[data-page="dashboard"] .hero-panel::after {
+  width: 320px; height: 320px;
+  bottom: -80px; left: -80px;
+  background: rgba(76, 29, 149, 0.2);
+}
+.app-root[data-page="dashboard"] .hero-panel > * { position: relative; z-index: 1; }
+
+html body #root .app-root[data-page="dashboard"] .hero-panel .eyebrow,
+html:not(.dark) body #root .app-root[data-page="dashboard"] .hero-panel .eyebrow,
+.app-root[data-page="dashboard"] .hero-panel .eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(124, 58, 237, 0.1) !important;
+  backdrop-filter: blur(8px);
+  border-radius: 999px;
+  padding: 6px 16px;
+  color: #000000 !important;
+  margin-bottom: 16px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* Pulsing AI-connected dot */
+.app-root[data-page="dashboard"] .hero-panel .ai-live-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6);
+  animation: sdAiPulse 2s ease-out infinite;
+}
+@keyframes sdAiPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6); }
+  70%  { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+}
+
+html body #root .app-root[data-page="dashboard"] .hero-panel h1,
+html:not(.dark) body #root .app-root[data-page="dashboard"] .hero-panel h1,
+.app-root[data-page="dashboard"] .hero-panel h1 {
+  font-weight: 800 !important;
+  color: #000000 !important;
+  font-size: clamp(36px, 5vw, 48px) !important;
+  line-height: 1.05 !important;
+}
+
+html body #root .app-root[data-page="dashboard"] .hero-panel h1 em,
+html:not(.dark) body #root .app-root[data-page="dashboard"] .hero-panel h1 em,
+.app-root[data-page="dashboard"] .hero-panel h1 em {
+  font-style: normal;
+  background: linear-gradient(90deg, #332f3a 18%, #7c3aed 58%, #db2777) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+}
+
+html body #root .app-root[data-page="dashboard"] .hero-panel p,
+html:not(.dark) body #root .app-root[data-page="dashboard"] .hero-panel p,
+.app-root[data-page="dashboard"] .hero-panel p {
+  color: #000000 !important;
+  font-size: 1.125rem;
+  font-weight: 500;
+  max-width: 640px;
+}
+
+
+/* 5 — Stat cards: solid white, large icon chip, uppercase label, big number, mini bars */
+.app-root[data-page="dashboard"] .stat-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  border-radius: 1.5rem !important;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.06), 0 8px 20px -8px rgba(99,102,241,0.1) !important;
+  padding: 24px !important;
+  transition: box-shadow 200ms ease, transform 200ms ease;
+}
+.app-root[data-page="dashboard"] .stat-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(99,102,241,0.1) !important;
+  transform: translateY(-2px);
+}
+.app-root[data-page="dashboard"] .stat-card > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+.app-root[data-page="dashboard"] .stat-card .tone-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 1rem;
+  display: grid;
+  place-items: center;
+}
+.app-root[data-page="dashboard"] .stat-card .tone-icon.indigo,
+.app-root[data-page="dashboard"] .stat-card .tone-icon.amber,
+.app-root[data-page="dashboard"] .stat-card .tone-icon.rose,
+.app-root[data-page="dashboard"] .stat-card .tone-icon.emerald,
+.app-root[data-page="dashboard"] .stat-card .tone-icon.violet {
+  color: #6366f1 !important;
+  background: #eef2ff !important;
+}
+.app-root[data-page="dashboard"] .stat-card small {
+  color: #059669 !important;
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+.app-root[data-page="dashboard"] .stat-card strong {
+  display: block;
+  font-family: "Plus Jakarta Sans", sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 1.875rem !important;
+  color: #1e293b !important;
+  margin-top: 0 !important;
+  line-height: 1;
+}
+.app-root[data-page="dashboard"] .stat-card p {
+  margin: 8px 0 2px !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b !important;
+}
+.app-root[data-page="dashboard"] .stat-card > span {
+  color: #94a3b8 !important;
+  font-size: 0.75rem !important;
+}
+/* Stepping-arrow-up sparkline SVG — unified indigo (covered by combined rule above) */
+
+/* Document sparkline SVG (amber/RPH card) — unified indigo */
+.app-root[data-page="dashboard"] .stat-card .sparkline-doc,
+.app-root[data-page="dashboard"] .stat-card .sparkline-clock,
+.app-root[data-page="dashboard"] .stat-card .sparkline-stairs {
+  color: #6366f1;
+  flex-shrink: 0;
+  width: 48px !important;
+  height: 48px !important;
+}
+
+/* Per-tone number color — unified to indigo (quick action color) */
+.app-root[data-page="dashboard"] .stat-card.tone-indigo strong { color: #6366f1 !important; }
+.app-root[data-page="dashboard"] .stat-card.tone-emerald strong { color: #6366f1 !important; }
+.app-root[data-page="dashboard"] .stat-card.tone-amber strong { color: #6366f1 !important; }
+.app-root[data-page="dashboard"] .stat-card.tone-rose strong { color: #6366f1 !important; }
+/* Per-tone sparkline bar colors — all indigo */
+.app-root[data-page="dashboard"] .stat-card.tone-indigo .sparkline span { background: #c7d2fe; }
+.app-root[data-page="dashboard"] .stat-card.tone-indigo .sparkline span:nth-child(3) { background: #6366f1; }
+.app-root[data-page="dashboard"] .stat-card.tone-emerald .sparkline span { background: #c7d2fe; }
+.app-root[data-page="dashboard"] .stat-card.tone-emerald .sparkline span:nth-child(3) { background: #6366f1; }
+.app-root[data-page="dashboard"] .stat-card.tone-amber .sparkline span { background: #c7d2fe; }
+.app-root[data-page="dashboard"] .stat-card.tone-amber .sparkline span:nth-child(3) { background: #6366f1; }
+.app-root[data-page="dashboard"] .stat-card.tone-rose .sparkline span { background: #c7d2fe; }
+.app-root[data-page="dashboard"] .stat-card.tone-rose .sparkline span:nth-child(3) { background: #6366f1; }
+
+/* 6 — Glass cards (schedule, materials, goals) — true glassmorphism over orbs */
+.app-root[data-page="dashboard"] .card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.55) !important;
+  backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  border-radius: 1.5rem !important;
+  box-shadow: 0 8px 32px -8px rgba(0,0,0,0.18) !important;
+  transition: box-shadow 200ms ease, transform 200ms ease, background 200ms ease;
+}
+.app-root[data-page="dashboard"] .card:hover {
+  background: rgba(255, 255, 255, 0.65) !important;
+  box-shadow: 0 12px 40px -8px rgba(99,102,241,0.25) !important;
+  transform: translateY(-2px);
+}
+.app-root[data-page="dashboard"] .card header { padding-bottom: 8px; }
+.app-root[data-page="dashboard"] .card h2 {
+  font-weight: 800 !important;
+  font-size: 1.25rem !important;
+  color: #1e293b !important;
+}
+.app-root[data-page="dashboard"] .card header p {
+  color: #64748b !important;
+  font-size: 0.875rem;
+}
+.app-root[data-page="dashboard"] .card header button {
+  color: #6366f1 !important;
+  font-weight: 600;
+}
+
+/* 7 — Schedule class rows: glass tiles with tone-tinted hover */
+.app-root[data-page="dashboard"] .class-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 16px !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 1rem !important;
+  background: rgba(255, 255, 255, 0.4) !important;
+  backdrop-filter: blur(10px);
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+.app-root[data-page="dashboard"] .class-row:hover {
+  background: rgba(255, 255, 255, 0.6) !important;
+  border-color: rgba(99, 102, 241, 0.3) !important;
+  transform: translateX(4px);
+}
+.app-root[data-page="dashboard"] .class-row > span {
+  display: flex;
+  flex-direction: column;
+  color: #0f172a !important;
+  font-weight: 700;
+  min-width: 70px;
+}
+.app-root[data-page="dashboard"] .class-row > span small {
+  color: #64748b !important;
+  font-weight: 500;
+  font-size: 0.75rem !important;
+}
+.app-root[data-page="dashboard"] .class-row div strong {
+  color: #0f172a !important;
+}
+.app-root[data-page="dashboard"] .class-row div small {
+  color: #475569 !important;
+}
+.app-root[data-page="dashboard"] .class-row.emerald { border-left: 3px solid #10b981; }
+.app-root[data-page="dashboard"] .class-row.indigo { border-left: 3px solid #6366f1; }
+.app-root[data-page="dashboard"] .class-row.amber { border-left: 3px solid #f59e0b; }
+.app-root[data-page="dashboard"] .class-row.rose { border-left: 3px solid #f43f5e; }
+.app-root[data-page="dashboard"] .class-row.violet { border-left: 3px solid #8b5cf6; }
+
+/* 8 — AI Insights card: white semi-transparent glassmorphism */
+.app-root[data-page="dashboard"] .card:has(.insight-list) {
+  background: rgba(255, 255, 255, 0.55) !important;
+  backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  box-shadow: 0 8px 32px -8px rgba(0,0,0,0.25) !important;
+}
+.app-root[data-page="dashboard"] .card:has(.insight-list) h2,
+.app-root[data-page="dashboard"] .card:has(.insight-list) header p {
+  color: #0f172a !important;
+}
+.app-root[data-page="dashboard"] .card:has(.insight-list) header p {
+  color: #6366f1 !important;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+.app-root[data-page="dashboard"] .insight {
+  background: rgba(255,255,255,0.4) !important;
+  border: 1px solid rgba(255,255,255,0.5) !important;
+  border-radius: 1rem !important;
+  padding: 14px !important;
+}
+.app-root[data-page="dashboard"] .insight:hover {
+  background: rgba(255,255,255,0.6) !important;
+}
+.app-root[data-page="dashboard"] .insight i {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+.app-root[data-page="dashboard"] .insight i.rose { background: #e11d48; }
+.app-root[data-page="dashboard"] .insight i.indigo { background: #6366f1; }
+.app-root[data-page="dashboard"] .insight i.amber { background: #d97706; }
+.app-root[data-page="dashboard"] .insight i.emerald { background: #059669; }
+.app-root[data-page="dashboard"] .insight strong { color: #0f172a !important; }
+.app-root[data-page="dashboard"] .insight span { color: #475569 !important; }
+.app-root[data-page="dashboard"] .insight em { color: #6366f1 !important; }
+
+/* 9 — Metric tiles (insight strip): solid glass, distinct icon + tone-colored number/bar */
+.app-root[data-page="dashboard"] .metric {
+  background: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  border-radius: 1.5rem !important;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.06), 0 8px 20px -8px rgba(99,102,241,0.1) !important;
+  padding: 20px !important;
+  transition: box-shadow 200ms ease, transform 200ms ease;
+}
+.app-root[data-page="dashboard"] .metric:hover {
+  box-shadow: 0 10px 20px -5px rgba(99,102,241,0.12) !important;
+  transform: translateY(-2px);
+}
+.app-root[data-page="dashboard"] .metric-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.app-root[data-page="dashboard"] .metric .tone-icon {
+  width: 44px; height: 44px;
+  border-radius: 0.75rem;
+  display: grid; place-items: center;
+}
+.app-root[data-page="dashboard"] .metric .tone-icon.indigo { color: #6366f1; background: #eef2ff; }
+.app-root[data-page="dashboard"] .metric .tone-icon.emerald { color: #059669; background: #ecfdf5; }
+.app-root[data-page="dashboard"] .metric .tone-icon.amber { color: #d97706; background: #fffbeb; }
+.app-root[data-page="dashboard"] .metric .tone-icon.rose { color: #e11d48; background: #fff1f2; }
+.app-root[data-page="dashboard"] .metric p {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8 !important;
+  font-size: 0.75rem !important;
+  font-weight: 700;
+}
+.app-root[data-page="dashboard"] .metric strong {
+  font-family: "Plus Jakarta Sans", sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 1.75rem !important;
+  line-height: 1;
+}
+/* Tone-specific number color */
+.app-root[data-page="dashboard"] .metric.tone-indigo strong { color: #6366f1 !important; }
+.app-root[data-page="dashboard"] .metric.tone-emerald strong { color: #059669 !important; }
+.app-root[data-page="dashboard"] .metric.tone-amber strong { color: #d97706 !important; }
+.app-root[data-page="dashboard"] .metric.tone-rose strong { color: #e11d48 !important; }
+.app-root[data-page="dashboard"] .metric small { color: #64748b !important; font-size: 0.75rem; display: block; margin-top: 4px; }
+
+/* 10 — Progress bars: slate track + tone-colored fill */
+.app-root[data-page="dashboard"] .metric .progress {
+  background: #f1f5f9 !important;
+  border-radius: 999px !important;
+  height: 8px;
+  overflow: hidden;
+  margin-top: 12px;
+}
+.app-root[data-page="dashboard"] .metric.tone-indigo .progress > span { background: #6366f1 !important; }
+.app-root[data-page="dashboard"] .metric.tone-emerald .progress > span { background: #059669 !important; }
+.app-root[data-page="dashboard"] .metric.tone-amber .progress > span { background: #d97706 !important; }
+.app-root[data-page="dashboard"] .metric.tone-rose .progress > span { background: #e11d48 !important; }
+
+/* 11 — Goals card rows */
+.app-root[data-page="dashboard"] .goal span { color: #1e293b !important; font-weight: 700; font-size: 0.875rem; }
+.app-root[data-page="dashboard"] .goal strong { color: #94a3b8 !important; font-weight: 500; font-size: 0.875rem; }
+.app-root[data-page="dashboard"] .goal .progress { margin-top: 6px; height: 10px !important; }
+
+/* 12 — Buttons: indigo gradient primary, glass secondary */
+.app-root[data-page="dashboard"] .primary-btn {
+  background: linear-gradient(135deg, #6366f1, #4f46e5) !important;
+  box-shadow: 0 12px 24px -12px rgba(99,102,241,0.5) !important;
+  border: 0 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+.app-root[data-page="dashboard"] .primary-btn:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+.app-root[data-page="dashboard"] .secondary-btn {
+  background: rgba(255,255,255,0.85) !important;
+  backdrop-filter: blur(8px);
+  border: 1px solid #e2e8f0 !important;
+  color: #475569 !important;
+  font-weight: 600 !important;
+}
+.app-root[data-page="dashboard"] .hero-panel .secondary-btn {
+  background: rgba(255,255,255,0.18) !important;
+  border: 1px solid rgba(255,255,255,0.3) !important;
+  color: #ffffff !important;
+}
+
+/* 13 — AI note pill */
+.app-root[data-page="dashboard"] .ai-note {
+  background: #eef2ff !important;
+  border: 1px solid #c7d2fe !important;
+  color: #4f46e5 !important;
+  font-weight: 600;
+}
+
+/* 14 — Stat card mini sparkline bars (per reference design) */
+.app-root[data-page="dashboard"] .stat-card .sparkline {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  padding-bottom: 4px;
+}
+.app-root[data-page="dashboard"] .stat-card .sparkline span {
+  width: 6px;
+  border-radius: 999px;
+  background: #e0e7ff;
+}
+.app-root[data-page="dashboard"] .stat-card .sparkline span:nth-child(3) {
+  background: #6366f1;
+}
+.app-root[data-page="dashboard"] .stat-card .stat-body {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+}
+.app-root[data-page="dashboard"] .stat-card .stat-side-note {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-style: italic;
+  margin-bottom: 4px;
+}
+
+/* 15 — Quick Actions section */
+.app-root[data-page="dashboard"] .quick-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.app-root[data-page="dashboard"] .quick-actions-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.app-root[data-page="dashboard"] .quick-actions-head h3 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+.app-root[data-page="dashboard"] .quick-actions-head .quick-actions-sub {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #94a3b8;
+}
+.app-root[data-page="dashboard"] .quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.app-root[data-page="dashboard"] .quick-action {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 1.5rem;
+  box-shadow: 0 8px 32px -8px rgba(0,0,0,0.18);
+  transition: box-shadow 200ms ease, transform 200ms ease, border-color 200ms ease, background 200ms ease;
+  text-align: left;
+  cursor: pointer;
+}
+.app-root[data-page="dashboard"] .quick-action:hover {
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 20px 25px -5px rgba(99,102,241,0.2);
+  transform: translateY(-4px);
+  border-color: rgba(99,102,241,0.3);
+}
+.app-root[data-page="dashboard"] .qa-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 1rem;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  transition: background 200ms ease, color 200ms ease;
+}
+.app-root[data-page="dashboard"] .quick-action:hover .qa-icon.qa-indigo { background: #6366f1; color: #fff; }
+.app-root[data-page="dashboard"] .quick-action:hover .qa-icon.qa-blue { background: #2563eb; color: #fff; }
+.app-root[data-page="dashboard"] .quick-action:hover .qa-icon.qa-emerald { background: #059669; color: #fff; }
+.app-root[data-page="dashboard"] .qa-icon.qa-indigo { background: #eef2ff; color: #6366f1; }
+.app-root[data-page="dashboard"] .qa-icon.qa-blue { background: #eff6ff; color: #2563eb; }
+.app-root[data-page="dashboard"] .qa-icon.qa-emerald { background: #ecfdf5; color: #059669; }
+.app-root[data-page="dashboard"] .qa-text strong {
+  display: block;
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 1rem;
+}
+.app-root[data-page="dashboard"] .qa-text small {
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
+/* 16 — AI Insights glass override (force regardless of :has support) */
+.app-root[data-page="dashboard"] .dashboard-grid > section.card:last-child {
+  background: rgba(255, 255, 255, 0.55) !important;
+  backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  box-shadow: 0 8px 32px -8px rgba(0,0,0,0.25) !important;
+  color: #0f172a !important;
+}
+.app-root[data-page="dashboard"] .dashboard-grid > section.card:last-child h2 {
+  color: #0f172a !important;
+}
+.app-root[data-page="dashboard"] .dashboard-grid > section.card:last-child header p {
+  color: #6366f1 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.625rem;
+  font-weight: 700;
+}
+.app-root[data-page="dashboard"] .dashboard-grid > section.card:last-child .insight strong { color: #0f172a !important; }
+.app-root[data-page="dashboard"] .dashboard-grid > section.card:last-child .insight span { color: #475569 !important; }
+.app-root[data-page="dashboard"] .dashboard-grid > section.card:last-child .insight em { color: #6366f1 !important; }
+
+/* ===== DARK MODE: AI Insights glass card → dark glass + light text ===== */
+html.dark .app-root[data-page="dashboard"] .card:has(.insight-list),
+html.dark .app-root[data-page="dashboard"] .dashboard-grid > section.card:last-child {
+  background: rgba(30, 27, 75, 0.55) !important;
+  backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(129, 140, 248, 0.25) !important;
+  box-shadow: 0 8px 32px -8px rgba(0,0,0,0.45) !important;
+}
+html.dark .app-root[data-page="dashboard"] .card:has(.insight-list) h2,
+html.dark .app-root[data-page="dashboard"] .dashboard-grid > section.card:last-child h2 {
+  color: #f1f5f9 !important;
+}
+html.dark .app-root[data-page="dashboard"] .card:has(.insight-list) header p,
+html.dark .app-root[data-page="dashboard"] .dashboard-grid > section.card:last-child header p {
+  color: #a5b4fc !important;
+}
+html.dark .app-root[data-page="dashboard"] .insight {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+html.dark .app-root[data-page="dashboard"] .insight:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+html.dark .app-root[data-page="dashboard"] .insight strong { color: #f8fafc !important; }
+html.dark .app-root[data-page="dashboard"] .insight span { color: #c7d2fe !important; }
+html.dark .app-root[data-page="dashboard"] .insight em { color: #a5b4fc !important; }
+
+/* ============================================================
+   DARK MODE — full dashboard integration
+   Flips every hardcoded-light surface to dark glass + light text.
+   ============================================================ */
+
+/* Base body text → light */
+html.dark .app-root[data-page="dashboard"] .page-wrap,
+html.dark .app-root[data-page="dashboard"] .page-stack { color: #e2e8f0 !important; }
+html.dark .app-root[data-page="dashboard"] .page-wrap p,
+html.dark .app-root[data-page="dashboard"] .page-stack p,
+html.dark .app-root[data-page="dashboard"] .body-copy { color: #cbd5e1 !important; }
+html.dark .app-root[data-page="dashboard"] h1,
+html.dark .app-root[data-page="dashboard"] h2,
+html.dark .app-root[data-page="dashboard"] h3,
+html.dark .app-root[data-page="dashboard"] h4 { color: #f8fafc !important; }
+html.dark .app-root[data-page="dashboard"] .page-wrap span { color: #94a3b8; }
+html.dark .app-root[data-page="dashboard"] .page-wrap small { color: #94a3b8; }
+
+/* Topbar → dark glass */
+html.dark .app-root[data-page="dashboard"] .topbar {
+  background: rgba(15, 23, 42, 0.7) !important;
+  backdrop-filter: blur(14px) saturate(160%);
+  border-bottom: 1px solid rgba(99, 102, 241, 0.15);
+}
+/* Topbar children — no light boxes in dark mode */
+html.dark .app-root[data-page="dashboard"] .topbar .icon-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+}
+html.dark .app-root[data-page="dashboard"] .topbar .icon-btn:hover {
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+}
+html.dark .app-root[data-page="dashboard"] .topbar .search-box input {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #e2e8f0 !important;
+}
+html.dark .app-root[data-page="dashboard"] .topbar .search-box input::placeholder { color: #64748b; }
+html.dark .app-root[data-page="dashboard"] .topbar .search-box svg { color: #64748b; }
+html.dark .app-root[data-page="dashboard"] .topbar .search-box kbd {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #94a3b8;
+}
+html.dark .app-root[data-page="dashboard"] .topbar .search-results {
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  box-shadow: 0 20px 40px -12px rgba(0,0,0,0.5);
+}
+html.dark .app-root[data-page="dashboard"] .topbar .search-result:hover { background: rgba(99, 102, 241, 0.15); }
+html.dark .app-root[data-page="dashboard"] .topbar .search-result-text strong { color: #f1f5f9; }
+html.dark .app-root[data-page="dashboard"] .topbar .search-result-text small { color: #94a3b8; }
+html.dark .app-root[data-page="dashboard"] .topbar .search-result > svg { color: #64748b; }
+html.dark .app-root[data-page="dashboard"] .topbar .profile {
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+html.dark .app-root[data-page="dashboard"] .topbar .profile p strong { color: #f1f5f9; }
+html.dark .app-root[data-page="dashboard"] .topbar .profile p span { color: #64748b; }
+
+/* Hero panel dark mode: deep indigo/glass + white text + bright gradient name */
+html.dark body #root .app-root[data-page="dashboard"] .hero-panel,
+html.dark .app-root[data-page="dashboard"] .hero-panel {
+  background:
+    radial-gradient(circle at 84% 14%, rgba(167, 139, 250, 0.25), transparent 34%),
+    radial-gradient(circle at 76% 92%, rgba(14, 165, 233, 0.15), transparent 30%),
+    linear-gradient(135deg, rgba(35, 28, 49, 0.96) 0%, rgba(27, 23, 40, 0.96) 100%) !important;
+  border: 1px solid rgba(139, 92, 246, 0.28) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6) !important;
+  color: #ffffff !important;
+}
+
+html.dark body #root .app-root[data-page="dashboard"] .hero-panel h1,
+html.dark .app-root[data-page="dashboard"] .hero-panel h1,
+html.dark body #root .app-root[data-page="dashboard"] .hero-panel p,
+html.dark .app-root[data-page="dashboard"] .hero-panel p,
+html.dark body #root .app-root[data-page="dashboard"] .hero-panel .eyebrow,
+html.dark .app-root[data-page="dashboard"] .hero-panel .eyebrow {
+  color: #ffffff !important;
+}
+
+html.dark body #root .app-root[data-page="dashboard"] .hero-panel .eyebrow,
+html.dark .app-root[data-page="dashboard"] .hero-panel .eyebrow {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+html.dark body #root .app-root[data-page="dashboard"] .hero-panel h1 em,
+html.dark .app-root[data-page="dashboard"] .hero-panel h1 em {
+  background: linear-gradient(90deg, #f7f2ff 10%, #a78bfa 54%, #f472b6) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+}
+
+/* Stat cards → dark glass + light labels */
+html.dark .app-root[data-page="dashboard"] .stat-card {
+  background: rgba(30, 41, 59, 0.6) !important;
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(99, 102, 241, 0.18) !important;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2), 0 8px 20px -8px rgba(0,0,0,0.3) !important;
+}
+html.dark .app-root[data-page="dashboard"] .stat-card:hover {
+  box-shadow: 0 10px 20px -5px rgba(0,0,0,0.3) !important;
+}
+html.dark .app-root[data-page="dashboard"] .stat-card small { color: #6ee7b7 !important; }
+html.dark .app-root[data-page="dashboard"] .stat-card strong { color: #f8fafc !important; }
+html.dark .app-root[data-page="dashboard"] .stat-card p { color: #94a3b8 !important; }
+html.dark .app-root[data-page="dashboard"] .stat-card > span { color: #64748b !important; }
+/* Tone number colors — unified indigo for dark bg */
+html.dark .app-root[data-page="dashboard"] .stat-card.tone-indigo strong,
+html.dark .app-root[data-page="dashboard"] .stat-card.tone-emerald strong,
+html.dark .app-root[data-page="dashboard"] .stat-card.tone-amber strong,
+html.dark .app-root[data-page="dashboard"] .stat-card.tone-rose strong { color: #818cf8 !important; }
+/* Tone icon chips — unified indigo dark */
+html.dark .app-root[data-page="dashboard"] .stat-card .tone-icon.indigo,
+html.dark .app-root[data-page="dashboard"] .stat-card .tone-icon.amber,
+html.dark .app-root[data-page="dashboard"] .stat-card .tone-icon.rose,
+html.dark .app-root[data-page="dashboard"] .stat-card .tone-icon.emerald,
+html.dark .app-root[data-page="dashboard"] .stat-card .tone-icon.violet { background: rgba(99,102,241,0.18) !important; color: #818cf8 !important; }
+/* Sparkline + SVG sparks — unified indigo dark */
+html.dark .app-root[data-page="dashboard"] .stat-card .sparkline span { background: rgba(129,140,248,0.4); }
+html.dark .app-root[data-page="dashboard"] .stat-card .sparkline span:nth-child(3) { background: #818cf8; }
+html.dark .app-root[data-page="dashboard"] .stat-card .sparkline-doc,
+html.dark .app-root[data-page="dashboard"] .stat-card .sparkline-clock,
+html.dark .app-root[data-page="dashboard"] .stat-card .sparkline-stairs { color: #818cf8; width: 48px !important; height: 48px !important; }
+
+/* Glass cards (schedule, materials, goals) → dark glass */
+html.dark .app-root[data-page="dashboard"] .card {
+  background: rgba(30, 41, 59, 0.55) !important;
+  backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(99, 102, 241, 0.18) !important;
+  box-shadow: 0 8px 32px -8px rgba(0,0,0,0.4) !important;
+}
+html.dark .app-root[data-page="dashboard"] .card:hover {
+  background: rgba(30, 41, 59, 0.7) !important;
+  box-shadow: 0 12px 40px -8px rgba(0,0,0,0.5) !important;
+}
+html.dark .app-root[data-page="dashboard"] .card h2 { color: #f8fafc !important; }
+html.dark .app-root[data-page="dashboard"] .card header p { color: #94a3b8 !important; }
+html.dark .app-root[data-page="dashboard"] .card header button { color: #818cf8 !important; }
+
+/* Schedule class rows → dark glass tiles (dark mode) */
+html.dark .app-root[data-page="dashboard"] .class-row,
+html.dark .app-root[data-page="dashboard"] .dashboard-grid .class-list .class-row {
+  background: rgba(30, 41, 59, 0.5) !important;
+  border: 1px solid rgba(99, 102, 241, 0.15) !important;
+  backdrop-filter: blur(10px);
+}
+html.dark .app-root[data-page="dashboard"] .class-row:hover,
+html.dark .app-root[data-page="dashboard"] .dashboard-grid .class-list .class-row:hover {
+  background: rgba(30, 41, 59, 0.7) !important;
+  border-color: rgba(99, 102, 241, 0.3) !important;
+}
+html.dark .app-root[data-page="dashboard"] .class-row > span,
+html.dark .app-root[data-page="dashboard"] .class-row.violet > span,
+html.dark .app-root[data-page="dashboard"] .class-row.emerald > span,
+html.dark .app-root[data-page="dashboard"] .class-row.indigo > span,
+html.dark .app-root[data-page="dashboard"] .class-row.amber > span,
+html.dark .app-root[data-page="dashboard"] .class-row.rose > span { color: #f1f5f9 !important; }
+html.dark .app-root[data-page="dashboard"] .class-row > span small { color: #64748b !important; }
+html.dark .app-root[data-page="dashboard"] .class-row div strong,
+html.dark .app-root[data-page="dashboard"] .class-row.violet div strong { color: #f8fafc !important; }
+html.dark .app-root[data-page="dashboard"] .class-row div small,
+html.dark .app-root[data-page="dashboard"] .class-row.violet div small { color: #94a3b8 !important; }
+
+/* Quick action cards → dark glass */
+html.dark .app-root[data-page="dashboard"] .quick-action {
+  background: rgba(30, 41, 59, 0.6) !important;
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(99, 102, 241, 0.15) !important;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2) !important;
+}
+html.dark .app-root[data-page="dashboard"] .quick-action:hover {
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.4) !important;
+}
+html.dark .app-root[data-page="dashboard"] .qa-icon.qa-indigo { background: rgba(99,102,241,0.18) !important; color: #818cf8 !important; }
+html.dark .app-root[data-page="dashboard"] .qa-icon.qa-blue { background: rgba(59,130,246,0.18) !important; color: #60a5fa !important; }
+html.dark .app-root[data-page="dashboard"] .qa-icon.qa-emerald { background: rgba(16,185,129,0.18) !important; color: #34d399 !important; }
+html.dark .app-root[data-page="dashboard"] .quick-action:hover .qa-icon.qa-indigo { background: #6366f1 !important; color: #fff !important; }
+html.dark .app-root[data-page="dashboard"] .quick-action:hover .qa-icon.qa-blue { background: #2563eb !important; color: #fff !important; }
+html.dark .app-root[data-page="dashboard"] .quick-action:hover .qa-icon.qa-emerald { background: #059669 !important; color: #fff !important; }
+html.dark .app-root[data-page="dashboard"] .qa-text strong { color: #f8fafc !important; }
+html.dark .app-root[data-page="dashboard"] .qa-text small { color: #94a3b8 !important; }
+html.dark .app-root[data-page="dashboard"] .quick-actions-head h3 { color: #f8fafc !important; }
+html.dark .app-root[data-page="dashboard"] .quick-actions-head .quick-actions-sub { color: #64748b !important; }
+
+/* Metric tiles → dark glass + bright tone numbers */
+html.dark .app-root[data-page="dashboard"] .metric {
+  background: rgba(30, 41, 59, 0.6) !important;
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(99, 102, 241, 0.18) !important;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2) !important;
+}
+html.dark .app-root[data-page="dashboard"] .metric p { color: #64748b !important; }
+html.dark .app-root[data-page="dashboard"] .metric small { color: #94a3b8 !important; }
+html.dark .app-root[data-page="dashboard"] .metric .tone-icon.indigo { background: rgba(99,102,241,0.18); color: #818cf8; }
+html.dark .app-root[data-page="dashboard"] .metric .tone-icon.emerald { background: rgba(16,185,129,0.18); color: #34d399; }
+html.dark .app-root[data-page="dashboard"] .metric .tone-icon.amber { background: rgba(245,158,11,0.18); color: #fbbf24; }
+html.dark .app-root[data-page="dashboard"] .metric .tone-icon.rose { background: rgba(244,63,94,0.18); color: #fb7185; }
+html.dark .app-root[data-page="dashboard"] .metric.tone-indigo strong { color: #818cf8 !important; }
+html.dark .app-root[data-page="dashboard"] .metric.tone-emerald strong { color: #34d399 !important; }
+html.dark .app-root[data-page="dashboard"] .metric.tone-amber strong { color: #fbbf24 !important; }
+html.dark .app-root[data-page="dashboard"] .metric.tone-rose strong { color: #fb7185 !important; }
+
+/* Progress bars → dark track */
+html.dark .app-root[data-page="dashboard"] .progress,
+html.dark .app-root[data-page="dashboard"] .metric .progress { background: rgba(255, 255, 255, 0.1) !important; }
+html.dark .app-root[data-page="dashboard"] .metric.tone-indigo .progress > span { background: #818cf8 !important; }
+html.dark .app-root[data-page="dashboard"] .metric.tone-emerald .progress > span { background: #34d399 !important; }
+html.dark .app-root[data-page="dashboard"] .metric.tone-amber .progress > span { background: #fbbf24 !important; }
+html.dark .app-root[data-page="dashboard"] .metric.tone-rose .progress > span { background: #fb7185 !important; }
+
+/* Buttons — keep indigo gradient primary, secondary darkens */
+html.dark .app-root[data-page="dashboard"] .secondary-btn {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #cbd5e1 !important;
+}
+
+/* AI note pill */
+html.dark .app-root[data-page="dashboard"] .ai-note {
+  background: rgba(99, 102, 241, 0.15) !important;
+  border: 1px solid rgba(129, 140, 248, 0.3) !important;
+  color: #a5b4fc !important;
+}
+
+/* Goals card rows */
+html.dark .app-root[data-page="dashboard"] .goal span { color: #e2e8f0 !important; }
+html.dark .app-root[data-page="dashboard"] .goal strong { color: #64748b !important; }
+
+/* Responsive: quick actions collapse to 1 col on small screens */
+@media (max-width: 768px) {
+  .app-root[data-page="dashboard"] .quick-actions-grid { grid-template-columns: 1fr; }
+}
+
+/* ============================================================
+   LESSON PLANNER PAGE — same dashboard UI theme
+   (orbs + glassmorphism + Plus Jakarta Sans + indigo)
+   ============================================================ */
+
+/* 1 — White base + orb layering */
+.app-root[data-page="lesson-planner"] {
+  background: #ffffff !important;
+  position: relative;
+  overflow-x: hidden;
+}
+.app-root[data-page="lesson-planner"] .orb-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.app-root[data-page="lesson-planner"] .orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.35;
+  will-change: transform;
+}
+.app-root[data-page="lesson-planner"] .orb-purple { width: 600px; height: 600px; top: 2%; left: 4%; background: #a855f7; animation: sdOrb1 18s ease-in-out infinite; }
+.app-root[data-page="lesson-planner"] .orb-blue   { width: 550px; height: 550px; top: 55%; right: 2%; background: #3b82f6; animation: sdOrb2 22s ease-in-out infinite; }
+.app-root[data-page="lesson-planner"] .orb-pink   { width: 520px; height: 520px; bottom: -5%; left: 35%; background: #ec4899; animation: sdOrb3 20s ease-in-out infinite; }
+.app-root[data-page="lesson-planner"] .orb-white  { width: 480px; height: 480px; top: 30%; left: 60%; background: #ffffff; opacity: 0.45; animation: sdOrb4 16s ease-in-out infinite; }
+
+/* 2 — Layer content above orbs */
+.app-root[data-page="lesson-planner"] .sidebar,
+.app-root[data-page="lesson-planner"] .main-column,
+.app-root[data-page="lesson-planner"] .page-wrap,
+.app-root[data-page="lesson-planner"] .page-stack {
+  background: transparent !important;
+  position: relative;
+  z-index: 10;
+}
+.app-root[data-page="lesson-planner"] .page-wrap { padding: 32px; }
+/* Clear the fixed topbar (top:10 + 64px tall — bottom ~74px) with comfortable
+   breathing room. High-specificity + !important so it beats the global
+   html body #root .app-root .page-wrap { padding-top: 84px } rule. */
+html body #root .app-root[data-page="lesson-planner"] .page-wrap {
+  padding-top: 108px !important;
+}
+.app-root[data-page="lesson-planner"] .page-stack { gap: 28px; max-width: 1440px; margin: 0 auto; }
+.app-root[data-page="lesson-planner"] .copilot,
+.app-root[data-page="lesson-planner"] .copilot-fab { z-index: 60; }
+
+/* 3 — Topbar → glass */
+.app-root[data-page="lesson-planner"] .topbar {
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(14px) saturate(160%);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+  z-index: 35;
+}
+
+/* 4 — Typography: Plus Jakarta Sans */
+.app-root[data-page="lesson-planner"] .page-wrap,
+.app-root[data-page="lesson-planner"] .page-stack {
+  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif !important;
+  color: #1e293b;
+}
+.app-root[data-page="lesson-planner"] h1,
+.app-root[data-page="lesson-planner"] h2,
+.app-root[data-page="lesson-planner"] h3,
+.app-root[data-page="lesson-planner"] h4 {
+  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif !important;
+  letter-spacing: -0.02em;
+  color: #0f172a !important;
+}
+.app-root[data-page="lesson-planner"] .page-wrap p,
+.app-root[data-page="lesson-planner"] .page-stack p { color: #334155 !important; }
+.app-root[data-page="lesson-planner"] .page-wrap span,
+.app-root[data-page="lesson-planner"] .page-stack span { color: #475569; }
+.app-root[data-page="lesson-planner"] .page-wrap small { color: #64748b; }
+
+/* 5 — Glass cards (Input RPH + Lesson Preview) */
+.app-root[data-page="lesson-planner"] .card {
+  background: rgba(255, 255, 255, 0.55) !important;
+  backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  border-radius: 1.5rem !important;
+  box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.18) !important;
+}
+.app-root[data-page="lesson-planner"] .card h2 { font-weight: 800 !important; color: #0f172a !important; }
+.app-root[data-page="lesson-planner"] .card header p { color: #64748b !important; }
+
+/* 6 — Form fields → glass inputs */
+.app-root[data-page="lesson-planner"] .field > span {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.02em;
+}
+.app-root[data-page="lesson-planner"] input,
+.app-root[data-page="lesson-planner"] select,
+.app-root[data-page="lesson-planner"] textarea {
+  background: rgba(255, 255, 255, 0.5) !important;
+  border: 1px solid rgba(99, 102, 241, 0.15) !important;
+  border-radius: 0.75rem !important;
+  color: #0f172a !important;
+}
+.app-root[data-page="lesson-planner"] input:focus,
+.app-root[data-page="lesson-planner"] select:focus,
+.app-root[data-page="lesson-planner"] textarea:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  outline: none;
+}
+
+/* 6b — Pretty dropdowns (custom select) */
+.app-root[data-page="lesson-planner"] select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  min-height: 48px;
+  padding: 12px 44px 12px 16px !important;
+  font-size: 0.95rem !important;
+  font-weight: 600;
+  cursor: pointer;
+  /* Solid-enough white tinted with indigo so it reads as a control on the glass card */
+  background-color: rgba(255, 255, 255, 0.78) !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 16px center !important;
+  background-size: 20px !important;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease, transform 160ms ease;
+}
+.app-root[data-page="lesson-planner"] select:hover {
+  border-color: rgba(99, 102, 241, 0.45) !important;
+  background-color: rgba(255, 255, 255, 0.92) !important;
+  transform: translateY(-1px);
+}
+.app-root[data-page="lesson-planner"] select:focus {
+  background-color: #ffffff !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%234f46e5' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+}
+/* Placeholder-style empty option dimmed, so "No class selected" reads as a hint */
+.app-root[data-page="lesson-planner"] select option[value=""] {
+  color: #94a3b8;
+  font-weight: 500;
+}
+/* Dropdown list options: clean white rows, indigo on hover/check */
+.app-root[data-page="lesson-planner"] select option {
+  background: #ffffff;
+  color: #0f172a;
+  padding: 12px;
+  font-weight: 600;
+}
+.app-root[data-page="lesson-planner"] select option:checked,
+.app-root[data-page="lesson-planner"] select option:hover {
+  background: #eef2ff !important;
+  color: #4338ca !important;
+}
+
+/* 7 — Locked subject box → indigo tint */
+.app-root[data-page="lesson-planner"] .locked-subject {
+  background: rgba(99, 102, 241, 0.08) !important;
+  border: 1px solid rgba(99, 102, 241, 0.2) !important;
+  border-radius: 0.75rem !important;
+}
+.app-root[data-page="lesson-planner"] .locked-subject strong { color: #4f46e5 !important; }
+.app-root[data-page="lesson-planner"] .locked-subject span { color: #64748b !important; }
+
+/* 8 — Buttons → indigo gradient + glass secondary */
+.app-root[data-page="lesson-planner"] .primary-btn {
+  background: linear-gradient(135deg, #6366f1, #4f46e5) !important;
+  color: #ffffff !important;
+  border: 0 !important;
+  border-radius: 0.75rem !important;
+  font-weight: 700 !important;
+  box-shadow: 0 12px 24px -12px rgba(99, 102, 241, 0.5) !important;
+}
+.app-root[data-page="lesson-planner"] .primary-btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
+.app-root[data-page="lesson-planner"] .secondary-btn {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(8px);
+  border: 1px solid #e2e8f0 !important;
+  color: #475569 !important;
+  font-weight: 600 !important;
+}
+
+/* 9 — Page header eyebrow → AI badge with pulse */
+.app-root[data-page="lesson-planner"] .page-header .eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #6366f1;
+  color: #ffffff !important;
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.app-root[data-page="lesson-planner"] .page-header .eyebrow::before {
+  content: "";
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #34d399;
+  animation: sdAiPulse 2s ease-out infinite;
+}
+.app-root[data-page="lesson-planner"] .page-header h1 {
+  font-size: clamp(32px, 4vw, 42px);
+  font-weight: 800;
+  margin: 12px 0 8px;
+}
+
+/* 10 — Export callout */
+.app-root[data-page="lesson-planner"] .export-callout {
+  background: rgba(99, 102, 241, 0.06) !important;
+  border: 1px solid rgba(99, 102, 241, 0.15) !important;
+  border-radius: 1rem !important;
+}
+
+/* 11 — Range slider → indigo */
+.app-root[data-page="lesson-planner"] input[type="range"] {
+  -webkit-appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  border: 0;
+}
+.app-root[data-page="lesson-planner"] input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #6366f1;
+  cursor: pointer;
+}
+
+/* 12 — Sidebar → glass */
+.app-root[data-page="lesson-planner"] .sidebar {
+  background: rgba(255, 255, 255, 0.72) !important;
+  backdrop-filter: blur(20px);
+}
+
+/* ===== DARK MODE — lesson planner ===== */
+html.dark .app-root[data-page="lesson-planner"] { background: #0f0a1e !important; }
+html.dark .app-root[data-page="lesson-planner"] .orb { opacity: 0.5; mix-blend-mode: screen; filter: blur(90px); }
+html.dark .app-root[data-page="lesson-planner"] .orb-purple { background: #6d28d9; }
+html.dark .app-root[data-page="lesson-planner"] .orb-blue   { background: #1e40af; }
+html.dark .app-root[data-page="lesson-planner"] .orb-pink    { background: #9d174d; }
+html.dark .app-root[data-page="lesson-planner"] .orb-white   { background: #4338ca; opacity: 0.6; }
+html.dark .app-root[data-page="lesson-planner"] .topbar {
+  background: rgba(15, 23, 42, 0.7) !important;
+  border-bottom: 1px solid rgba(99, 102, 241, 0.15);
+}
+html.dark .app-root[data-page="lesson-planner"] .page-wrap,
+html.dark .app-root[data-page="lesson-planner"] .page-stack { color: #e2e8f0 !important; }
+html.dark .app-root[data-page="lesson-planner"] h1,
+html.dark .app-root[data-page="lesson-planner"] h2,
+html.dark .app-root[data-page="lesson-planner"] h3 { color: #f8fafc !important; }
+html.dark .app-root[data-page="lesson-planner"] .card {
+  background: rgba(30, 41, 59, 0.55) !important;
+  border-color: rgba(99, 102, 241, 0.18) !important;
+  box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.4) !important;
+}
+html.dark .app-root[data-page="lesson-planner"] input,
+html.dark .app-root[data-page="lesson-planner"] select,
+html.dark .app-root[data-page="lesson-planner"] textarea {
+  background: rgba(15, 23, 42, 0.6) !important;
+  color: #e2e8f0 !important;
+  border-color: rgba(99, 102, 241, 0.2) !important;
+}
+html.dark .app-root[data-page="lesson-planner"] .secondary-btn {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #cbd5e1 !important;
+}
+html.dark .app-root[data-page="lesson-planner"] .sidebar {
+  background: rgba(15, 23, 42, 0.7) !important;
 }
 

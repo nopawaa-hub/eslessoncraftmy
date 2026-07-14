@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import multer from "multer";
 import Material from "../models/Material.js";
 import { requireDatabase } from "../services/db.js";
+import { ensureDemoDataSeeded } from "../services/demoSeeder.js";
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } }); // 15MB limit
@@ -14,6 +15,33 @@ const __dirname = path.dirname(__filename);
 const uploadsDir = path.resolve(__dirname, "../uploads");
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+function cleanTags(tags) {
+  if (Array.isArray(tags)) return tags.map((t) => String(t).trim()).filter(Boolean);
+  return String(tags || "")
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
+}
+
+function normalizeUrl(value) {
+  if (!value) return "";
+  const raw = String(value).trim();
+  if (/^https?:\/\//i.test(raw)) return raw;
+  return `https://${raw}`;
+}
+
+function payloadFromRequest(req) {
+  return {
+    title: String(req.body?.title || "").trim(),
+    type: String(req.body?.type || "PDF").trim(),
+    size: String(req.body?.size || "External Link").trim(),
+    subject: String(req.body?.subject || "English").trim(),
+    year: String(req.body?.year || "Year 4").trim(),
+    folder: String(req.body?.folder || "Reading Support").trim(),
+    url: normalizeUrl(req.body?.url),
+  };
 }
 
 function safeFilename(name) {
@@ -42,54 +70,7 @@ function formatFileSize(bytes = 0) {
 // GET /materials - List all materials for the logged in teacher (or demo seed)
 router.get("/", requireDatabase, async (req, res, next) => {
   try {
-    const isDemoTeacher = String(req.user._id) === "000000000000000000000001" || req.user.email === "demo@test.com";
-    if (isDemoTeacher) {
-      const existing = await Material.countDocuments({ teacherId: req.user._id });
-      if (existing === 0) {
-        await Material.create([
-          {
-            teacherId: req.user._id,
-            title: "KSSR Year 4 DSKP English Language.pdf",
-            type: "PDF",
-            size: "1.2 MB",
-            subject: "English",
-            year: "Year 4",
-            folder: "Reading Support",
-            url: "https://drive.google.com/file/d/demo-dskp-y4/view",
-          },
-          {
-            teacherId: req.user._id,
-            title: "Unit 3: In the Past Vocabulary Worksheets.docx",
-            type: "DOCX",
-            size: "340 KB",
-            subject: "English",
-            year: "Year 4",
-            folder: "Reading Support",
-            url: "https://drive.google.com/file/d/demo-unit3-worksheets/view",
-          },
-          {
-            teacherId: req.user._id,
-            title: "Year 5 Bestari Speaking & Listening PBD Rubric.pdf",
-            type: "PDF",
-            size: "420 KB",
-            subject: "English",
-            year: "Year 5",
-            folder: "PBD Rubrics",
-            url: "https://drive.google.com/file/d/demo-pbd-rubric/view",
-          },
-          {
-            teacherId: req.user._id,
-            title: "Interactive Wordwall Quiz: Past Tense Irregular Verbs",
-            type: "LINK",
-            size: "External Link",
-            subject: "English",
-            year: "Year 4",
-            folder: "Interactive Activities",
-            url: "https://wordwall.net/resource/123456/english/past-tense-verbs",
-          },
-        ]);
-      }
-    }
+    await ensureDemoDataSeeded(req.user._id);
 
     const materials = await Material.find({ teacherId: req.user._id }).sort({ createdAt: -1 });
     res.json(materials);

@@ -2,6 +2,7 @@ import { Router } from "express";
 import Student from "../models/Student.js";
 import SchoolClass from "../models/Class.js";
 import { requireDatabase } from "../services/db.js";
+import { ensureDemoDataSeeded } from "../services/demoSeeder.js";
 
 const router = Router();
 
@@ -36,6 +37,8 @@ router.post("/", requireDatabase, async (req, res, next) => {
 
 router.get("/", requireDatabase, async (req, res, next) => {
   try {
+    await ensureDemoDataSeeded(req.user._id);
+
     const ownedClassIds = await SchoolClass.find({ teacherId: req.user._id }).distinct("_id");
     const query = { classId: { $in: ownedClassIds } };
     if (req.query.classId) {
