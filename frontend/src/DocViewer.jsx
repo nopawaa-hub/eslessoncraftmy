@@ -10,36 +10,48 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
 // =========================================================================
 // FLOATING POPOVER — positioned absolutely near the hovered/clicked highlight
 // =========================================================================
-function FloatingPopover({ ann, rect, containerRef }) {
+function FloatingPopover({ ann, rect, containerRef, onClose }) {
   if (!ann || !rect) return null;
   const containerRect = containerRef.current?.getBoundingClientRect();
   if (!containerRect) return null;
   const top = rect.top - containerRect.top - 8;
   const left = Math.max(0, Math.min(rect.left - containerRect.left, containerRect.width - 340));
-  const showAbove = top > 200;
+  const showAbove = top > 210;
   return (
     <div style={{
       position: "absolute", zIndex: 1000, width: 320, maxWidth: "calc(100% - 16px)",
       padding: "14px 16px", borderRadius: 12,
-      background: "color-mix(in srgb, var(--card) 88%, transparent)",
-      border: "1px solid color-mix(in srgb, var(--border) 70%, transparent)",
-      boxShadow: "0 8px 28px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.06)",
-      backdropFilter: "blur(14px)", fontSize: "0.82rem", lineHeight: 1.5,
-      color: "var(--foreground)", pointerEvents: "none",
+      background: "color-mix(in srgb, var(--card) 94%, transparent)",
+      border: "1px solid color-mix(in srgb, var(--border) 85%, transparent)",
+      boxShadow: "0 12px 36px rgba(0,0,0,0.18), 0 2px 10px rgba(0,0,0,0.08)",
+      backdropFilter: "blur(16px)", fontSize: "0.82rem", lineHeight: 1.5,
+      color: "var(--foreground)", pointerEvents: "auto",
       top: showAbove ? "auto" : rect.bottom - containerRect.top + 8,
       bottom: showAbove ? containerRect.height - top : "auto",
       left,
     }}>
-      {ann.severity && (
-        <span style={{
-          position: "absolute", top: 10, right: 12, textTransform: "uppercase",
-          fontSize: "0.62rem", fontWeight: 800, padding: "2px 7px", borderRadius: 8,
-          background: ann.severity === "high" ? "color-mix(in srgb, var(--rose) 25%, transparent)" : "color-mix(in srgb, var(--amber) 25%, transparent)",
-          color: ann.severity === "high" ? "var(--rose)" : "var(--amber)",
-        }}>{ann.severity}</span>
-      )}
-      {ann.issue && <strong style={{ display: "block", marginBottom: 4, paddingRight: ann.severity ? 50 : 0, fontSize: "0.85rem" }}>{ann.issue}</strong>}
-      {ann.text && <div style={{ padding: "5px 8px", background: "color-mix(in srgb, var(--primary) 8%, transparent)", borderRadius: 6, marginBottom: 6, fontStyle: "italic", color: "var(--muted)" }}>"{ann.text}"</div>}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6, gap: 8 }}>
+        <strong style={{ fontSize: "0.86rem", color: "var(--foreground)", flex: 1 }}>{ann.issue || "Pedagogy Note"}</strong>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+          {ann.severity && (
+            <span style={{
+              textTransform: "uppercase", fontSize: "0.62rem", fontWeight: 800, padding: "2px 7px", borderRadius: 8,
+              background: ann.severity === "high" ? "color-mix(in srgb, var(--rose) 25%, transparent)" : "color-mix(in srgb, var(--amber) 25%, transparent)",
+              color: ann.severity === "high" ? "var(--rose)" : "var(--amber)",
+            }}>{ann.severity}</span>
+          )}
+          {onClose && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onClose(); }}
+              style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--muted)", fontSize: "1.1rem", padding: "0 4px", lineHeight: 1 }}
+            >
+              ×
+            </button>
+          )}
+        </div>
+      </div>
+      {ann.text && <div style={{ padding: "5px 8px", background: "color-mix(in srgb, var(--primary) 8%, transparent)", borderRadius: 6, marginBottom: 8, fontStyle: "italic", color: "var(--muted)" }}>"{ann.text}"</div>}
       {ann.explanation && <p style={{ margin: "0 0 8px" }}>{ann.explanation}</p>}
       {ann.suggestion && (
         <div style={{ padding: "8px 10px", background: "color-mix(in srgb, var(--emerald) 10%, transparent)", borderRadius: 8, border: "1px solid color-mix(in srgb, var(--emerald) 30%, transparent)" }}>
@@ -49,6 +61,22 @@ function FloatingPopover({ ann, rect, containerRef }) {
       )}
     </div>
   );
+}
+
+function useSyncPopover(containerRef, annotations, activeIndex, hoveredIndex, setPopover) {
+  useEffect(() => {
+    const activeIdx = hoveredIndex !== null && hoveredIndex !== undefined ? hoveredIndex : activeIndex;
+    if (activeIdx !== null && activeIdx !== undefined && annotations[activeIdx]) {
+      const mark = containerRef.current?.querySelector(`mark[data-ann-idx="${activeIdx}"], .pdf-highlight[data-ann-idx="${activeIdx}"]`);
+      if (mark) {
+        setPopover({ ann: annotations[activeIdx], rect: mark.getBoundingClientRect() });
+        return;
+      }
+    }
+    if (activeIndex === null || activeIndex === undefined) {
+      setPopover(null);
+    }
+  }, [activeIndex, hoveredIndex, annotations, setPopover]);
 }
 
 // =========================================================================
@@ -107,6 +135,8 @@ export function TextViewer({ text, annotations = [], activeIndex, setActiveIndex
     segments.push({ type: "plain", text: str.slice(curr) });
   }
 
+  useSyncPopover(containerRef, annotations, activeIndex, hoveredIndex, setPopover);
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -124,7 +154,9 @@ export function TextViewer({ text, annotations = [], activeIndex, setActiveIndex
     const handleMouseLeave = (e) => {
       if (!e.target.closest("mark[data-ann-idx]")) return;
       if (setHoveredIndex) setHoveredIndex(null);
-      setPopover(null);
+      if (activeIndex === null || activeIndex === undefined) {
+        setPopover(null);
+      }
     };
 
     const handleClick = (e) => {
@@ -168,7 +200,16 @@ export function TextViewer({ text, annotations = [], activeIndex, setActiveIndex
           })}
         </pre>
       </div>
-      <FloatingPopover ann={popover?.ann} rect={popover?.rect} containerRef={containerRef} />
+      <FloatingPopover
+        ann={popover?.ann}
+        rect={popover?.rect}
+        containerRef={containerRef}
+        onClose={() => {
+          if (setActiveIndex) setActiveIndex(null);
+          if (setHoveredIndex) setHoveredIndex(null);
+          setPopover(null);
+        }}
+      />
     </div>
   );
 }
@@ -285,6 +326,8 @@ export function DocxViewer({ dataUrl, annotations = [], activeIndex, setActiveIn
     }
   }, [rendered, annotations, activeIndex, hoveredIndex]);
 
+  useSyncPopover(containerRef, annotations, activeIndex, hoveredIndex, setPopover);
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -301,7 +344,9 @@ export function DocxViewer({ dataUrl, annotations = [], activeIndex, setActiveIn
     const handleMouseLeave = (e) => {
       if (!e.target.closest('mark[data-ann-idx]')) return;
       if (setHoveredIndex) setHoveredIndex(null);
-      setPopover(null);
+      if (activeIndex === null || activeIndex === undefined) {
+        setPopover(null);
+      }
     };
     const handleClick = (e) => {
       const mark = e.target.closest('mark[data-ann-idx]');
@@ -327,7 +372,16 @@ export function DocxViewer({ dataUrl, annotations = [], activeIndex, setActiveIn
   return (
     <div ref={containerRef} style={{ position: "relative", width: "100%" }}>
       <div ref={innerRef} className="docx-container" style={{ transform: `scale(${zoom})`, transformOrigin: "top center" }} />
-      <FloatingPopover ann={popover?.ann} rect={popover?.rect} containerRef={containerRef} />
+      <FloatingPopover
+        ann={popover?.ann}
+        rect={popover?.rect}
+        containerRef={containerRef}
+        onClose={() => {
+          if (setActiveIndex) setActiveIndex(null);
+          if (setHoveredIndex) setHoveredIndex(null);
+          setPopover(null);
+        }}
+      />
     </div>
   );
 }
@@ -432,6 +486,8 @@ export function PdfViewer({ dataUrl, annotations = [], activeIndex, setActiveInd
     });
   };
 
+  useSyncPopover(containerRef, annotations, activeIndex, hoveredIndex, setPopover);
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -446,7 +502,9 @@ export function PdfViewer({ dataUrl, annotations = [], activeIndex, setActiveInd
     };
     const handleMouseLeave = () => {
       if (setHoveredIndex) setHoveredIndex(null);
-      setPopover(null);
+      if (activeIndex === null || activeIndex === undefined) {
+        setPopover(null);
+      }
     };
     const handleClick = (e) => {
       const hl = e.target.closest(".pdf-highlight[data-ann-idx]");
@@ -476,7 +534,16 @@ export function PdfViewer({ dataUrl, annotations = [], activeIndex, setActiveInd
           <div style={{ textAlign: "center", fontSize: "0.72rem", color: "var(--muted)", marginTop: 2 }}>Page {page.pageNum}</div>
         </div>
       ))}
-      <FloatingPopover ann={popover?.ann} rect={popover?.rect} containerRef={containerRef} />
+      <FloatingPopover
+        ann={popover?.ann}
+        rect={popover?.rect}
+        containerRef={containerRef}
+        onClose={() => {
+          if (setActiveIndex) setActiveIndex(null);
+          if (setHoveredIndex) setHoveredIndex(null);
+          setPopover(null);
+        }}
+      />
     </div>
   );
 }

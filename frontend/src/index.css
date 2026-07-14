@@ -6883,19 +6883,22 @@ html.dark body #root .analytics-tabs {
   flex: 1;
   min-width: 0;
   max-width: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
+  height: calc(100vh - 140px);
+  min-height: 640px;
+  overflow: auto !important;
   display: flex;
   justify-content: center;
-  background: #ffffff;
+  align-items: flex-start;
+  background: color-mix(in srgb, var(--muted) 14%, var(--background));
   border: 1px solid var(--border);
   border-radius: 16px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
-  padding: 0;
+  box-shadow: inset 0 2px 12px rgba(0,0,0,0.06);
+  padding: 32px 24px !important;
+  scroll-behavior: smooth;
 }
 
 html.dark .DV-pageCollection {
-  background: var(--card);
+  background: color-mix(in srgb, var(--background) 82%, #000000);
 }
 
 /* Comment cards — each annotation is its own card */
@@ -7265,23 +7268,30 @@ html.dark .DV-pageCollection {
   scroll-behavior: smooth;
 }
 
-.document-page {
-  min-height: 600px;
-  margin: 0 auto;
-  border-radius: 2px;
-  padding: 56px 64px 64px;
-  background: #ffffff;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08), 0 8px 32px rgba(0,0,0,0.06);
+.document-page,
+.docx-container .docx-wrapper > section.docx {
+  width: 210mm !important;
+  max-width: 100% !important;
+  min-height: 297mm !important;
+  margin: 0 auto 32px auto !important;
+  border-radius: 4px !important;
+  padding: 22mm 20mm !important;
+  background: #ffffff !important;
+  box-shadow: 0 4px 28px rgba(0, 0, 0, 0.14), 0 1px 6px rgba(0, 0, 0, 0.08) !important;
   white-space: normal;
   line-height: 1.75;
-  color: #2d2d34;
+  color: #2d2d34 !important;
   font-size: 0.9rem;
-  position: relative;
+  position: relative !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+  flex-shrink: 0 !important;
 }
 
-html.dark .document-page {
-  background: var(--card);
-  color: var(--foreground);
+html.dark .document-page,
+html.dark .docx-container .docx-wrapper > section.docx {
+  background: var(--card) !important;
+  color: var(--foreground) !important;
 }
 
 /* Render mammoth DOCX HTML as a proper document */
@@ -7298,22 +7308,7 @@ html.dark .document-page {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-}
-
-.docx-container .docx-wrapper > section.docx {
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08), 0 8px 32px rgba(0,0,0,0.06);
-  margin: 0 auto;
-  background: #ffffff;
-  flex-shrink: 0;
-  max-width: 100% !important;
-  box-sizing: border-box !important;
-  padding: 40px 32px !important;
-  overflow-x: hidden !important;
-}
-
-html.dark .docx-container .docx-wrapper > section.docx {
-  background: var(--card);
+  gap: 24px;
 }
 
 /* Constrain tables to the page width so they don't bleed outside */
