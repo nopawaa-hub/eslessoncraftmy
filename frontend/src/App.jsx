@@ -4521,11 +4521,15 @@ function SvgLineConnector({ targetIdx, containerRef }) {
       const cardRect = cardEl.getBoundingClientRect();
       const markRect = markEl.getBoundingClientRect();
 
+      if (markRect.bottom < containerRect.top - 24 || markRect.top > containerRect.bottom + 24) {
+        setCoords(null);
+        return;
+      }
+
       const x1 = cardRect.right - containerRect.left;
       const y1 = cardRect.top + cardRect.height / 2 - containerRect.top;
-      // Ensure target x2 is inside the visible portion of the highlight mark, never on the divider edge
       const rawX2 = markRect.left - containerRect.left;
-      const x2 = Math.max(x1 + 35, rawX2 + Math.min(markRect.width / 2, 80));
+      const x2 = Math.max(x1 + 24, rawX2);
       const y2 = markRect.top + markRect.height / 2 - containerRect.top;
 
       setCoords({ x1, y1, x2, y2 });
@@ -4543,7 +4547,8 @@ function SvgLineConnector({ targetIdx, containerRef }) {
   if (!coords) return null;
 
   const { x1, y1, x2, y2 } = coords;
-  const dx = Math.max(45, Math.abs(x2 - x1) * 0.45);
+  const distX = Math.abs(x2 - x1);
+  const dx = Math.max(20, Math.min(distX * 0.5, 120));
   const pathData = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
 
   return (
@@ -4858,8 +4863,18 @@ function EvaluatePage({ lessons = [], liveMode = false }) {
             <div className="DV-sidebar">
               <div className="DV-sidebar-header">
                 <FileCheck style={{ width: 16, height: 16 }} />
-                <strong>Comments &amp; Feedback</strong>
-                <span className="DV-header-count">{annotations.length}</span>
+                <strong>{activeTab === "rubrics" ? "AI Scoring Breakdown" : "Comments & Feedback"}</strong>
+                <span className="DV-header-count">{activeTab === "rubrics" ? (rubric && Object.keys(rubric).filter(k => !["overallScore", "overallGrade"].includes(k)).length) || 0 : annotations.length}</span>
+              </div>
+              <div className="DV-topScoreStrip">
+                <div className="DV-rubricScore">
+                  <small>AI Score</small>
+                  <strong>{rubric?.overallScore ?? overallScore}{rubric ? "" : "%"}</strong>
+                  <span>{(rubric?.overallScore ?? overallScore) >= 85 ? "Excellent" : (rubric?.overallScore ?? overallScore) >= 70 ? "Good" : (rubric?.overallScore ?? overallScore) >= 50 ? "Could Improve" : "Needs Work"}</span>
+                </div>
+                <button type="button" className="DV-supplementalLink" onClick={() => setActiveTab(activeTab === "rubrics" ? "comments" : "rubrics")}>
+                  {activeTab === "rubrics" ? "← Back to comment" : "View AI Scoring →"}
+                </button>
               </div>
               <div className="DV-navigation" ref={commentScrollRef}>
                 {summary && (
@@ -4903,16 +4918,6 @@ function EvaluatePage({ lessons = [], liveMode = false }) {
                     </div>
                   ))
                 )}
-              </div>
-              <div className="DV-supplemental">
-                <div className="DV-rubricScore">
-                  <small>AI Score</small>
-                  <strong>{rubric?.overallScore ?? overallScore}{rubric ? "" : "%"}</strong>
-                  <span>{(rubric?.overallScore ?? overallScore) >= 85 ? "Excellent" : (rubric?.overallScore ?? overallScore) >= 70 ? "Good" : (rubric?.overallScore ?? overallScore) >= 50 ? "Could Improve" : "Needs Work"}</span>
-                </div>
-                <button type="button" className="DV-supplementalLink" onClick={() => setActiveTab(activeTab === "rubrics" ? "comments" : "rubrics")}>
-                  {activeTab === "rubrics" ? "← Back to document" : "View rubric →"}
-                </button>
               </div>
             </div>
 

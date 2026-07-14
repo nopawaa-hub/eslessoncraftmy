@@ -6881,7 +6881,10 @@ html.dark body #root .analytics-tabs {
 
 .DV-pageCollection {
   flex: 1;
+  min-width: 0;
+  max-width: 100%;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   justify-content: center;
   background: #ffffff;
@@ -6986,6 +6989,21 @@ html.dark .DV-pageCollection {
   border-radius: 10px;
   min-width: 20px;
   text-align: center;
+}
+
+.DV-topScoreStrip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--primary) 7%, var(--card));
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  gap: 10px;
+}
+
+.DV-topScoreStrip .DV-rubricScore {
+  margin-bottom: 0;
 }
 
 .DV-navControls {
@@ -7288,6 +7306,10 @@ html.dark .document-page {
   margin: 0 auto;
   background: #ffffff;
   flex-shrink: 0;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 40px 32px !important;
+  overflow-x: hidden !important;
 }
 
 html.dark .docx-container .docx-wrapper > section.docx {
@@ -7295,14 +7317,26 @@ html.dark .docx-container .docx-wrapper > section.docx {
 }
 
 /* Constrain tables to the page width so they don't bleed outside */
-.docx-container table {
+.docx-container table,
+.document-page table {
+  width: 100% !important;
   max-width: 100% !important;
-  table-layout: auto;
+  table-layout: fixed !important;
+  box-sizing: border-box !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
 }
 
-.docx-container td {
-  word-break: break-word;
-  overflow-wrap: break-word;
+.docx-container td,
+.docx-container th,
+.document-page td,
+.document-page th {
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  word-wrap: break-word !important;
+  white-space: normal !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 /* Highlight marks inside the natively rendered DOCX */
