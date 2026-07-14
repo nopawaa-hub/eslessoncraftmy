@@ -4947,13 +4947,13 @@ function EvaluatePage({ lessons = [], liveMode = false }) {
                   </div>
                 </div>
               ) : (
-                <div className="document-page" style={{ padding: fileDataUrl ? 0 : undefined }}>
+                <div className="DV-documentContainer" style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center", gap: 32 }}>
                   {docView === "text"
                     ? <TextViewer text={evaluatedText} annotations={effectiveAnnotations} activeIndex={activeIndex} setActiveIndex={(idx) => { setActiveIndex(idx); scrollToComment(idx); }} hoveredIndex={hoveredIndex} setHoveredIndex={setHoveredIndex} />
                     : fileDataUrl && fileType === "application/pdf"
                       ? <PdfViewer dataUrl={fileDataUrl} annotations={effectiveAnnotations} activeIndex={activeIndex} setActiveIndex={(idx) => { setActiveIndex(idx); scrollToComment(idx); }} hoveredIndex={hoveredIndex} setHoveredIndex={setHoveredIndex} />
                       : fileDataUrl && fileType && fileType.startsWith("image/")
-                        ? <img src={fileDataUrl} alt="Document" style={{ width: "100%", height: "auto" }} />
+                        ? <div className="document-page"><img src={fileDataUrl} alt="Document" style={{ width: "100%", height: "auto" }} /></div>
                         : fileDataUrl
                           ? <DocxViewer dataUrl={fileDataUrl} annotations={effectiveAnnotations} activeIndex={activeIndex} setActiveIndex={(idx) => { setActiveIndex(idx); scrollToComment(idx); }} hoveredIndex={hoveredIndex} setHoveredIndex={setHoveredIndex} zoom={zoomLevel / 100} />
                           : <TextViewer text={evaluatedText} annotations={effectiveAnnotations} activeIndex={activeIndex} setActiveIndex={(idx) => { setActiveIndex(idx); scrollToComment(idx); }} hoveredIndex={hoveredIndex} setHoveredIndex={setHoveredIndex} />}

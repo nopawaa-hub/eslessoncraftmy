@@ -65,6 +65,15 @@ function FloatingPopover({ ann, rect, containerRef, onClose }) {
 
 function useSyncPopover(containerRef, annotations, activeIndex, hoveredIndex, setPopover) {
   useEffect(() => {
+    if (containerRef.current) {
+      const marks = containerRef.current.querySelectorAll("mark[data-ann-idx], .pdf-highlight[data-ann-idx]");
+      marks.forEach((m) => {
+        const idx = Number(m.dataset.annIdx);
+        m.classList.toggle("active", idx === activeIndex);
+        m.classList.toggle("hovered", idx === hoveredIndex);
+      });
+    }
+
     const activeIdx = hoveredIndex !== null && hoveredIndex !== undefined ? hoveredIndex : activeIndex;
     if (activeIdx !== null && activeIdx !== undefined && annotations[activeIdx]) {
       const mark = containerRef.current?.querySelector(`mark[data-ann-idx="${activeIdx}"], .pdf-highlight[data-ann-idx="${activeIdx}"]`);
@@ -82,6 +91,44 @@ function useSyncPopover(containerRef, annotations, activeIndex, hoveredIndex, se
 // =========================================================================
 // TEXT VIEWER — renders plain/pasted lesson text with highlight overlays
 // =========================================================================
+function splitSegmentsIntoPages(segments) {
+  if (!segments || !segments.length) return [[]];
+  const pages = [];
+  let currentPage = [];
+  let charCount = 0;
+
+  for (const seg of segments) {
+    if (seg.type === "plain" && (charCount + seg.text.length > 2200)) {
+      const lines = seg.text.split("\n");
+      let currentText = "";
+      for (let i = 0; i < lines.length; i++) {
+        if (charCount + currentText.length + lines[i].length > 2200 && i > 0) {
+          if (currentText) {
+            currentPage.push({ type: "plain", text: currentText });
+          }
+          pages.push(currentPage);
+          currentPage = [];
+          charCount = 0;
+          currentText = lines.slice(i).join("\n");
+        } else {
+          currentText += (i > 0 || currentText ? "\n" : "") + lines[i];
+        }
+      }
+      if (currentText) {
+        currentPage.push({ type: "plain", text: currentText });
+        charCount += currentText.length;
+      }
+    } else {
+      currentPage.push(seg);
+      charCount += (seg.text ? seg.text.length : 0);
+    }
+  }
+  if (currentPage.length > 0) {
+    pages.push(currentPage);
+  }
+  return pages;
+}
+
 export function TextViewer({ text, annotations = [], activeIndex, setActiveIndex, hoveredIndex, setHoveredIndex }) {
   const containerRef = useRef(null);
   const [popover, setPopover] = useState(null);
@@ -135,6 +182,8 @@ export function TextViewer({ text, annotations = [], activeIndex, setActiveIndex
     segments.push({ type: "plain", text: str.slice(curr) });
   }
 
+  const pages = splitSegmentsIntoPages(segments);
+
   useSyncPopover(containerRef, annotations, activeIndex, hoveredIndex, setPopover);
 
   useEffect(() => {
@@ -177,29 +226,34 @@ export function TextViewer({ text, annotations = [], activeIndex, setActiveIndex
   }, [annotations, activeIndex, setActiveIndex, setHoveredIndex]);
 
   return (
-    <div ref={containerRef} style={{ position: "relative", width: "100%" }}>
-      <div className="document-page" style={{ padding: "36px 44px" }}>
-        <pre className="DV-textContents" style={{ whiteSpace: "pre-wrap", fontFamily: "inherit", margin: 0, lineHeight: 1.8, fontSize: "0.95rem" }}>
-          {segments.map((seg, i) => {
-            if (seg.type === "plain") {
-              return <span key={`plain-${i}`}>{seg.text}</span>;
-            }
-            const isActive = seg.annIdx === activeIndex;
-            const isHovered = seg.annIdx === hoveredIndex;
-            return (
-              <mark
-                key={`mark-${seg.annIdx}-${i}`}
-                data-ann-idx={seg.annIdx}
-                className={`highlight ${seg.severity} ${isActive ? "active" : ""} ${isHovered ? "hovered" : ""}`}
-                title={seg.title}
-                style={{ cursor: "pointer", transition: "all 160ms ease" }}
-              >
-                {seg.text}
-              </mark>
-            );
-          })}
-        </pre>
-      </div>
+    <div ref={containerRef} style={{ position: "relative", width: "100%", display: "flex", flexDirection: "column", alignItems: "center", gap: 32 }}>
+      {pages.map((pageSegs, pageNum) => (
+        <div key={pageNum} className="document-page" style={{ padding: "36px 44px", position: "relative" }}>
+          <pre className="DV-textContents" style={{ whiteSpace: "pre-wrap", fontFamily: "inherit", margin: 0, lineHeight: 1.8, fontSize: "0.95rem" }}>
+            {pageSegs.map((seg, i) => {
+              if (seg.type === "plain") {
+                return <span key={`plain-${pageNum}-${i}`}>{seg.text}</span>;
+              }
+              const isActive = seg.annIdx === activeIndex;
+              const isHovered = seg.annIdx === hoveredIndex;
+              return (
+                <mark
+                  key={`mark-${seg.annIdx}-${pageNum}-${i}`}
+                  data-ann-idx={seg.annIdx}
+                  className={`highlight ${seg.severity} ${isActive ? "active" : ""} ${isHovered ? "hovered" : ""}`}
+                  title={seg.title}
+                  style={{ cursor: "pointer", transition: "all 160ms ease" }}
+                >
+                  {seg.text}
+                </mark>
+              );
+            })}
+          </pre>
+          <div style={{ position: "absolute", bottom: 16, right: 28, fontSize: "0.75rem", color: "var(--muted)", fontWeight: 600 }}>
+            Page {pageNum + 1} of {pages.length}
+          </div>
+        </div>
+      ))}
       <FloatingPopover
         ann={popover?.ann}
         rect={popover?.rect}
@@ -212,6 +266,130 @@ export function TextViewer({ text, annotations = [], activeIndex, setActiveIndex
       />
     </div>
   );
+}
+
+// Helper to highlight phrases cleanly inside DocxViewer DOM
+function applyDocxHighlights(container, annotations = []) {
+  if (!container || !annotations.length) return;
+
+  const existingMarks = container.querySelectorAll("mark[data-ann-idx]");
+  if (existingMarks.length > 0 && existingMarks.length >= Math.min(annotations.length, 1)) return;
+
+  const textNodes = [];
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    if (node.nodeValue && node.nodeValue.trim() && !node.parentElement?.closest("mark[data-ann-idx]")) {
+      textNodes.push(node);
+    }
+  }
+
+  annotations.forEach((ann, idx) => {
+    if (!ann.text || typeof ann.text !== "string" || !ann.text.trim()) return;
+    const phrase = ann.text.trim();
+    const phraseLower = phrase.toLowerCase().replace(/\s+/g, " ");
+    const severity = ann.severity || "medium";
+    const title = ann.issue || "Pedagogy Note";
+
+    let marked = false;
+
+    // Try exact or prefix match inside single text node
+    for (const node of textNodes) {
+      if (!node.nodeValue || !node.parentElement || node.parentElement.closest("mark[data-ann-idx]")) continue;
+      const nodeTextLower = node.nodeValue.toLowerCase().replace(/\s+/g, " ");
+      if (nodeTextLower.includes(phraseLower)) {
+        const firstWord = phrase.split(/\s+/)[0] || phrase.slice(0, 8);
+        const realPos = node.nodeValue.toLowerCase().indexOf(firstWord.toLowerCase());
+        if (realPos >= 0) {
+          try {
+            const range = document.createRange();
+            range.setStart(node, realPos);
+            range.setEnd(node, Math.min(node.nodeValue.length, realPos + phrase.length));
+            const mark = document.createElement("mark");
+            mark.className = `highlight ${severity}`;
+            mark.dataset.annIdx = String(idx);
+            mark.title = title;
+            range.surroundContents(mark);
+            marked = true;
+            break;
+          } catch {
+            // ignore
+          }
+        }
+      }
+    }
+
+    if (marked) return;
+
+    // Try multi-word matching across Word .docx <w:t> splits
+    const words = phraseLower.split(/\s+/).filter(w => w.length >= 5);
+    let chunksMatched = 0;
+    for (const word of words) {
+      if (chunksMatched >= 2) break;
+      for (const node of textNodes) {
+        if (!node.nodeValue || !node.parentElement || node.parentElement.closest("mark[data-ann-idx]")) continue;
+        const realPos = node.nodeValue.toLowerCase().indexOf(word);
+        if (realPos >= 0) {
+          try {
+            const range = document.createRange();
+            range.setStart(node, realPos);
+            range.setEnd(node, realPos + word.length);
+            const mark = document.createElement("mark");
+            mark.className = `highlight ${severity}`;
+            mark.dataset.annIdx = String(idx);
+            mark.title = title;
+            range.surroundContents(mark);
+            chunksMatched++;
+            marked = true;
+            break;
+          } catch {
+            // ignore
+          }
+        }
+      }
+    }
+  });
+}
+
+function injectDocxPageBreaks(container) {
+  if (!container) return;
+  const sections = container.querySelectorAll("section.docx");
+  if (sections.length > 1) {
+    // docx-preview already created multiple sections for hard page breaks
+    sections.forEach((sec, i) => {
+      if (!sec.querySelector(".docx-page-footer")) {
+        const footer = document.createElement("div");
+        footer.className = "docx-page-footer";
+        footer.style.cssText = "position: absolute; bottom: 12px; right: 24px; font-size: 0.75rem; color: #94a3b8; font-weight: 600;";
+        footer.textContent = `Page ${i + 1} of ${sections.length}`;
+        sec.style.position = "relative";
+        sec.appendChild(footer);
+      }
+    });
+    return;
+  }
+
+  // If there is only 1 section or continuous sections taller than A4 height (~1123px), insert visual page break banners
+  sections.forEach((sec) => {
+    if (sec.scrollHeight > 1200) {
+      const children = Array.from(sec.children);
+      let pageNum = 1;
+      let lastBreakOffset = 0;
+      const pageHeight = 1123; // 297mm in pixels at standard DPI
+
+      children.forEach((child) => {
+        if (child.offsetTop - lastBreakOffset >= pageHeight) {
+          lastBreakOffset = child.offsetTop;
+          pageNum++;
+          const divider = document.createElement("div");
+          divider.className = "docx-page-break-divider";
+          divider.style.cssText = "margin: 40px -44px; padding: 10px 44px; border-top: 2px dashed #cbd5e1; border-bottom: 2px dashed #cbd5e1; background: #f8fafc; color: #64748b; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; display: flex; justify-content: space-between; align-items: center; page-break-after: always;";
+          divider.innerHTML = `<span>Page Break</span><span>Page ${pageNum}</span>`;
+          sec.insertBefore(divider, child);
+        }
+      });
+    }
+  });
 }
 
 // =========================================================================
@@ -249,82 +427,10 @@ export function DocxViewer({ dataUrl, annotations = [], activeIndex, setActiveIn
   }, [dataUrl]);
 
   useEffect(() => {
-    if (!rendered) return;
-    const inner = innerRef.current;
-    if (!inner) return;
-
-    const textNodes = [];
-    const walker = document.createTreeWalker(inner, NodeFilter.SHOW_TEXT, null);
-    let fullDOMText = "";
-    while (walker.nextNode()) {
-      const node = walker.currentNode;
-      if (!node.textContent || !node.textContent.trim()) continue;
-      const str = node.textContent;
-      const start = fullDOMText.length;
-      fullDOMText += str + " ";
-      textNodes.push({ node, start, end: start + str.length, text: str });
-    }
-
-    const validAnns = (annotations || []).map((a, idx) => ({ ...a, origIdx: idx })).filter(
-      (a) => (a.text && typeof a.text === "string" && a.text.trim()) || (Number.isFinite(a.start) && a.start >= 0 && Number.isFinite(a.end) && a.end > a.start)
-    );
-
-    validAnns.sort((a, b) => (b.start || 0) - (a.start || 0));
-
-    for (const ann of validAnns) {
-      const annIdx = ann.origIdx;
-      let start = -1;
-      let end = -1;
-
-      // 1. First search for ann.text in fullDOMText across all text nodes
-      if (ann.text && typeof ann.text === "string" && ann.text.trim().length >= 3) {
-        const phrase = ann.text.trim().toLowerCase();
-        let matchPos = fullDOMText.toLowerCase().indexOf(phrase);
-        if (matchPos < 0 && phrase.length >= 20) {
-          matchPos = fullDOMText.toLowerCase().indexOf(phrase.slice(0, 24));
-        }
-        if (matchPos >= 0) {
-          start = matchPos;
-          end = matchPos + Math.min(phrase.length, fullDOMText.length - matchPos);
-        }
-      }
-
-      // 2. Only if exact/fuzzy phrase match wasn't found, try numeric offsets
-      if (start < 0 || end <= start) {
-        if (Number.isFinite(ann.start) && ann.start >= 0 && Number.isFinite(ann.end) && ann.end > ann.start) {
-          start = Number(ann.start);
-          end = Number(ann.end);
-        }
-      }
-
-      if (start < 0 || end <= start) continue;
-
-      const severity = ann.severity || "medium";
-      const isActive = annIdx === activeIndex;
-      const isHovered = annIdx === hoveredIndex;
-
-      for (const entry of textNodes) {
-        if (entry.end <= start || entry.start >= end) continue;
-        const textNode = entry.node;
-        const localStart = Math.max(0, start - entry.start);
-        const localEnd = Math.min(entry.end, end) - entry.start;
-        if (localEnd <= localStart) continue;
-
-        try {
-          const range = document.createRange();
-          range.setStart(textNode, localStart);
-          range.setEnd(textNode, localEnd);
-          const mark = document.createElement("mark");
-          mark.className = `highlight ${severity} ${isActive ? "active" : ""} ${isHovered ? "hovered" : ""}`;
-          mark.dataset.annIdx = String(annIdx);
-          mark.title = ann.issue || "Pedagogy Note";
-          range.surroundContents(mark);
-        } catch {
-          // Skip range across complex tag boundary
-        }
-      }
-    }
-  }, [rendered, annotations, activeIndex, hoveredIndex]);
+    if (!rendered || !innerRef.current) return;
+    applyDocxHighlights(innerRef.current, annotations);
+    injectDocxPageBreaks(innerRef.current);
+  }, [rendered, annotations]);
 
   useSyncPopover(containerRef, annotations, activeIndex, hoveredIndex, setPopover);
 
