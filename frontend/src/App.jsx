@@ -4800,7 +4800,7 @@ function EvaluatePage({ lessons = [], liveMode = false }) {
                   value={textInput}
                   onChange={(e) => setTextInput(e.target.value)}
                   placeholder="Paste your KSSR lesson plan text here..."
-                  style={{ fontFamily: "monospace", fontSize: "0.95rem" }}
+                  style={{ fontSize: "0.95rem" }}
                 />
               </label>
             )}
