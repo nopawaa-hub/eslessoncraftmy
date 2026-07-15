@@ -5925,6 +5925,45 @@ html body #root .sidebar.sidebar-dock:not(.is-open) .dock-item:hover .dock-badge
   transform: none !important;
 }
 
+/* ===== Topbar icon sizing & alignment =====
+   Lucide SVGs default to 24×24; constrain them so every icon sits centered
+   in its 42px box with consistent visual weight. */
+.topbar .icon-btn svg,
+.topbar .create-btn svg {
+  width: 19px !important;
+  height: 19px !important;
+  flex-shrink: 0;
+}
+
+/* Rounded "pill" buttons instead of raw transparent squares — reads as a
+   cohesive toolbar against the glass topbar. */
+.topbar .icon-btn {
+  border-radius: 12px !important;
+  background: color-mix(in srgb, var(--accent, #eef2ff) 55%, transparent) !important;
+  color: var(--muted) !important;
+  box-shadow: none !important;
+}
+.topbar .icon-btn:hover {
+  background: var(--primary) !important;
+  color: #fff !important;
+}
+
+/* Notification dot — keep it anchored to the icon, not the box corner. */
+.topbar .notification span {
+  top: 9px;
+  right: 9px;
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--card, #fff);
+}
+
+/* Search box icon matches the others' weight. */
+.topbar .search-box svg {
+  width: 17px;
+  height: 17px;
+  left: 13px;
+}
+
 @media (max-width: 1100px) {
   .topbar {
     margin-left: 0;

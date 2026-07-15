@@ -735,7 +735,7 @@ Year: ${safeYear}
 Skill: ${skill}
 Classroom type: ${classroomType}
 Teacher-entered objectives: ${objectives || "Generate measurable KSSR objectives from the topic."}
-Teacher-entered lesson steps overview: ${stepsOverview || "Teacher did not provide a sequence. Generate a complete sequence from the topic and KSSR standards."}
+Teacher-entered lesson steps overview (MUST FOLLOW EXACTLY — see rules below): ${stepsOverview || "Teacher did not provide a sequence. Generate a complete sequence from the topic and KSSR standards."}
 Preferred lesson template: ${templateType || template || "Default MOE Template"}
 Date: ${date || "Teacher may fill later"}
 Time: ${startTime || ""}${endTime ? `-${endTime}` : ""}
@@ -753,7 +753,7 @@ ${buildSowInstruction(sowSource)}
 
 Must use simple child-friendly instructions, group work, visual support, and scaffolded learning.
 Use plain text only inside every JSON string value. Do not use Markdown formatting or symbols such as **bold**, __bold__, backticks, Markdown headings, or Markdown bullet markers.
-If the teacher entered a lesson steps overview, preserve its sequence and expand it into the five lesson stages.
+If the teacher entered a lesson steps overview, you MUST follow that exact sequence as the backbone of the procedure. Each step the teacher wrote becomes (or maps directly onto) a procedure stage — in order. Do NOT discard, reorder, or replace the teacher's steps with your own generic sequence. Do NOT overlay the default Pre/Stage I/II/III/Post template on top of the teacher's steps; instead build the five stages AROUND the teacher's steps. If the teacher provided 3 steps, distribute them across the five stages (e.g. step 1 in Pre, steps 2-3 in Development stages, closure in Post). If the teacher provided 5+ steps, map each step to its own stage. You may add detail, scaffolding, and closure, but the core activity of each stage must come from the teacher's steps — not from a template.
 For objectives, DO NOT repeat "By the end of the lesson" or "By the end of the 60-minute lesson" inside every objective item. Put that lead-in only once in the document; objective array items must start directly with the measurable pupil action.
 The procedure must be complete, detailed, and classroom-ready, like a real Malaysian RPH. Do not write short generic lines.
 For every procedure stage:
@@ -761,7 +761,7 @@ For every procedure stage:
 - teacherActivities must be 3 to 5 detailed sentences with teacher actions, exact prompts/questions, modelling, monitoring, and scaffolding.
 - pupilActivities must be 2 to 4 detailed sentences with expected pupil actions, responses, grouping, and evidence of learning.
 - remarks must include stage-specific CBA/PBD evidence, materials, TS/HoM/HOTS, CCE, ICT, T&LM, AEd, soft skills, 21stCPP, differentiation, and values.
-Use the teacher-entered overview as the backbone, but expand each stage with enough practical detail for a substitute teacher to run the lesson.
+The teacher-entered steps overview is the MANDATORY sequence — expand each step with practical detail for a substitute teacher, but never replace the teacher's intended activities with your own.
 Generate the document-ready fields for Content Standard (CS), Learning Standard (LS), Learning Outcome (LO), Knowledge, Skill, Value, Learning Objectives, Success Criteria, Classroom Based Assessment, Instruments, Thinking Skills, Habits of Mind, HOTS, CCE, ICT, T&LM, Arts in Education, Soft Skills, Teaching Strategies, 21stCPP, Differentiation Strategy, and all five lesson stages.`;
 
   const ai = await callAI(buildSystemPrompt("generate a KSSR primary lesson plan"), userPrompt, modelHint);
