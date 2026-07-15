@@ -1,7 +1,9 @@
 import React, { useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import { Sparkles, X } from "lucide-react";
 import { useAppStore } from "../state/useAppStore.js";
 import { useTheme } from "../hooks/useTheme.js";
+import { pathToPageId } from "../lib/nav.js";
 import Sidebar from "../components/Sidebar.jsx";
 import TopBar from "../components/TopBar.jsx";
 import ErrorBoundary from "../components/ErrorBoundary.jsx";
@@ -19,6 +21,14 @@ import { Tour, TUTORIAL_KEY } from "../components/TutorialTour.jsx";
 function AppLayout({ children }) {
   // Keep the <html> dark class in sync (replaces the App() useEffect).
   useTheme();
+
+  // Reflect the current route on .app-root as data-page, mirroring the legacy
+  // App() (App.jsx:850 set data-page={activePage}). The router refactor dropped
+  // it, which broke per-page theming CSS scoped to .app-root[data-page="..."]
+  // (dashboard quick actions, orb/variable themes, etc.). Sidebar derives the
+  // same id for its active nav highlight; both reuse the shared helper.
+  const location = useLocation();
+  const pageId = pathToPageId(location.pathname);
 
   const copilotOpen = useAppStore((s) => s.copilotOpen);
   const toggleCopilot = useAppStore((s) => s.toggleCopilot);
@@ -53,7 +63,7 @@ function AppLayout({ children }) {
   }, [setTourStep]);
 
   return (
-    <div className="app-root">
+    <div className="app-root" data-page={pageId}>
       <Sidebar />
       <div className="main-column">
         <TopBar />

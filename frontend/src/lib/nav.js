@@ -36,6 +36,18 @@ export const PATH_PAGES = Object.fromEntries(
   Object.entries(PAGE_PATHS).map(([id, path]) => [path, id]),
 );
 
+// Derive the page id for a route path. Handles nested routes such as
+// /lesson-planner/:draftId (not an exact key in PATH_PAGES) and maps the
+// "students" shim to "classes" (its real theme). Defaults to "dashboard".
+// Reused by Sidebar (active nav highlight) and AppLayout (data-page on
+// .app-root, which gates per-page theming).
+export function pathToPageId(path) {
+  const exact = PATH_PAGES[path];
+  if (exact) return exact === "students" ? "classes" : exact;
+  if (path.startsWith("/lesson-planner")) return "lesson-planner";
+  return "dashboard";
+}
+
 // Map a legacy page id (or current path) to its route path.
 export function pageIdToPath(pageId) {
   return PAGE_PATHS[pageId] || "/";

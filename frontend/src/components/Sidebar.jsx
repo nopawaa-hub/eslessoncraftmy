@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { navGroups, pageIdToPath, PAGE_PATHS } from "../lib/nav.js";
+import { navGroups, pageIdToPath, pathToPageId } from "../lib/nav.js";
 import { useAppStore } from "../state/useAppStore.js";
 
 function Sidebar() {
@@ -18,15 +18,8 @@ function Sidebar() {
 
   // Derive the active page id from the current URL path instead of a
   // useState("dashboard"). This keeps the sidebar highlight in sync with
-  // browser Back/Forward navigation automatically.
-  const pathToPageId = (path) => {
-    for (const [id, p] of Object.entries(PAGE_PATHS)) {
-      if (path === p) return id;
-    }
-    // Match nested paths like /lesson-planner/:draftId
-    if (path.startsWith("/lesson-planner")) return "lesson-planner";
-    return "dashboard";
-  };
+  // browser Back/Forward navigation automatically. The shared helper
+  // (lib/nav.js) is also used by AppLayout to set data-page on .app-root.
   const activePage = pathToPageId(location.pathname);
   const effectiveActivePage = activePage === "students" ? "classes" : activePage;
 

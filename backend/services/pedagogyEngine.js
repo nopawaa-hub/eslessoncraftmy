@@ -23,7 +23,7 @@ export function validateLessonPlan(req, res, next) {
 export function buildAiSource(ai) {
   return {
     fallbackTriggered: Boolean(ai?.fallbackTriggered),
-    provider: ai?.provider || "gemini",
+    provider: ai?.provider || "neuralwatt",
     model: ai?.model || null,
     error: ai?.error || null,
   };
