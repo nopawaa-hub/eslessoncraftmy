@@ -28,9 +28,12 @@ import { connectDatabase } from "./services/db.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-// Bounded retry for EADDRINUSE: instead of relistening forever (which fills the
-// logs with restart spam while the port stays held), try a few times with
-// exponential backoff, then exit so the process manager can decide what to do.
+// Port-conflict handling. On EADDRINUSE we retry a few times with exponential
+// backoff (covers a transient conflict during a `node --watch` / nodemon
+// restart). If the port stays held, we log once and keep the process IDLE —
+// we deliberately do NOT process.exit(), because exiting under `--watch`/
+// nodemon triggers an immediate restart, which re-hits EADDRINUSE and loops
+// forever (the "Restarting 'server.js' … Failed running …" storm).
 const MAX_PORT_RETRIES = 5;
 const PORT_RETRY_BASE_DELAY_MS = 1000;
 const __filename = fileURLToPath(import.meta.url);
@@ -121,6 +124,7 @@ connectDatabase()
   })
   .finally(() => {
     let retryCount = 0;
+    let gaveUp = false;
     const server = app.listen(PORT, () => {
       console.log(`ESLessonCraft MY backend running on http://localhost:${PORT}`);
       console.log(`AI provider: ${getConfiguredProvider()}`);
@@ -131,12 +135,24 @@ connectDatabase()
         process.exit(1);
         return;
       }
+      // Already surfaced the persistent-conflict message below; stay idle and
+      // silent so we neither spam retries nor feed the --watch restart loop.
+      if (gaveUp) return;
       retryCount += 1;
       if (retryCount > MAX_PORT_RETRIES) {
+        // Persistent port conflict. Do NOT process.exit(): when the server is
+        // run under `node --watch` / nodemon, exiting triggers an immediate
+        // restart, which re-hits EADDRINUSE and loops forever. Stay idle
+        // instead so the watcher stops restarting; free the port and re-run.
+        gaveUp = true;
+        server.close();
         console.error(
-          `Port ${PORT} is still in use after ${MAX_PORT_RETRIES} retries. Exiting — free the port (e.g. stop the other node server.js) and restart.`,
+          `\n[server] Port ${PORT} is already in use by another process — ` +
+            `this server will stay idle to avoid a restart loop.\n` +
+            `To fix: stop the other backend holding port ${PORT} (e.g. a duplicate ` +
+            `'node server.js' or 'node --watch server.js'), then restart this server ` +
+            `(or save any backend file if running under --watch).\n`,
         );
-        process.exit(1);
         return;
       }
       const delay = PORT_RETRY_BASE_DELAY_MS * 2 ** (retryCount - 1);
