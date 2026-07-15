@@ -6,7 +6,7 @@ const FaIcon = ({ viewBox = "0 0 512 512", path, color = "currentColor", classNa
     viewBox={viewBox}
     fill={color}
     className={className}
-    style={{ width: "1.3rem", height: "1.3rem", flexShrink: 0 }}
+    style={{ flexShrink: 0 }}
   >
     <path d={path} />
   </svg>
