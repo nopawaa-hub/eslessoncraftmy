@@ -1687,15 +1687,15 @@ function Dashboard({ setActivePage, setCopilotOpen, lessons = [], classes = [], 
         <div className="quick-actions-grid">
           <button type="button" className="quick-action" onClick={() => setActivePage("lesson-planner")}>
             <span className="qa-icon qa-indigo"><Sparkles /></span>
-            <span className="qa-text"><strong>Generate RPH</strong><small>AI-powered lesson planning</small></span>
+            <span className="qa-text"><strong>Generate RPH</strong><small>Create a KSSR lesson plan with AI</small></span>
           </button>
           <button type="button" className="quick-action" onClick={() => setActivePage("timetable")}>
             <span className="qa-icon qa-blue"><CalendarDays /></span>
-            <span className="qa-text"><strong>Open Schedule</strong><small>View and manage your timetable</small></span>
+            <span className="qa-text"><strong>Open Schedule</strong><small>Check today's classes & timetable</small></span>
           </button>
           <button type="button" className="quick-action" onClick={() => setActivePage("students")}>
             <span className="qa-icon qa-emerald"><FaRecordStudent /></span>
-            <span className="qa-text"><strong>Record Student</strong><small>Manage student roster & records</small></span>
+            <span className="qa-text"><strong>Record Student</strong><small>Open class rosters & pupils</small></span>
           </button>
         </div>
       </section>
