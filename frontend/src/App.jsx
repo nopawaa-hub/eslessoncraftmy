@@ -2009,6 +2009,7 @@ function ClassesPage({ activePage, classes = [], refreshClasses, setSelectedClas
   const [showClassForm, setShowClassForm] = useState(!classes.length);
   const [openClassPanel, setOpenClassPanel] = useState("");
   const [notice, setNotice] = useState("");
+  const [classView, setClassView] = useState("list");
 
   const selectedClass = classes.find((item) => item._id === selectedId);
   const classLessons = lessons.filter((lesson) => String(lesson.classId?._id || lesson.classId || "") === String(selectedClass?._id || ""));
@@ -2016,7 +2017,7 @@ function ClassesPage({ activePage, classes = [], refreshClasses, setSelectedClas
   useEffect(() => {
     if (activePage === "students" && classes.length > 0) {
       if (!selectedId) setSelectedId(classes[0]._id);
-      setOpenClassPanel("students");
+      setClassView("roster");
     }
   }, [activePage, classes, selectedId]);
 
@@ -2077,6 +2078,7 @@ function ClassesPage({ activePage, classes = [], refreshClasses, setSelectedClas
       setSelectedId(saved._id);
       setSelectedClassId?.(saved._id);
       setShowClassForm(false);
+      setClassView("detail");
       setStudentDrafts(Array.from({ length: Math.max(Number(saved.studentCount || 0), 1) }, () => ({
         studentName: "",
         proficiency: saved.studentProficiency || "Mixed ability",
@@ -2094,7 +2096,7 @@ function ClassesPage({ activePage, classes = [], refreshClasses, setSelectedClas
     if (!window.confirm("Delete this class? Existing lesson plans will not be deleted.")) return;
     await apiDelete(`/classes/${id}`);
     setNotice("Class deleted. Linked lessons were kept.");
-    if (selectedId === id) setSelectedId("");
+    if (selectedId === id) { setSelectedId(""); setClassView("list"); }
     refreshClasses?.();
   };
   const updateStudentDraft = (index, key, value) => {
@@ -2144,13 +2146,117 @@ function ClassesPage({ activePage, classes = [], refreshClasses, setSelectedClas
       <PageHeader eyebrow="Class Management" title="Class Database." subtitle="Create English classes, manage pupils, and generate class-owned KSSR lesson plans." />
 
       <section className="page-toolbar">
+        {classView !== "list" && (
+          <button className="secondary-btn" onClick={() => setClassView(selectedClass ? "detail" : "list")}><ChevronLeft /> Back</button>
+        )}
         <button className="secondary-btn" onClick={refreshClasses}><RefreshCw /> Refresh</button>
-        <button className="secondary-btn" onClick={() => { setForm(emptyClassForm); setEditingId(""); setShowClassForm(true); }}><Plus /> Add class</button>
+        <button className="secondary-btn" onClick={() => { setForm(emptyClassForm); setEditingId(""); setShowClassForm(true); setClassView("edit"); }}><Plus /> Add class</button>
         <button className="primary-btn" onClick={planForClass} disabled={!selectedClass}><Sparkles /> Plan for class</button>
       </section>
 
-      <section className="dashboard-grid">
-        {showClassForm && <Card title={editingId ? "Edit Class" : "Add Class"} subtitle="Enter the class first. The student database form appears after the class is saved.">
+      {classView === "list" && (
+        <section className="dashboard-grid">
+          {showClassForm && <Card title={editingId ? "Edit Class" : "Add Class"} subtitle="Enter the class first. The student database form appears after the class is saved.">
+            <div className="form-row">
+              <label className="field"><span>Class name</span><input value={form.name} onChange={(event) => updateClassForm("name", event.target.value)} placeholder="5 Bestari" /></label>
+              <label className="field"><span>Year</span><select value={form.year} onChange={(event) => updateClassForm("year", event.target.value)}><option>Year 1</option><option>Year 2</option><option>Year 3</option><option>Year 4</option><option>Year 5</option><option>Year 6</option></select></label>
+            </div>
+            <div className="form-row">
+              <label className="field"><span>Subject</span><input value={form.subject} onChange={(event) => updateClassForm("subject", event.target.value)} /></label>
+              <label className="field"><span>Pupil count</span><input type="number" min="1" value={form.studentCount} onChange={(event) => updateClassForm("studentCount", event.target.value)} /></label>
+            </div>
+            <label className="field"><span>Student proficiency</span><input value={form.studentProficiency} onChange={(event) => updateClassForm("studentProficiency", event.target.value)} /></label>
+            <label className="field"><span>Classroom environment</span><textarea rows="2" value={form.classroomEnvironment} onChange={(event) => updateClassForm("classroomEnvironment", event.target.value)} /></label>
+            <label className="field"><span>Teaching notes</span><textarea rows="2" value={form.teachingNotes} onChange={(event) => updateClassForm("teachingNotes", event.target.value)} /></label>
+            <label className="field"><span>Tags</span><input value={form.tags} onChange={(event) => updateClassForm("tags", event.target.value)} placeholder="support, vocabulary, no projector" /></label>
+            <div className="form-row">
+              <button className="primary-btn full" onClick={saveClass}><Save /> {editingId ? "Update class" : "Create class"}</button>
+              <button className="secondary-btn full" onClick={resetClassForm}><X /> Cancel</button>
+            </div>
+            {notice && <div className="success-note"><CheckCircle2 /> {notice}</div>}
+          </Card>}
+
+          <Card title="Class List" subtitle={`${classes.length} saved class${classes.length === 1 ? "" : "es"}`} className="span-3">
+            <div className="material-grid wide">
+              {classes.map((schoolClass) => (
+                <button key={schoolClass._id} className={`student-card ${selectedId === schoolClass._id ? "selected-card" : ""}`} onClick={() => { setSelectedId(schoolClass._id); setOpenClassPanel(""); setClassView("detail"); }}>
+                  <div>{schoolClass.name.split(" ").map((part) => part[0]).slice(0, 2).join("")}</div>
+                  <strong>{schoolClass.name}</strong>
+                  <span>{schoolClass.year} · {schoolClass.subject} · {schoolClass.studentCount || 0} pupils</span>
+                  <small>{schoolClass.studentProficiency}</small>
+                  <em>Open class database</em>
+                </button>
+              ))}
+              {!classes.length && (
+                <div className="empty-state-box wide" style={{ padding: "24px 16px", textAlign: "center", border: "1px dashed var(--border)", borderRadius: 12, width: "100%" }}>
+                  <p className="body-copy" style={{ marginBottom: 14 }}>Nothing to show, you can start create your class.</p>
+                  <button type="button" className="primary-btn" onClick={() => { setShowClassForm(true); setClassView("edit"); }} style={{ margin: "0 auto" }}><Plus /> + Create Class</button>
+                </div>
+              )}
+            </div>
+          </Card>
+          {!showClassForm && notice && <div className="success-note span-2"><CheckCircle2 /> {notice}</div>}
+        </section>
+      )}
+
+      {classView === "detail" && selectedClass && (
+        <Card title={selectedClass.name} subtitle={`${selectedClass.year} · ${selectedClass.subject} · ${selectedClass.studentProficiency}`}>
+          <p className="body-copy">{selectedClass.classroomEnvironment}</p>
+          {selectedClass.teachingNotes && <p className="body-copy">{selectedClass.teachingNotes}</p>}
+          <div className="form-row">
+            <button className="secondary-btn" onClick={() => { startEdit(selectedClass); setClassView("edit"); }}><Save /> Edit class</button>
+            <button className="secondary-btn" onClick={() => deleteClass(selectedClass._id)}><X /> Delete class</button>
+            <button className="primary-btn" onClick={planForClass}><Sparkles /> Generate RPH</button>
+          </div>
+          <div className="class-panel-actions">
+            <button className="student-card compact" onClick={() => setClassView("roster")}>
+              <div><Users /></div>
+              <strong>Student database</strong>
+              <span>{students.length} saved pupils · {selectedClass.studentCount || 0} expected</span>
+              <em>Open form</em>
+            </button>
+            <button className="student-card compact" onClick={() => setOpenClassPanel("lessons")}>
+              <div><BookOpen /></div>
+              <strong>Lesson library</strong>
+              <span>{classLessons.length} class-owned RPH</span>
+              <em>Open library</em>
+            </button>
+          </div>
+        </Card>
+      )}
+
+      {classView === "roster" && selectedClass && (
+        <Card title="Student Database Form" subtitle={`${selectedClass.name} — ${selectedClass.year}`} action="Back" onAction={() => setClassView("detail")}>
+          <small className="muted" style={{ display: "block", marginBottom: "16px" }}>{`Fill or edit the pupil rows for ${selectedClass.name} (${students.length} saved · ${selectedClass.studentCount || 0} target). Blank rows are automatically cleaned up when saved.`}</small>
+          <div className="form-row" style={{ marginTop: "0", marginBottom: "16px" }}>
+            <button className="secondary-btn" onClick={addRosterRow}><Plus size={16} /> Add student</button>
+          </div>
+          <div className="table-wrap" style={{ maxHeight: "55vh", overflowY: "auto" }}>
+            <table>
+              <thead><tr><th>#</th><th>Student name</th><th>Proficiency</th><th>Notes</th><th>Status</th></tr></thead>
+              <tbody>
+                {studentDrafts.map((student, index) => (
+                  <tr key={student._id || `draft-${index}`}>
+                    <td>{index + 1}</td>
+                    <td><input className="comment-input" value={student.studentName || ""} onChange={(event) => updateStudentDraft(index, "studentName", event.target.value)} placeholder="Student name" /></td>
+                    <td><input className="comment-input" value={student.proficiency || ""} onChange={(event) => updateStudentDraft(index, "proficiency", event.target.value)} placeholder="Mixed ability" /></td>
+                    <td><input className="comment-input" value={student.notes || ""} onChange={(event) => updateStudentDraft(index, "notes", event.target.value)} placeholder="Notes, support needs, language profile" /></td>
+                    <td><Badge tone={student._id ? "emerald" : "amber"}>{student._id ? "saved" : "new"}</Badge></td>
+                  </tr>
+                ))}
+                {!studentDrafts.length && <tr><td colSpan="5">Save a class with a pupil count to create empty student rows.</td></tr>}
+              </tbody>
+            </table>
+          </div>
+          <div className="form-row" style={{ marginTop: "20px", justifyContent: "flex-end" }}>
+            <button className="secondary-btn" onClick={() => setClassView("detail")}><X /> Close</button>
+            <button className="primary-btn" onClick={saveRoster}><Save /> Save student database</button>
+          </div>
+        </Card>
+      )}
+
+      {classView === "edit" && (
+        <Card title={editingId ? "Edit Class" : "Add Class"} subtitle="Enter the class first. The student database form appears after the class is saved." action={editingId ? "Back" : undefined} onAction={editingId ? () => setClassView("detail") : undefined}>
           <div className="form-row">
             <label className="field"><span>Class name</span><input value={form.name} onChange={(event) => updateClassForm("name", event.target.value)} placeholder="5 Bestari" /></label>
             <label className="field"><span>Year</span><select value={form.year} onChange={(event) => updateClassForm("year", event.target.value)}><option>Year 1</option><option>Year 2</option><option>Year 3</option><option>Year 4</option><option>Year 5</option><option>Year 6</option></select></label>
@@ -2165,108 +2271,10 @@ function ClassesPage({ activePage, classes = [], refreshClasses, setSelectedClas
           <label className="field"><span>Tags</span><input value={form.tags} onChange={(event) => updateClassForm("tags", event.target.value)} placeholder="support, vocabulary, no projector" /></label>
           <div className="form-row">
             <button className="primary-btn full" onClick={saveClass}><Save /> {editingId ? "Update class" : "Create class"}</button>
-            <button className="secondary-btn full" onClick={resetClassForm}><X /> Cancel</button>
+            <button className="secondary-btn full" onClick={() => { resetClassForm(); setClassView("list"); }}><X /> Cancel</button>
           </div>
           {notice && <div className="success-note"><CheckCircle2 /> {notice}</div>}
-        </Card>}
-
-        <Card title="Class List" subtitle={`${classes.length} saved class${classes.length === 1 ? "" : "es"}`} className="span-3">
-          <div className="material-grid wide">
-            {classes.map((schoolClass) => (
-              <button key={schoolClass._id} className={`student-card ${selectedId === schoolClass._id ? "selected-card" : ""}`} onClick={() => { setSelectedId(schoolClass._id); setOpenClassPanel(""); }}>
-                <div>{schoolClass.name.split(" ").map((part) => part[0]).slice(0, 2).join("")}</div>
-                <strong>{schoolClass.name}</strong>
-                <span>{schoolClass.year} · {schoolClass.subject} · {schoolClass.studentCount || 0} pupils</span>
-                <small>{schoolClass.studentProficiency}</small>
-                <em>Open class database</em>
-              </button>
-            ))}
-            {!classes.length && (
-              <div className="empty-state-box wide" style={{ padding: "24px 16px", textAlign: "center", border: "1px dashed var(--border)", borderRadius: 12, width: "100%" }}>
-                <p className="body-copy" style={{ marginBottom: 14 }}>Nothing to show, you can start create your class.</p>
-                <button type="button" className="primary-btn" onClick={() => setShowClassForm(true)} style={{ margin: "0 auto" }}><Plus /> + Create Class</button>
-              </div>
-            )}
-          </div>
         </Card>
-        {!showClassForm && notice && <div className="success-note span-2"><CheckCircle2 /> {notice}</div>}
-      </section>
-
-      {selectedClass && (
-        <div className="fullscreen-modal-backdrop" role="dialog" aria-modal="true">
-          <section className="fullscreen-modal">
-            <div className="modal-header">
-              <div>
-                <p className="eyebrow">Class Database</p>
-                <h2>{selectedClass.name}</h2>
-                <p className="body-copy">{selectedClass.year} · {selectedClass.subject} · {selectedClass.studentProficiency}</p>
-              </div>
-              <button className="icon-btn" onClick={() => { setSelectedId(""); setOpenClassPanel(""); }}><X /></button>
-            </div>
-            <Card title={selectedClass.name} subtitle={`${selectedClass.year} · ${selectedClass.subject} · ${selectedClass.studentProficiency}`}>
-            <p className="body-copy">{selectedClass.classroomEnvironment}</p>
-            {selectedClass.teachingNotes && <p className="body-copy">{selectedClass.teachingNotes}</p>}
-            <div className="form-row">
-              <button className="secondary-btn" onClick={() => startEdit(selectedClass)}><Save /> Edit class</button>
-              <button className="secondary-btn" onClick={() => deleteClass(selectedClass._id)}><X /> Delete class</button>
-              <button className="primary-btn" onClick={planForClass}><Sparkles /> Generate RPH</button>
-            </div>
-            <div className="class-panel-actions">
-              <button className={`student-card compact ${openClassPanel === "students" ? "selected-card" : ""}`} onClick={() => setOpenClassPanel("students")}>
-                <div><Users /></div>
-                <strong>Student database</strong>
-                <span>{students.length} saved pupils · {selectedClass.studentCount || 0} expected</span>
-                <em>Open form</em>
-              </button>
-              <button className={`student-card compact ${openClassPanel === "lessons" ? "selected-card" : ""}`} onClick={() => setOpenClassPanel("lessons")}>
-                <div><BookOpen /></div>
-                <strong>Lesson library</strong>
-                <span>{classLessons.length} class-owned RPH</span>
-                <em>Open library</em>
-              </button>
-            </div>
-          </Card>
-
-          </section>
-        </div>
-      )}
-
-      {selectedClass && openClassPanel === "students" && (
-        <div className="modal-backdrop gaussian-blur-modal" onClick={() => setOpenClassPanel("")}>
-          <div className="modal-card wide-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div>
-                <p className="eyebrow">{selectedClass.name} — {selectedClass.year}</p>
-                <h2>Student Database Form</h2>
-                <small className="muted">{`Fill or edit the pupil rows for ${selectedClass.name} (${students.length} saved · ${selectedClass.studentCount || 0} target). Blank rows are automatically cleaned up when saved.`}</small>
-              </div>
-              <button className="secondary-btn" onClick={() => setOpenClassPanel("")} aria-label="Close modal"><X /> Close form</button>
-            </div>
-            <div className="form-row" style={{ marginTop: "12px", marginBottom: "16px" }}>
-              <button className="secondary-btn" onClick={addRosterRow} style={{ border: "none", background: "rgba(255,255,255,0.05)", padding: "8px 16px" }}><Plus size={16} /> Add student</button>
-            </div>
-            <div className="table-wrap" style={{ maxHeight: "55vh", overflowY: "auto" }}>
-              <table>
-                <thead><tr><th>#</th><th>Student name</th><th>Proficiency</th><th>Notes</th><th>Status</th></tr></thead>
-                <tbody>
-                  {studentDrafts.map((student, index) => (
-                    <tr key={student._id || `draft-${index}`}>
-                      <td>{index + 1}</td>
-                      <td><input className="comment-input" value={student.studentName || ""} onChange={(event) => updateStudentDraft(index, "studentName", event.target.value)} placeholder="Student name" /></td>
-                      <td><input className="comment-input" value={student.proficiency || ""} onChange={(event) => updateStudentDraft(index, "proficiency", event.target.value)} placeholder="Mixed ability" /></td>
-                      <td><input className="comment-input" value={student.notes || ""} onChange={(event) => updateStudentDraft(index, "notes", event.target.value)} placeholder="Notes, support needs, language profile" /></td>
-                      <td><Badge tone={student._id ? "emerald" : "amber"}>{student._id ? "saved" : "new"}</Badge></td>
-                    </tr>
-                  ))}
-                  {!studentDrafts.length && <tr><td colSpan="5">Save a class with a pupil count to create empty student rows.</td></tr>}
-                </tbody>
-              </table>
-            </div>
-            <div className="form-row" style={{ marginTop: "20px", justifyContent: "flex-end" }}>
-              <button className="primary-btn" onClick={saveRoster}><Save /> Save student database</button>
-            </div>
-          </div>
-        </div>
       )}
 
       {selectedClass && openClassPanel === "lessons" && (
