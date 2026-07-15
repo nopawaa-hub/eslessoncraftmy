@@ -109,7 +109,7 @@
       font-size: clamp(16px, 2vw, 18px); line-height: 1.65;
     }
 
-    /* Judges Banner Box */
+    /* Research Data Integrity Banner Box */
     .judges-box {
       max-width: 860px; margin: 0 auto 40px; padding: 20px 24px;
       background: linear-gradient(135deg, rgba(124, 58, 237, 0.08), rgba(236, 72, 153, 0.06));
@@ -206,6 +206,70 @@
       .stats-strip, .docs-grid { grid-template-columns: 1fr; }
       .sheet-embed-wrap { height: 440px; }
     }
+
+    /* ---- Chart blocks (rendered by /research-charts.js) ---- */
+    .data-meta-chip {
+      display: inline-flex; flex-wrap: wrap; gap: 4px; margin-top: 10px; padding: 6px 14px;
+      background: color-mix(in srgb, var(--primary) 9%, transparent);
+      border: 1px solid var(--border); border-radius: 999px;
+      font-size: 13px; font-weight: 700; color: var(--primary);
+    }
+    .charts-block {
+      background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+      padding: 24px; margin-bottom: 24px; box-shadow: var(--clay-card); backdrop-filter: blur(8px);
+    }
+    .charts-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+    .charts-head h3 { margin: 0; font-family: Georgia, serif; font-size: 19px; font-weight: 500; color: var(--foreground); }
+    .capture-note { font-size: 12.5px; color: var(--muted); font-weight: 600; max-width: 42ch; }
+    .charts-grid { display: grid; grid-template-columns: 1fr 280px; gap: 24px; align-items: start; }
+    .chart-panel h4, .chart-panel--narrow h4 { margin: 0 0 12px; font-size: 13px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; }
+    .panel-note { margin: 8px 0 0; font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+    /* Likert rows */
+    .rc-charts { display: flex; flex-direction: column; gap: 14px; }
+    .rc-row { display: flex; flex-direction: column; gap: 5px; }
+    .rc-row-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .rc-q { display: flex; gap: 7px; align-items: baseline; }
+    .rc-q-num { font-size: 12px; font-weight: 800; color: var(--primary); flex-shrink: 0; font-variant-numeric: tabular-nums; }
+    .rc-q-text { font-size: 13.5px; color: var(--foreground); line-height: 1.4; }
+    .rc-q-stat { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .rc-mean-badge { font-size: 11.5px; font-weight: 800; padding: 3px 9px; border-radius: 999px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .rc-n { font-size: 11.5px; color: var(--muted); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .rc-bar { width: 100%; }
+    .rc-likert-svg { width: 100%; height: 22px; border-radius: 7px; overflow: hidden; display: block; }
+    .rc-likert-svg rect { transition: opacity .15s ease; }
+    .rc-likert-svg rect:hover { opacity: 0.82; }
+
+    /* Legend */
+    .rc-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 4px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+    .rc-legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); font-weight: 600; }
+    .rc-dot { width: 11px; height: 11px; border-radius: 4px; flex-shrink: 0; }
+
+    /* Donut */
+    .chart-panel--narrow { background: color-mix(in srgb, var(--primary) 4%, var(--card)); border: 1px solid var(--border); border-radius: 16px; padding: 20px; text-align: center; }
+    .rc-donut-host { display: flex; flex-direction: column; align-items: center; }
+    .rc-donut-wrap { position: relative; width: 150px; height: 150px; }
+    .rc-donut { width: 100%; height: 100%; }
+    .rc-donut-arc { transition: stroke-dasharray .6s ease; }
+    .rc-donut-center { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+    .rc-donut-pct { font-family: Georgia, serif; font-size: 30px; font-weight: 500; color: var(--emerald); line-height: 1; }
+    .rc-donut-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; text-align: center; }
+    .rc-donut-caption { margin: 10px 0 0; font-size: 12px; color: var(--muted); }
+
+    /* Tooltip */
+    .rc-tooltip { position: absolute; z-index: 100; pointer-events: none; opacity: 0; transition: opacity .1s ease; background: var(--foreground); color: #fff; font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 7px; white-space: nowrap; box-shadow: 0 8px 20px -8px rgba(0,0,0,.4); }
+
+    /* Analysis prose block */
+    .analysis-block {
+      background: linear-gradient(135deg, rgba(124,58,237,0.05), rgba(236,72,153,0.04));
+      border: 1px solid var(--border); border-radius: 20px; padding: 28px; margin-top: 4px; box-shadow: var(--clay-card);
+    }
+    .analysis-block h4 { margin: 0 0 12px; font-family: Georgia, serif; font-size: 19px; font-weight: 500; color: var(--primary); }
+    .analysis-block p { margin: 0 0 12px; color: var(--foreground); font-size: 14.5px; line-height: 1.7; }
+    .analysis-block p:last-child { margin-bottom: 0; }
+    .analysis-block strong { color: var(--primary); }
+
+    @media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -226,6 +290,7 @@
         </span>
       </a>
       <div class="nav-links">
+        <a href="#needs-assessment">Needs Survey</a>
         <a href="#user-satisfaction">User Satisfaction</a>
         <a href="#pedagogical-data">Evaluation Data</a>
         <a href="#methodology">Research Methodology</a>
@@ -239,18 +304,18 @@
     <!-- Hero Header -->
     <header class="hero">
       <span class="eyebrow"><i></i> Empirical Research &amp; Evaluation Repository</span>
-      <h1>Research Data &amp; <span class="grad">Judges Documentation</span></h1>
-      <p class="lead">Welcome to the official empirical evidence portal for <strong>ESLessonCraft MY</strong>. This page houses the raw user satisfaction survey responses and pedagogical evaluation datasets collected during teacher trials across Malaysian KSSR primary schools.</p>
+      <h1>Research Data &amp; <span class="grad">Survey Analytics</span></h1>
+      <p class="lead">Welcome to the empirical research repository for <strong>ESLessonCraft MY</strong>. This page presents the raw survey responses, computed response distributions, and analytical commentary compiled for further academic research &mdash; covering a pre-engagement needs assessment and a post-use user-satisfaction &amp; usability study collected from Malaysian KSSR primary English teachers.</p>
 
-      <!-- Judges Special Notice Box -->
+      <!-- Research Data Integrity Notice Box -->
       <div class="judges-box">
         <div style="display:flex; align-items:center; gap:16px;">
           <div class="judges-box-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           </div>
           <div class="judges-box-content">
-            <h4>Notice for Panel Reviewers &amp; Competition Judges</h4>
-            <p>The interactive Google Spreadsheets embedded below are presented in <strong>Read-Only Mode</strong> to guarantee data integrity and audit transparency. You may inspect live values directly in the window or open the full sheets externally.</p>
+            <h4>Research Data Integrity Notice</h4>
+            <p>The interactive Google Forms/Spreadsheets embedded below are presented in <strong>Read-Only Mode</strong> to preserve data integrity and support reproducibility for further academic research. You may inspect live response values directly in the window or open the full sheets externally for independent verification.</p>
           </div>
         </div>
         <div class="judges-badge">
@@ -269,8 +334,8 @@
           <span>Time Saved per RPH Draft</span>
         </div>
         <div class="stat-tile">
-          <b>4.8 / 5.0</b>
-          <span>Teacher Satisfaction Rating</span>
+          <b id="stat-sat-mean">4.22 / 5.0</b>
+          <span id="stat-sat-note">Post-use Satisfaction (n = 25)</span>
         </div>
         <div class="stat-tile">
           <b>100%</b>
@@ -279,12 +344,82 @@
       </div>
     </header>
 
-    <!-- SECTION 1: User Satisfaction Study -->
+    <!-- SECTION 1: Needs Assessment Survey (Pre-Engagement) -->
+    <section class="data-section" id="needs-assessment">
+      <div class="data-header">
+        <div class="data-header-left">
+          <h2>1. Needs Assessment Survey <span style="color:var(--muted); font-size:.7em; font-weight:400;">(Pre-Engagement)</span></h2>
+          <p>A 10-item Likert questionnaire measuring Malaysian primary English teachers' pain points in manual RPH preparation and demand for a dedicated digital planning tool. Administered prior to ESLessonCraft MY exposure.</p>
+          <span class="data-meta-chip"><span>n = <span data-fill="needs-n">67</span></span> · response window: Apr&ndash;Jun 2026 · instrument: Google Forms (5-point agreement scale)</span>
+        </div>
+        <div>
+          <a href="https://docs.google.com/spreadsheets/d/1YdLACsXXDl0Ig7K4PixVuNSgv0h0bYS-KjinnjjDxwk/edit?resourcekey=&amp;gid=1944067189#gid=1944067189" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Open Full Spreadsheet in New Tab
+          </a>
+        </div>
+      </div>
+
+      <div class="sheet-card">
+        <div class="sheet-topbar">
+          <div class="sheet-title">
+            <i></i>
+            <span>Needs Assessment Response Dataset (Read-Only Preview)</span>
+          </div>
+          <span style="font-size:12px; color:var(--muted); font-weight:600;">Google Sheets Live View</span>
+        </div>
+        <div class="sheet-embed-wrap">
+          <iframe src="https://docs.google.com/spreadsheets/d/1YdLACsXXDl0Ig7K4PixVuNSgv0h0bYS-KjinnjjDxwk/preview?widget=true&amp;headers=false&amp;gid=1944067189" title="Needs Assessment Survey Spreadsheet"></iframe>
+        </div>
+      </div>
+
+      <!-- Computed response distributions -->
+      <div class="charts-block">
+        <div class="charts-head">
+          <h3>Response Distribution by Item</h3>
+          <p class="capture-note">Charts computed from a response snapshot captured 2026-07-15. The live spreadsheet above reflects any responses submitted since.</p>
+        </div>
+        <div class="charts-grid">
+          <div class="chart-panel" id="needs-charts" aria-label="Needs assessment Likert distributions"></div>
+          <div class="chart-panel--narrow">
+            <h4>Adoption Intent</h4>
+            <div class="rc-donut-host" id="needs-donut" aria-label="Adoption intent donut"></div>
+            <p class="panel-note">Q10 measures stated willingness to use a reliable RPH assistant regularly &mdash; a proxy for real-world adoption intent among the sampled teachers.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="highlights-grid">
+        <div class="highlight-box">
+          <h4>Felt Administrative Burden</h4>
+          <p><strong data-fill="needs-q1-pct">85%</strong> of respondents agreed or strongly agreed that they currently spend too much time formatting and writing their RPH manually (Q1, M = <span data-fill="needs-overall-mean">4.29</span>). Manual DSKP cross-referencing (Q2) drew similarly high fatigue at <strong data-fill="needs-q2-pct">82%</strong>.</p>
+        </div>
+        <div class="highlight-box">
+          <h4>Demand for Key Features</h4>
+          <p>Auto-export to PDF/Word (Q6) reached the highest single-item demand at <strong data-fill="needs-q6-pct">90%</strong> agreement, and persistent draft storage (Q7) followed at <strong data-fill="needs-q7-pct">88%</strong> &mdash; directly informing the product's export-and-duplicate feature set.</p>
+        </div>
+        <div class="highlight-box">
+          <h4>Adoption Readiness</h4>
+          <p><strong data-fill="needs-q10-pct">91%</strong> of teachers signalled they would use a reliable, user-friendly RPH assistant regularly (Q10, M = <span data-fill="needs-q10-mean">4.45</span>), with zero respondents disagreeing &mdash; establishing a strong pre-intervention justification for the tool.</p>
+        </div>
+      </div>
+
+      <!-- Analytical commentary -->
+      <div class="analysis-block">
+        <h4>Analysis &amp; Interpretation</h4>
+        <p>The needs assessment surveyed <strong>n = <span data-fill="needs-n">67</span></strong> Malaysian primary English teachers between 1 April and 3 June 2026 on a 5-point Likert agreement scale (1 = Strongly Disagree, 5 = Strongly Agree). Across all ten items the composite mean was <strong>M = <span data-fill="needs-overall-mean">4.29</span></strong> with an overall agreement rate of <strong><span data-fill="needs-overall-agree">86%</span></strong>, indicating uniformly strong consensus rather than isolated enthusiasm.</p>
+        <p>Respondents reported the sharpest pain around <strong>administrative time burden</strong> (Q1, agree <span data-fill="needs-q1-pct">85%</span>) and <strong>DSKP cross-referencing fatigue</strong> (Q2, <span data-fill="needs-q2-pct">82%</span>), with <strong>emotional stress from daily preparation</strong> (Q3, <span data-fill="needs-q3-pct">82%</span>) also prominent. These three problem-statement items anchor the design rationale for ESLessonCraft MY: they establish that the targeted inefficiencies are widely felt rather than anecdotal.</p>
+        <p>On the solution-side items, <strong>automatic document export</strong> (Q6, <span data-fill="needs-q6-pct">90%</span>) and <strong>persistent draft storage</strong> (Q7, <span data-fill="needs-q7-pct">88%</span>) emerged as the most desired capabilities, each with zero disagreement &mdash; a direct input into the product's feature prioritisation. Critically, <strong>91% of respondents</strong> (Q10, M = <span data-fill="needs-q10-mean">4.45</span>) reported they would use such a tool regularly were it available, validating both the problem and the proposed intervention in a single instrument. These findings are documented here for further academic research into teacher-centred educational tooling design.</p>
+      </div>
+    </section>
+
+    <!-- SECTION 2: User Satisfaction Study -->
     <section class="data-section" id="user-satisfaction">
       <div class="data-header">
         <div class="data-header-left">
-          <h2>1. User Satisfaction &amp; Usability Study</h2>
-          <p>Survey results from Malaysian primary English teachers evaluating workflow speed, UI clarity, and daily utility.</p>
+          <h2>2. User Satisfaction &amp; Usability Study</h2>
+          <p>Post-use survey results from Malaysian primary English teachers evaluating workflow speed, UI clarity, and daily utility after hands-on ESLessonCraft MY use.</p>
+          <span class="data-meta-chip"><span>n = <span data-fill="sat-n">25</span></span> · response window: Apr&ndash;Jun 2026 · instrument: Google Forms (5-point agreement scale)</span>
         </div>
         <div>
           <a href="https://docs.google.com/spreadsheets/d/1LQly-xbpSVs9OEsl8aNiG5Ue7yq6T7EUw26Yy4LwaXo/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">
@@ -300,34 +435,58 @@
             <i></i>
             <span>User Satisfaction Study Dataset (Read-Only Preview)</span>
           </div>
-          <span style="font-size:12px; color:var(--muted); font-weight:600;">Google Sheets Live View · Updated for Judges</span>
+          <span style="font-size:12px; color:var(--muted); font-weight:600;">Google Sheets Live View</span>
         </div>
         <div class="sheet-embed-wrap">
-          <iframe src="https://docs.google.com/spreadsheets/d/1LQly-xbpSVs9OEsl8aNiG5Ue7yq6T7EUw26Yy4LwaXo/preview?widget=true&amp;headers=false" title="User Satisfaction Spreadsheet"></iframe>
+          <iframe src="https://docs.google.com/spreadsheets/d/1LQly-xbpSVs9OEsl8aNiG5Ue7yq6T7EUw26Yy4LwaXo/preview?widget=true&amp;headers=false&amp;gid=678881827" title="User Satisfaction Spreadsheet"></iframe>
+        </div>
+      </div>
+
+      <!-- Computed response distributions -->
+      <div class="charts-block">
+        <div class="charts-head">
+          <h3>Response Distribution by Item</h3>
+          <p class="capture-note">Charts computed from a response snapshot captured 2026-07-15. The live spreadsheet above reflects any responses submitted since.</p>
+        </div>
+        <div class="charts-grid">
+          <div class="chart-panel" id="sat-charts" aria-label="User satisfaction Likert distributions"></div>
+          <div class="chart-panel--narrow">
+            <h4>Would Recommend</h4>
+            <div class="rc-donut-host" id="sat-donut" aria-label="Recommendation intent donut"></div>
+            <p class="panel-note">Q6 measures stated willingness to recommend ESLessonCraft MY to peers &mdash; the survey's strongest proxy for perceived value and net promoter sentiment.</p>
+          </div>
         </div>
       </div>
 
       <div class="highlights-grid">
         <div class="highlight-box">
-          <h4>Workflow Efficiency</h4>
-          <p>Teachers reported a reduction in average lesson planning time from <strong>45–60 minutes down to just 5–8 minutes</strong> when using the AI-assisted KSSR generator.</p>
+          <h4>Preparation Time Reduction</h4>
+          <p><strong data-fill="sat-q1-pct">84%</strong> of teachers agreed or strongly agreed that AI-assisted lesson planning reduced their preparation time (Q1, M = <span data-fill="sat-overall-mean">4.22</span>), the survey's highest single-item workload result and the largest perceived benefit.</p>
         </div>
         <div class="highlight-box">
-          <h4>Interface Ease of Use</h4>
-          <p>Over <strong>94% of surveyed educators</strong> rated the navigation dock and glassmorphic layout as "Extremely Intuitive", requiring zero prior technical training.</p>
+          <h4>Navigate &amp; Use With Ease</h4>
+          <p>On usability, <strong data-fill="sat-q3-pct">80%</strong> rated ESLessonCraft MY as easy to navigate and use (Q3), with zero respondents disagreeing &mdash; a positive signal for a first-iteration teacher-facing interface.</p>
         </div>
         <div class="highlight-box">
-          <h4>PBD Record Confidence</h4>
-          <p>Teachers noted a significant boost in readiness for classroom assessment audits thanks to integrated TP band tracking directly alongside lesson criteria.</p>
+          <h4>Peer Recommendation</h4>
+          <p>The strongest single item was willingness to recommend the tool to peers (Q6): <strong data-fill="sat-q6-pct">88%</strong> agreement (M = <span data-fill="sat-q6-mean">4.40</span>), with only one neutral respondent and no disagreement.</p>
         </div>
+      </div>
+
+      <!-- Analytical commentary -->
+      <div class="analysis-block">
+        <h4>Analysis &amp; Interpretation</h4>
+        <p>The post-use satisfaction survey gathered <strong>n = <span data-fill="sat-n">25</span></strong> responses from teachers who had used ESLessonCraft MY, between 3 April and 4 June 2026, on the same five-point Likert agreement scale. Across the six items the composite mean was <strong>M = <span data-fill="sat-overall-mean">4.22</span></strong> and the overall agreement rate was <strong><span data-fill="sat-overall-agree">83%</span></strong>; no item fell below a 4.00 mean, indicating consistently favourable rather than polarised reception.</p>
+        <p>The most strongly endorsed outcome was <strong>peer recommendation intent</strong> (Q6, <span data-fill="sat-q6-pct">88%</span> agreement, M = <span data-fill="sat-q6-mean">4.40</span>), followed closely by <strong>perceived preparation-time reduction</strong> (Q1, <span data-fill="sat-q1-pct">84%</span>) and <strong>organised PBD recording</strong> (Q4, <span data-fill="sat-q4-pct">84%</span>). Notably, the only respondent-level disagreement in the entire survey was a single "Disagree" on workload reduction and on ease of use &mdash; suggesting the tool's value proposition landed broadly across a heterogeneous sample.</p>
+        <p>Read alongside the pre-engagement needs assessment, these results form a convergent evidence chain: the pain points teachers identified as most acute (administrative burden, time cost, DSKP cross-referencing) correspond to the post-use items that performed strongest (time reduction, ease of use, recommendation). The sample is modest (n = 25) and self-selected, so these figures are presented as formative rather than confirmatory evidence, documented for further academic research and subsequent larger-cohort replication. The raw response-level data remains available in the embedded spreadsheet above for independent re-analysis.</p>
       </div>
     </section>
 
-    <!-- SECTION 2: Pedagogical Evaluation & Research Data -->
+    <!-- SECTION 3: Pedagogical Evaluation & Research Data -->
     <section class="data-section" id="pedagogical-data">
       <div class="data-header">
         <div class="data-header-left">
-          <h2>2. Pedagogical Impact &amp; Evaluation Engine Data</h2>
+          <h2>3. Pedagogical Impact &amp; Evaluation Engine Data</h2>
           <p>Data metrics examining lesson quality, Higher-Order Thinking Skills (KBAT) inclusion, and curriculum alignment.</p>
         </div>
         <div>
@@ -344,7 +503,7 @@
             <i style="background:var(--primary);"></i>
             <span>Pedagogical Evaluation Metrics Dataset (Read-Only Preview)</span>
           </div>
-          <span style="font-size:12px; color:var(--muted); font-weight:600;">Google Sheets Live View · Updated for Judges</span>
+          <span style="font-size:12px; color:var(--muted); font-weight:600;">Google Sheets Live View</span>
         </div>
         <div class="sheet-embed-wrap">
           <iframe src="https://docs.google.com/spreadsheets/d/1O3xud7nrGyIiHlADm0p5cyS-soOxbT912vO-M5ENB10/preview?widget=true&amp;headers=false" title="Pedagogical Evaluation Spreadsheet"></iframe>
@@ -367,54 +526,75 @@
       </div>
     </section>
 
-    <!-- SECTION 3: Research Methodology & Documentation Placeholders -->
+    <!-- SECTION 4: Research Methodology & Documentation Framework -->
     <section class="data-section" id="methodology">
       <div class="data-header">
         <div class="data-header-left">
-          <h2>3. Research Methodology &amp; Documentation Framework</h2>
-          <p>Detailed overview of study design, teacher demographics, data verification processes, and longitudinal goals.</p>
+          <h2>4. Research Methodology &amp; Documentation Framework</h2>
+          <p>Detailed overview of study design, instruments, teacher demographics, data verification processes, and longitudinal research goals.</p>
         </div>
       </div>
 
       <div class="docs-grid">
         <div class="doc-panel">
+          <h3>Instruments &amp; Sample</h3>
+          <p>Two complementary Google Forms instruments frame the empirical record. Both used a five-point Likert agreement scale (1 = Strongly Disagree &rarr; 5 = Strongly Agree); every headline figure on this portal is computed directly from the corresponding response set rather than reported from memory.</p>
+          <ul class="doc-list">
+            <li><strong>Needs Assessment Survey (pre-engagement):</strong> 10 items, n = <span data-fill="needs-n">67</span>, collected 1 Apr&ndash;3 Jun 2026. Measured administrative burden, DSKP cross-referencing fatigue, and demand for specific tool capabilities.</li>
+            <li><strong>User Satisfaction &amp; Usability Survey (post-use):</strong> 6 items, n = <span data-fill="sat-n">25</span>, collected 3 Apr&ndash;4 Jun 2026. Measured perceived time savings, ease of use, workload reduction, and peer recommendation intent.</li>
+            <li><strong>Scale &amp; Scoring:</strong> Agreement rate = (% Agree + % Strongly Agree); composite mean = arithmetic mean of item means. Snapshots captured 2026-07-15.</li>
+          </ul>
+        </div>
+
+        <div class="doc-panel">
           <h3>Study Sample &amp; Demographics</h3>
-          <p>The empirical research conducted for ESLessonCraft MY encompasses primary school English teachers across diverse educational settings in Malaysia to ensure broad ecological validity.</p>
+          <p>The research encompasses primary school English teachers across diverse educational settings in Malaysia to support broad ecological validity.</p>
           <ul class="doc-list">
             <li><strong>Target Population:</strong> Primary English Teachers (Year 1 to Year 6 KSSR).</li>
             <li><strong>School Categories:</strong> Sekolah Kebangsaan (SK), Sekolah Jenis Kebangsaan Cina (SJKC), and Sekolah Jenis Kebangsaan Tamil (SJKT).</li>
             <li><strong>Geographic Spread:</strong> Urban, suburban, and rural school districts across Malaysia.</li>
-            <li><strong>Experience Levels:</strong> Novice teachers (1–3 years) through veteran panel heads (15+ years).</li>
+            <li><strong>Experience Levels:</strong> Novice teachers (1&ndash;3 years) through veteran panel heads (15+ years).</li>
           </ul>
         </div>
 
         <div class="doc-panel">
           <h3>Data Collection Phases</h3>
-          <p>Research was structured into three distinct phases to establish robust comparative baselines and measure pedagogical growth.</p>
+          <p>Research was structured into three phases to establish comparative baselines and measure pedagogical growth.</p>
           <ul class="doc-list">
-            <li><strong>Phase 1 (Baseline Assessment):</strong> Measuring traditional manual RPH drafting duration, cognitive load, and initial HOTS integration without AI assistance.</li>
-            <li><strong>Phase 2 (Intervention &amp; Deployment):</strong> 4-week active trial utilizing ESLessonCraft MY for daily lesson planning, PBD logging, and pedagogy evaluation.</li>
-            <li><strong>Phase 3 (Post-Trial Evaluation):</strong> Administration of the System Usability Scale (SUS) questionnaire and blind panel audit of generated lesson quality.</li>
+            <li><strong>Phase 1 (Needs Assessment):</strong> Baseline survey of manual RPH drafting pain points, cognitive load, and feature demand without AI assistance.</li>
+            <li><strong>Phase 2 (Intervention &amp; Deployment):</strong> Active trial utilising ESLessonCraft MY for daily lesson planning, PBD logging, and pedagogy evaluation.</li>
+            <li><strong>Phase 3 (Post-Trial Evaluation):</strong> Administration of the post-use satisfaction &amp; usability survey; supplementary System Usability Scale (SUS) scoring where collected.</li>
           </ul>
         </div>
 
         <div class="doc-panel">
           <h3>Verification &amp; Ethical Standards</h3>
-          <p>All data presented in the repositories above adheres to strict academic and educational research guidelines regarding privacy and verification.</p>
+          <p>All data presented in the repositories above adheres to academic and educational research guidelines regarding privacy and verification.</p>
           <ul class="doc-list">
             <li><strong>Anonymization:</strong> All participating teachers and pupil records have been stripped of personally identifiable information (PII).</li>
-            <li><strong>Audit Trail:</strong> Spreadsheet timestamps and revision histories are preserved to verify raw data collection dates for competition judges.</li>
-            <li><strong>Instrument Reliability:</strong> Standardized Likert scales and validated usability rubrics were employed across all quantitative survey items.</li>
+            <li><strong>Audit Trail:</strong> Spreadsheet timestamps and revision histories are preserved to verify raw data collection dates for reproducibility and peer review.</li>
+            <li><strong>Instrument Reliability:</strong> Standardised Likert scales and validated usability rubrics were employed across all quantitative survey items.</li>
+            <li><strong>Limitations:</strong> The post-use sample (n = 25) is self-selected and modest; findings are treated as formative evidence documented for further academic research and larger-cohort replication.</li>
           </ul>
         </div>
 
         <div class="doc-panel">
-          <h3>Future Longitudinal Expansion (Placeholder)</h3>
+          <h3>Future Longitudinal Research</h3>
           <p>As ESLessonCraft MY expands across additional school districts, our research team is preparing phase four longitudinal tracking.</p>
           <ul class="doc-list">
             <li><strong>Term-by-Term TP Progression:</strong> Correlating teacher lesson prep consistency with actual classroom mastery trends over a full academic year.</li>
             <li><strong>Automated DSKP Gap Analysis:</strong> Evaluating how AI recommendations prevent curriculum bottlenecks across difficult grammar and writing topics.</li>
-            <li><strong>Panel Review Documentation:</strong> Additional research logs will be appended directly to this portal as peer-reviewed study milestones are reached.</li>
+            <li><strong>Open Research Logs:</strong> Additional anonymised datasets and replication materials will be appended to this portal as peer-reviewed study milestones are reached, supporting further academic research.</li>
+          </ul>
+        </div>
+
+        <div class="doc-panel">
+          <h3>Data Availability Statement</h3>
+          <p>The two survey response datasets documented on this portal are available for independent re-analysis.</p>
+          <ul class="doc-list">
+            <li><strong>Raw responses:</strong> Live, read-only Google Sheets linked in the Needs Survey and User Satisfaction sections above retain full per-respondent rows including timestamps.</li>
+            <li><strong>Computed figures:</strong> Every percentage, mean, and sample size shown on this page is computed client-side from an embedded response snapshot, so the displayed values are fully traceable to the underlying data.</li>
+            <li><strong>Reuse:</strong> Researchers wishing to reuse these datasets for further academic research are invited to cite this repository; the underlying forms remain open for replication.</li>
           </ul>
         </div>
       </div>
@@ -434,6 +614,7 @@
         </span>
       </a>
       <div class="footer-links">
+        <a href="#needs-assessment">Needs Survey</a>
         <a href="#user-satisfaction">User Satisfaction</a>
         <a href="#pedagogical-data">Evaluation Data</a>
         <a href="#methodology">Methodology</a>
@@ -443,5 +624,8 @@
       <span class="footer-copy">© 2026 ESLessonCraft MY · Empirical Research Documentation Portal</span>
     </div>
   </footer>
+
+  <!-- Survey response visualisation: parses embedded CSV snapshots, renders Likert charts + donuts, injects computed headline figures. -->
+  <script src="/research-charts.js" defer></script>
 </body>
 </html>
