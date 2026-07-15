@@ -580,7 +580,7 @@ export async function generateLesson({
   classroomEnvironment = "",
   teachingNotes = "",
   sowSource,
-}) {
+}, modelHint) {
   const safeYear = /^Year [1-6]$/.test(year) ? year : "Year 4";
   const userPrompt = `Generate a Malaysian primary school KSSR lesson plan.
 
@@ -764,7 +764,7 @@ For every procedure stage:
 Use the teacher-entered overview as the backbone, but expand each stage with enough practical detail for a substitute teacher to run the lesson.
 Generate the document-ready fields for Content Standard (CS), Learning Standard (LS), Learning Outcome (LO), Knowledge, Skill, Value, Learning Objectives, Success Criteria, Classroom Based Assessment, Instruments, Thinking Skills, Habits of Mind, HOTS, CCE, ICT, T&LM, Arts in Education, Soft Skills, Teaching Strategies, 21stCPP, Differentiation Strategy, and all five lesson stages.`;
 
-  const ai = await callAI(buildSystemPrompt("generate a KSSR primary lesson plan"), userPrompt);
+  const ai = await callAI(buildSystemPrompt("generate a KSSR primary lesson plan"), userPrompt, modelHint);
   return { ...normalizeGenerateResponse(ai.data, {
     topic,
     year: safeYear,
@@ -789,7 +789,7 @@ Generate the document-ready fields for Content Standard (CS), Learning Standard 
   }), aiSource: buildAiSource(ai) };
 }
 
-export async function analyzeLesson(lessonPlan) {
+export async function analyzeLesson(lessonPlan, modelHint) {
   const userPrompt = `Analyze this lesson plan.
 
 Return JSON exactly in this shape:
@@ -816,11 +816,11 @@ Return JSON exactly in this shape:
 Lesson plan:
 ${lessonPlan}`;
 
-  const ai = await callAI(buildSystemPrompt("KSSR-aligned lesson analysis"), userPrompt);
+  const ai = await callAI(buildSystemPrompt("KSSR-aligned lesson analysis"), userPrompt, modelHint);
   return { ...normalizeAnalyzeResponse(ai.data, lessonPlan), aiSource: buildAiSource(ai) };
 }
 
-export async function simulateLesson(lessonPlan) {
+export async function simulateLesson(lessonPlan, modelHint) {
   const userPrompt = `Simulate likely classroom outcomes for this lesson plan.
 
 Return JSON exactly in this shape:
@@ -833,11 +833,11 @@ Return JSON exactly in this shape:
 Lesson plan:
 ${lessonPlan}`;
 
-  const ai = await callAI(buildSystemPrompt("Malaysian classroom simulation"), userPrompt);
+  const ai = await callAI(buildSystemPrompt("Malaysian classroom simulation"), userPrompt, modelHint);
   return { ...normalizeSimulationResponse(ai.data, lessonPlan), aiSource: buildAiSource(ai) };
 }
 
-export async function improveLesson(lessonPlan) {
+export async function improveLesson(lessonPlan, modelHint) {
   const userPrompt = `Rewrite this lesson with better pedagogy, differentiation, student-centered activities, BM/BI scaffolding, PBD evidence, HOTS/KBAT, six-pillar KSSR awareness, and large-class practicality.
 
 Return JSON exactly in this shape:
@@ -850,11 +850,11 @@ Return JSON exactly in this shape:
 Lesson plan:
 ${lessonPlan}`;
 
-  const ai = await callAI(buildSystemPrompt("lesson improvement"), userPrompt);
+  const ai = await callAI(buildSystemPrompt("lesson improvement"), userPrompt, modelHint);
   return { ...normalizeImproveResponse(ai.data), aiSource: buildAiSource(ai) };
 }
 
-export async function checkKssrAlignment(lessonPlan) {
+export async function checkKssrAlignment(lessonPlan, modelHint) {
   const userPrompt = `Check only KSSR alignment for this lesson plan.
 
 Return JSON exactly in this shape:
@@ -867,7 +867,7 @@ Return JSON exactly in this shape:
 Lesson plan:
 ${lessonPlan}`;
 
-  const ai = await callAI(buildSystemPrompt("KSSR alignment checking"), userPrompt);
+  const ai = await callAI(buildSystemPrompt("KSSR alignment checking"), userPrompt, modelHint);
   return { ...normalizeKssrCheckResponse(ai.data, lessonPlan), aiSource: buildAiSource(ai) };
 }
 
@@ -950,7 +950,7 @@ function normalizeEvaluateResponse(value, lessonPlan, classData = "") {
   };
 }
 
-export async function evaluateLesson(lessonPlan, classData = "") {
+export async function evaluateLesson(lessonPlan, classData = "", modelHint) {
   const userPrompt = `Evaluate this Malaysian primary school KSSR lesson plan like a mentor teacher or lecturer reviewing an RPH.
 
 Return EXACT JSON:
@@ -1006,7 +1006,7 @@ ${classData || "No class records supplied."}
 Lesson plan:
 ${lessonPlan}`;
 
-  const ai = await callAI(buildSystemPrompt("evaluate a KSSR lesson document with highlight comments and rubric scoring"), userPrompt);
+  const ai = await callAI(buildSystemPrompt("evaluate a KSSR lesson document with highlight comments and rubric scoring"), userPrompt, modelHint);
   const result = { ...normalizeEvaluateResponse(ai.data, lessonPlan, classData), aiSource: buildAiSource(ai) };
   // Extract rubric if the AI returned it.
   if (ai.data && ai.data.rubric) {
@@ -1295,7 +1295,7 @@ export function parseCopilotActions(reply, question = "", classes = []) {
   return { reply: cleaned, actions };
 }
 
-export async function askCopilot(question, context) {
+export async function askCopilot(question, context, modelHint) {
   const contextText = buildCopilotContext(context);
   const trimmedQuestion = String(question || "").trim();
   if (!trimmedQuestion) {
@@ -1323,7 +1323,7 @@ Do NOT add action tags for general knowledge, casual chat, or grammar explanatio
 WORKSPACE CONTEXT (for reference only when explicitly requested):
 ${contextText}`;
 
-  const ai = await callAIText(systemPrompt, `User question: ${trimmedQuestion}`);
+  const ai = await callAIText(systemPrompt, `User question: ${trimmedQuestion}`, modelHint);
 
   if (ai.fallbackTriggered || !ai.text) {
     const heuristic = copilotHeuristicResponse(trimmedQuestion, contextText);

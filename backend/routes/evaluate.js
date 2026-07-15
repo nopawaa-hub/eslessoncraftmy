@@ -34,7 +34,8 @@ router.post("/", requireDatabase, upload.single("file"), async (req, res, next) 
     const lessonText = requireLessonText(await resolveLessonText(req));
     const studentRecords = await StudentRecord.find({ teacherId: req.user._id }).sort({ updatedAt: -1 }).limit(50);
     const classData = String(req.body?.classData || "").trim() || summarizeClassData(studentRecords);
-    const result = await evaluateLesson(lessonText, classData);
+    const modelHint = String(req.body?.model || "").trim() || undefined;
+    const result = await evaluateLesson(lessonText, classData, modelHint);
     let lessonPlanId = req.body?.lessonPlanId;
 
     if (!lessonPlanId) {

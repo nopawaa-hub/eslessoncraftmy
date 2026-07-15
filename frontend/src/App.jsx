@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { DocxViewer, PdfViewer, TextViewer } from "./DocViewer.jsx";
 import {
   AlertTriangle,
@@ -15,6 +15,7 @@ import {
   ChevronRight,
   ClipboardCheck,
   Clock,
+  Compass,
   Download,
   FileCheck,
   FileText,
@@ -673,6 +674,12 @@ function App() {
   const [assessments, setAssessments] = useState([]);
   const [selectedClassId, setSelectedClassId] = useState("");
   const [copilotFormDraft, setCopilotFormDraft] = useState(null);
+  const [tourOpen, setTourOpen] = useState(false);
+  const [tourStep, setTourStep] = useState(0);
+  const [tourBranch, setTourBranch] = useState(null); // "class" | "planning" | "full"
+  const tourStartedRef = useRef(false);
+  const startTour = useCallback(() => { setTourStep(0); setTourBranch(null); setTourOpen(true); }, []);
+  const TUTORIAL_KEY = "lessoncraft-tutorial-seen";
   const isDemoUser = currentUser?.email === "demo@test.com" || currentUser?.role === "demo" || String(currentUser?._id) === "000000000000000000000001";
   const liveMode = typeof window !== "undefined" && (window.location.pathname.startsWith("/testing") || window.location.search.includes("live=1") || (currentUser && !isDemoUser));
 
@@ -725,6 +732,17 @@ function App() {
     document.documentElement.classList.toggle("dark", theme === "dark");
     localStorage.setItem("lessoncraft-theme", theme);
   }, [theme]);
+
+  // Auto-launch the tutorial on a user's first visit (per browser, replayable via the
+  // "?" help button in the topbar or the "Take a tour" button in Settings).
+  useEffect(() => {
+    if (!currentUser || !authChecked) return;
+    if (tourStartedRef.current) return;
+    if (localStorage.getItem(TUTORIAL_KEY)) return;
+    tourStartedRef.current = true;
+    const timer = setTimeout(() => startTour(), 600);
+    return () => clearTimeout(timer);
+  }, [currentUser, authChecked, startTour, TUTORIAL_KEY]);
 
   useEffect(() => {
     apiRequest("/health")
@@ -809,6 +827,7 @@ function App() {
     currentUser,
     setCurrentUser,
     handleLogout,
+    startTour,
   };
 
   if (!authChecked) {
@@ -838,7 +857,348 @@ function App() {
         {copilotOpen ? <X /> : <Sparkles />}
       </button>
       <AICopilot open={copilotOpen} setOpen={setCopilotOpen} setActivePage={setActivePage} setCopilotFormDraft={setCopilotFormDraft} classes={classes} />
+      {tourOpen && (
+        <Tour
+          step={tourStep}
+          branch={tourBranch}
+          setActivePage={setActivePage}
+          onChooseBranch={(b) => { setTourBranch(b); setTourStep(0); }}
+          onNext={() => {
+            const steps = currentTourSteps(tourBranch);
+            if (tourStep < steps.length - 1) setTourStep((s) => s + 1);
+            else { localStorage.setItem(TUTORIAL_KEY, "1"); setTourOpen(false); }
+          }}
+          onPrev={() => setTourStep((s) => Math.max(0, s - 1))}
+          onClose={() => { localStorage.setItem(TUTORIAL_KEY, "1"); setTourOpen(false); }}
+        />
+      )}
     </div>
+  );
+}
+
+/* ============================================================
+   Product tour — spotlight coachmarks. Auto-launches once for
+   new users (see App() auto-launch effect) and replays via the
+   topbar "?" button or the Settings "Take a tour" button.
+   ============================================================ */
+/* ============================================================
+   Product tour — a branching UI walkthrough led by a guide
+   cursor (a purple pointer that glides to each highlighted
+   element). The user's native OS cursor is never replaced.
+   Launches once for new users and replays via Settings →
+   "Take a tour".
+   ============================================================ */
+
+// Centered intro/choice/done steps shown before a branch is picked.
+const TOUR_INTRO = [
+  {
+    id: "welcome",
+    title: "Welcome to LessonCraft MY 👋",
+    body: "Your all-in-one ESL teaching workspace for the Malaysia classroom — lessons, PBD assessment, materials, analytics and an AI copilot.",
+  },
+  {
+    id: "choice",
+    title: "How would you like to get started?",
+    body: "Pick a path and I'll walk you through the most effective way to begin. You can restart this tour any time from Settings → Take a tour.",
+  },
+];
+
+const TOUR_DONE = {
+  id: "done",
+  title: "You're all set! 🎉",
+  body: "That's the core flow. Open the AI Copilot anytime to draft lessons, extract forms, or ask anything. Happy teaching!",
+};
+
+// Each branch is a guided flow of targeted steps. Mirrors the dashboard's
+// own onboarding hint: "Start by creating a class roster — your AI
+// lesson-planning and PBD tracking will flow from there."
+const TUTORIAL_FLOWS = {
+  class: [
+    {
+      id: "nav-classes",
+      selector: '[data-tour="nav-classes"]',
+      title: "Open Classes",
+      body: "First, let's set up a class. Click Classes in the sidebar — your AI lesson-planning and PBD tracking flow from a roster.",
+    },
+    {
+      id: "add-class",
+      selector: ".page-toolbar .secondary-btn, .classes-toolbar .secondary-btn, .toolbar .secondary-btn",
+      page: "classes",
+      title: "Add a class",
+      body: "Click Add class to open the roster form.",
+    },
+    {
+      id: "class-form",
+      selector: ".class-form, form .field",
+      page: "classes",
+      title: "Fill in the details",
+      body: "Enter the class name, year, subject and pupil proficiency. This context powers your AI planning and analytics.",
+    },
+    {
+      id: "save-class",
+      selector: "button.primary-btn.full",
+      page: "classes",
+      title: "Save the roster",
+      body: "Save to create the class. You can come back here any time to add pupils and edit details.",
+    },
+    {
+      id: "plan-for-class",
+      selector: ".page-toolbar .primary-btn",
+      page: "classes",
+      title: "Now plan a lesson",
+      body: "With a class selected, Plan for class jumps straight into the Lesson Planner with context applied.",
+    },
+  ],
+  planning: [
+    {
+      id: "open-planner",
+      selector: '[data-tour="nav-lesson-planner"]',
+      title: "Open the Lesson Planner",
+      body: "Jump straight into lesson planning — Lesson Planner AI in the sidebar.",
+    },
+    {
+      id: "planner-form",
+      selector: ".lesson-form, form .field",
+      page: "lesson-planner",
+      title: "Describe your lesson",
+      body: "Enter the topic and class details. Use the AI Quick Form Fill box if you want the Copilot to draft the fields for you.",
+    },
+    {
+      id: "generate",
+      selector: "button.primary-btn.full",
+      page: "lesson-planner",
+      title: "Generate with AI",
+      body: "Tap Generate RPH with AI to produce your KSSR English lesson plan. Review and edit the result, then refine with the Copilot.",
+    },
+  ],
+  full: [
+    {
+      id: "sidebar",
+      selector: '[data-tour="sidebar"]',
+      title: "Navigate anywhere",
+      body: "Use this sidebar to jump between Dashboard, Classes, Lesson Planner, Evaluation Engine, PBD, Timetable, Materials, Analytics and Reports.",
+    },
+    {
+      id: "hero",
+      selector: ".hero-panel",
+      page: "dashboard",
+      title: "Your command center",
+      body: "The Dashboard surfaces today's lessons, class alerts and quick actions. Visit it first each morning.",
+    },
+    {
+      id: "quick-actions",
+      selector: ".quick-action",
+      page: "dashboard",
+      title: "One-tap shortcuts",
+      body: "These quick-action buttons launch common tasks instantly — generate a lesson plan, open the timetable, record a pupil.",
+    },
+    {
+      id: "search",
+      selector: '[data-tour="search"]',
+      title: "Find anything fast",
+      body: "Search pupils, RPH, materials and classes with Ctrl+K (or Cmd+K on Mac). Results update as you type.",
+    },
+    {
+      id: "theme",
+      selector: '[data-tour="theme-toggle"]',
+      title: "Light or dark",
+      body: "Toggle the theme any time — your choice is remembered for next visit.",
+    },
+    {
+      id: "copilot",
+      selector: ".copilot-fab",
+      title: "Meet your AI Copilot",
+      body: "Click this button to open the AI Copilot. Ask it to draft lessons, extract form data, suggest interventions — anything.",
+    },
+  ],
+};
+
+// Build the flat ordered step list for the current branch.
+// Before a branch is chosen, only the intro steps run (welcome → choice);
+// after a user picks a path, steps are intro[0] (welcome) is skipped because
+// starting a branch resets step to the choice index — see startTour + onChoose.
+function currentTourSteps(branch) {
+  if (!branch) return TOUR_INTRO; // [welcome, choice] only, until a path is picked
+  return [...TUTORIAL_FLOWS[branch], TOUR_DONE];
+}
+
+function Tour({ step, branch, setActivePage, onChooseBranch, onNext, onPrev, onClose }) {
+  const steps = currentTourSteps(branch);
+  const current = steps[step] || steps[0];
+  const isCentered = !current.selector;
+  const isChoice = current.id === "choice";
+  const nextBtnRef = useRef(null);
+  const [rect, setRect] = useState({ top: 0, left: 0, w: 0, h: 0, ready: false });
+  const [tipPos, setTipPos] = useState({ top: 0, left: 0 });
+
+  // Re-read the target's rect and update the highlight/cursor/callout — no
+  // scrolling. Used by resize/scroll so the spotlight tracks the element
+  // without yanking the user's scroll position back to center.
+  const capture = useCallback(() => {
+    if (isCentered) return;
+    // A step may list several candidate selectors (comma-separated); take the
+    // first that resolves, so the tour degrades gracefully if a view differs.
+    const el = document.querySelector(current.selector);
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const pad = 6;
+    setRect({ top: r.top - pad, left: r.left - pad, w: r.width + pad * 2, h: r.height + pad * 2, ready: true });
+    const below = r.top < window.innerHeight / 2;
+    requestAnimationFrame(() => {
+      const tip = document.querySelector(".tour-callout");
+      const tipH = tip?.offsetHeight || 190;
+      const tipW = tip?.offsetWidth || 360;
+      const top = below ? r.bottom + pad + 16 : Math.max(16, r.top - pad - tipH - 16);
+      const left = Math.max(16, Math.min(window.innerWidth - tipW - 16, r.left + r.width / 2 - tipW / 2));
+      setTipPos({ top, left });
+    });
+  }, [current, isCentered]);
+
+  // Resolve + scroll the target into view, then measure on the next frame.
+  // Uses instant scroll so the element has settled by the time we read its
+  // rect — reading right after a *smooth* scroll captures a transient
+  // mid-scroll position and the cursor lands off-target. The .page-wrap
+  // subtree remounts on navigation (ErrorBoundary is keyed by activePage), so
+  // we re-measure across a few frames after a nav step.
+  const measure = useCallback(() => {
+    if (isCentered) { setRect((s) => ({ ...s, ready: false })); return; }
+    if (current.page && setActivePage) setActivePage(current.page);
+    const el = document.querySelector(current.selector);
+    // Target not in the DOM yet (mid page-navigation): leave the cursor where
+    // it is and let the next scheduled re-measure glide it in once the new
+    // page renders — don't zero the rect, which would make it pop.
+    if (!el) return;
+    el.scrollIntoView({ block: "center", behavior: "auto" });
+    requestAnimationFrame(() => capture());
+  }, [current, isCentered, setActivePage, capture]);
+
+  useEffect(() => {
+    // NB: do NOT reset rect here. Keeping the previous rect (and ready=false
+    // for centered steps) means the highlight + cursor stay mounted across
+    // targeted steps, so their CSS transitions actually run — the ring morphs
+    // and the cursor glides to the next target. Resetting would unmount them
+    // and the glide would never fire.
+    measure();
+    const t1 = setTimeout(measure, 30);
+    const t2 = setTimeout(measure, 150);
+    const t3 = setTimeout(measure, 400);
+    const onResize = () => capture();
+    const onScroll = () => capture();
+    window.addEventListener("resize", onResize);
+    window.addEventListener("scroll", onScroll, true);
+    return () => {
+      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("scroll", onScroll, true);
+    };
+  }, [step, branch, measure]);
+
+  // Keyboard: Esc → close, → next, ← prev (disabled on the choice screen).
+  useEffect(() => {
+    if (isChoice) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") { e.preventDefault(); onClose(); }
+      else if (e.key === "ArrowRight") { e.preventDefault(); onNext(); }
+      else if (e.key === "ArrowLeft") { e.preventDefault(); onPrev(); }
+    };
+    window.addEventListener("keydown", onKey);
+    nextBtnRef.current?.focus();
+    return () => window.removeEventListener("keydown", onKey);
+  }, [step, isChoice, onNext, onPrev, onClose]);
+
+  return (
+    <div className={`tour-overlay ${isCentered ? "is-centered" : ""}`} role="dialog" aria-modal="true" aria-label={current.title}>
+      {/* Transparent blocker so the user can't click underlying controls mid-tour.
+          Clicking it dismisses the tour (mark seen). */}
+      <div className="tour-blocker" onClick={onClose} />
+      {!isCentered && rect.ready && (
+        <>
+          <div className="tour-highlight" style={{ top: rect.top, left: rect.left, width: rect.w, height: rect.h }} />
+          <GuideCursor x={rect.left} y={rect.top} />
+        </>
+      )}
+      {isCentered && !isChoice && (
+        <CenteredCallout step={step} total={steps.length} current={current} onNext={onNext} onPrev={onPrev} onClose={onClose} nextBtnRef={nextBtnRef} />
+      )}
+      {isChoice && (
+        <div className="tour-choice">
+          <div className="tour-choice-card">
+            <span className="tour-counter">Step {step + 1} of {steps.length}</span>
+            <h3 className="tour-title">{current.title}</h3>
+            <p className="tour-body">{current.body}</p>
+            <div className="tour-choice-grid">
+              <button type="button" className="tour-choice-btn recommended" onClick={() => onChooseBranch("class")}>
+                <Users /> Set up a class first
+                <small>Recommended — your planning &amp; PBD flow from a roster</small>
+              </button>
+              <button type="button" className="tour-choice-btn" onClick={() => onChooseBranch("planning")}>
+                <Wand2 /> Jump into lesson planning
+                <small>Generate an RPH with AI right now</small>
+              </button>
+              <button type="button" className="tour-choice-btn" onClick={() => onChooseBranch("full")}>
+                <LayoutDashboard /> Full tour
+                <small>See the whole workspace — sidebar, dashboard, copilot</small>
+              </button>
+            </div>
+            <div className="tour-actions tour-choice-foot">
+              <button type="button" className="tour-skip" onClick={onClose}>Skip tour</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {!isCentered && rect.ready && (
+        <div className="tour-callout" style={{ top: tipPos.top, left: tipPos.left }}>
+          <span className="tour-counter">Step {step + 1} of {steps.length}</span>
+          <h3 className="tour-title">{current.title}</h3>
+          <p className="tour-body">{current.body}</p>
+          <div className="tour-actions">
+            <button type="button" className="tour-skip" onClick={onClose}>Skip tour</button>
+            <span className="tour-spacer" />
+            {step > 0 && <button type="button" className="secondary-btn" onClick={onPrev}><ChevronLeft /> Back</button>}
+            <button type="button" className="primary-btn" ref={nextBtnRef} onClick={onNext}>
+              {step < steps.length - 1 ? (<><ChevronRight /> Next</>) : (<><CheckCircle2 /> Done</>)}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CenteredCallout({ step, total, current, onNext, onPrev, onClose, nextBtnRef }) {
+  return (
+    <div className="tour-centered-card">
+      <span className="tour-counter">Step {step + 1} of {total}</span>
+      <h3 className="tour-title">{current.title}</h3>
+      <p className="tour-body">{current.body}</p>
+      <div className="tour-actions">
+        <button type="button" className="tour-skip" onClick={onClose}>{step === 0 ? "Skip tour" : "Skip"}</button>
+        <span className="tour-spacer" />
+        {step > 0 && <button type="button" className="secondary-btn" onClick={onPrev}><ChevronLeft /> Back</button>}
+        <button type="button" className="primary-btn" ref={nextBtnRef} onClick={onNext}>
+          {step < total - 1 ? (<><ChevronRight /> Next</>) : (<><CheckCircle2 /> Done</>)}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// The purple guide cursor — a pointer arrow that glides to each target's
+// top-left corner (tip resting on the highlighted element, like a real cursor
+// hovering it). This IS the tutorial guide; the user's real OS cursor is never
+// touched. The SVG tip sits at viewBox (4, 2.5) → (5, 3)px in the 30px box, so
+// we offset by exactly that to land the tip on (x, y).
+function GuideCursor({ x, y }) {
+  return (
+    <svg
+      className="guide-cursor"
+      width="30" height="30" viewBox="0 0 24 24" fill="none"
+      aria-hidden="true"
+      style={{ transform: `translate3d(${x - 5}px, ${y - 3}px, 0)` }}
+    >
+      <path d="M4 2.5 L4 20 L9 15.5 L12.2 22 L15 20.7 L11.8 14.2 L18.5 14 Z"
+        fill="var(--primary, #7c3aed)" stroke="white" strokeWidth="1.4" strokeLinejoin="round" />
+    </svg>
   );
 }
 
@@ -1069,7 +1429,7 @@ function Sidebar({ activePage, setActivePage, collapsed, setCollapsed, mobileOpe
   return (
     <>
       {mobileOpen && <button className="mobile-backdrop" onClick={() => setMobileOpen(false)} aria-label="Close menu" />}
-      <aside className={`sidebar sidebar-dock ${mobileOpen ? "is-open" : ""}`}>
+      <aside className={`sidebar sidebar-dock ${mobileOpen ? "is-open" : ""}`} data-tour="sidebar">
         <div className="dock-logo">
           <img src="/logo.svg" alt="ESLessonCraft MY" />
         </div>
@@ -1093,6 +1453,7 @@ function Sidebar({ activePage, setActivePage, collapsed, setCollapsed, mobileOpe
                 key={item.id}
                 ref={(el) => (itemRefs.current[item.id] = el)}
                 className={`dock-item ${active ? "active" : ""}`}
+                data-tour={`nav-${item.id}`}
                 onClick={() => { setActivePage(item.id); setMobileOpen(false); }}
                 onMouseEnter={() => {
                   const activeEl = itemRefs.current[effectiveActivePage];
@@ -1189,7 +1550,7 @@ function TopBar({ setMobileOpen, setActivePage, backendStatus, theme, setTheme, 
   return (
     <header className="topbar">
       <button type="button" className="icon-btn mobile-only" onClick={() => setMobileOpen(true)}><Menu /></button>
-      <div className={`search-box ${showResults && results.length ? "has-results" : ""}`} ref={searchRef}>
+      <div className={`search-box ${showResults && results.length ? "has-results" : ""}`} ref={searchRef} data-tour="search">
         <Search />
         <input
           placeholder="Search pupils, RPH, materials, classes…"
@@ -1218,7 +1579,7 @@ function TopBar({ setMobileOpen, setActivePage, backendStatus, theme, setTheme, 
         )}
       </div>
       <button type="button" className="icon-btn create-btn" aria-label="Search" title="Search pupils, RPH, materials, classes…" onClick={() => searchRef.current?.querySelector("input")?.focus()}><Search /></button>
-      <button type="button" className="icon-btn" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>{theme === "dark" ? <Sun /> : <Moon />}</button>
+      <button type="button" className="icon-btn" data-tour="theme-toggle" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>{theme === "dark" ? <Sun /> : <Moon />}</button>
       <button type="button" className="icon-btn notification" aria-label="Notifications" onMouseDown={(event) => event.preventDefault()}><Bell /><span /></button>
       <div className="profile">
         {currentUser?.picture ? <img src={currentUser.picture} alt="" /> : <div>{initials}</div>}
@@ -4967,7 +5328,7 @@ function EvaluatePage({ lessons = [], liveMode = false }) {
   );
 }
 
-function SettingsPage({ backendStatus, theme, setTheme, currentUser, setCurrentUser, handleLogout }) {
+function SettingsPage({ backendStatus, theme, setTheme, currentUser, setCurrentUser, handleLogout, startTour }) {
   const [profileDraft, setProfileDraft] = useState({
     name: currentUser?.name || "",
     school: currentUser?.school || "",
@@ -5002,7 +5363,7 @@ function SettingsPage({ backendStatus, theme, setTheme, currentUser, setCurrentU
           <button className="primary-btn full" onClick={saveProfile}><Save /> Save profile</button>
           {saveState && <p className="body-copy">{saveState}</p>}
         </Card>
-        <Card title="System"><Metric title="Backend" value={backendStatus} note="ESLessonCraft API" tone={backendStatus.includes("Offline") ? "rose" : "emerald"} /><button className="secondary-btn full" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>{theme === "dark" ? <Sun /> : <Moon />} Change theme</button><button className="secondary-btn full" onClick={handleLogout}><LogOut /> Sign out</button></Card>
+        <Card title="System"><Metric title="Backend" value={backendStatus} note="ESLessonCraft API" tone={backendStatus.includes("Offline") ? "rose" : "emerald"} /><button className="secondary-btn full" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>{theme === "dark" ? <Sun /> : <Moon />} Change theme</button><button className="secondary-btn full" onClick={startTour}><Compass /> Take a tour</button><button className="secondary-btn full" onClick={handleLogout}><LogOut /> Sign out</button></Card>
       </section>
     </div>
   );

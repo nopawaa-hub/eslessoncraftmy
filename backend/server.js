@@ -22,7 +22,7 @@ import classesRouter from "./routes/classes.js";
 import studentsRouter from "./routes/students.js";
 import materialsRouter from "./routes/materials.js";
 import copilotRouter from "./routes/copilot.js";
-import { getConfiguredProvider } from "./services/aiProvider.js";
+import { getConfiguredProvider, getAvailableModels } from "./services/aiProvider.js";
 import { requireAuth } from "./services/auth.js";
 import { connectDatabase } from "./services/db.js";
 
@@ -62,6 +62,7 @@ app.get("/health", (_req, res) => {
     app: "ESLessonCraft MY",
     aiProvider: getConfiguredProvider(),
     aiMode: getConfiguredProvider(),
+    availableModels: getAvailableModels(),
     database: "mongodb",
   });
 });

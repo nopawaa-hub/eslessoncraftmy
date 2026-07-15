@@ -27,6 +27,19 @@ export function getConfiguredProvider() {
   return isNeuralWattConfigured() ? "gemini+neuralwatt (round-robin)" : "gemini";
 }
 
+// Lists the AI models currently available based on configured API keys.
+// Used by the /health endpoint so the frontend Settings page can populate
+// its model selector with only real, enabled options.
+export function getAvailableModels() {
+  const models = [
+    { id: "gemini", label: `Gemini (${GEMINI_MODEL})`, provider: "gemini" },
+  ];
+  if (isNeuralWattConfigured()) {
+    models.push({ id: "neuralwatt", label: `GLM (${NEURALWATT_MODEL})`, provider: "neuralwatt" });
+  }
+  return models;
+}
+
 export function safeParseJson(rawText) {
   if (!rawText || typeof rawText !== "string") {
     throw new Error("AI response was empty.");
@@ -189,8 +202,29 @@ async function callNeuralWatt(systemPrompt, userPrompt) {
 // Round-robin dispatcher: alternates between Gemini and NeuralWatt on each call.
 // If the selected provider fails, the other is tried as a fallback before
 // giving up. When only one provider is configured, it's used exclusively.
-async function callAIWithRoundRobin(systemPrompt, userPrompt) {
+//
+// modelHint (optional): if the frontend sends a model preference (e.g. "gemini"
+// or "neuralwatt"), the dispatcher tries that provider first. Unknown/unsupported
+// hints are ignored and the normal round-robin is used.
+async function callAIWithRoundRobin(systemPrompt, userPrompt, modelHint) {
   const useNeuralWatt = isNeuralWattConfigured();
+
+  // If a valid model hint was provided, try that provider first.
+  if (modelHint && typeof modelHint === "string") {
+    const hint = modelHint.toLowerCase();
+    if (hint === "neuralwatt" || hint === "glm") {
+      if (useNeuralWatt) {
+        const hintedResult = await callNeuralWatt(systemPrompt, userPrompt);
+        if (!hintedResult.fallbackTriggered && hintedResult.text) return hintedResult;
+        // Fall through to round-robin as fallback.
+      }
+    } else if (hint === "gemini") {
+      const hintedResult = await callGemini(systemPrompt, userPrompt);
+      if (!hintedResult.fallbackTriggered && hintedResult.text) return hintedResult;
+      // Fall through to round-robin as fallback.
+    }
+    // Unknown hint — ignore and use round-robin below.
+  }
 
   // When only one provider is configured, skip round-robin.
   if (!useNeuralWatt) {
@@ -224,15 +258,15 @@ async function callAIWithRoundRobin(systemPrompt, userPrompt) {
   return primaryResult;
 }
 
-export async function callAI(systemPrompt, userPrompt) {
-  const result = await callAIWithRoundRobin(systemPrompt, userPrompt);
+export async function callAI(systemPrompt, userPrompt, modelHint) {
+  const result = await callAIWithRoundRobin(systemPrompt, userPrompt, modelHint);
   return { ...result, data: result.fallbackTriggered ? null : safeParseJson(result.text) };
 }
 
 // Free-text AI call for conversational responses (copilot). Returns raw text
 // instead of trying to parse JSON, so the model can answer naturally.
-export async function callAIText(systemPrompt, userPrompt) {
-  const result = await callAIWithRoundRobin(systemPrompt, userPrompt);
+export async function callAIText(systemPrompt, userPrompt, modelHint) {
+  const result = await callAIWithRoundRobin(systemPrompt, userPrompt, modelHint);
   return {
     text: result.text || "",
     provider: result.provider,

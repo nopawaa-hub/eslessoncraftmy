@@ -67,6 +67,7 @@ router.post("/", requireDatabase, async (req, res, next) => {
       if (customSow) sowSource = { ...customSow.toObject(), sourceType: "custom" };
     }
 
+    const modelHint = String(req.body?.model || "").trim() || undefined;
     const result = await generateLesson({
       topic,
       year: effectiveYear,
@@ -90,7 +91,7 @@ router.post("/", requireDatabase, async (req, res, next) => {
       classroomEnvironment,
       teachingNotes,
       sowSource,
-    });
+    }, modelHint);
 
     const classContext = schoolClass ? {
       classId: schoolClass._id,

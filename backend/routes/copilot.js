@@ -35,7 +35,8 @@ router.post("/ask", requireDatabase, async (req, res, next) => {
     if (question.length > 2000) return res.status(400).json({ error: "Question is too long (max 2000 characters)." });
 
     const context = await gatherTeacherContext(req.user);
-    const result = await askCopilot(question, context);
+    const modelHint = String(req.body?.model || "").trim() || undefined;
+    const result = await askCopilot(question, context, modelHint);
     res.json(result);
   } catch (error) {
     next(error);
