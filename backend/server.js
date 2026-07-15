@@ -28,6 +28,11 @@ import { connectDatabase } from "./services/db.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+// Bounded retry for EADDRINUSE: instead of relistening forever (which fills the
+// logs with restart spam while the port stays held), try a few times with
+// exponential backoff, then exit so the process manager can decide what to do.
+const MAX_PORT_RETRIES = 5;
+const PORT_RETRY_BASE_DELAY_MS = 1000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const frontendDistPath = path.resolve(__dirname, "../frontend/dist");
@@ -115,19 +120,29 @@ connectDatabase()
     console.warn("Backend started without MongoDB. Persistent endpoints will return JSON errors until MongoDB is available.");
   })
   .finally(() => {
+    let retryCount = 0;
     const server = app.listen(PORT, () => {
       console.log(`ESLessonCraft MY backend running on http://localhost:${PORT}`);
       console.log(`AI provider: ${getConfiguredProvider()}`);
     });
     server.on("error", (err) => {
-      if (err.code === "EADDRINUSE") {
-        console.error(`Port ${PORT} is already in use. Retrying in 1s...`);
-        setTimeout(() => {
-          server.close();
-          server.listen(PORT);
-        }, 1000);
-      } else {
+      if (err.code !== "EADDRINUSE") {
         console.error("Server listen error:", err);
+        process.exit(1);
+        return;
       }
+      retryCount += 1;
+      if (retryCount > MAX_PORT_RETRIES) {
+        console.error(
+          `Port ${PORT} is still in use after ${MAX_PORT_RETRIES} retries. Exiting — free the port (e.g. stop the other node server.js) and restart.`,
+        );
+        process.exit(1);
+        return;
+      }
+      const delay = PORT_RETRY_BASE_DELAY_MS * 2 ** (retryCount - 1);
+      console.error(`Port ${PORT} is already in use. Retrying ${retryCount}/${MAX_PORT_RETRIES} in ${delay}ms...`);
+      server.close(() => {
+        setTimeout(() => server.listen(PORT), delay);
+      });
     });
   });
