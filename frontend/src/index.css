@@ -2250,11 +2250,19 @@ html.dark body #root .modal-backdrop.gaussian-blur-modal {
   50%      { box-shadow: 0 0 0 3px var(--primary), 0 0 22px 5px rgba(124, 58, 237, 0.55); }
 }
 
-/* Transparent click-blocker. Dismissing the tour marks it seen. */
+/* Click-blocker + light dim. A transparent blocker let the dashboard's
+   animated orbs + body copy bleed through behind the callout (the "bs text"
+   look), so we add a soft dim: content stays faintly visible but the
+   highlighted target + callout now read clearly. */
 .tour-blocker {
   position: absolute;
   inset: 0;
   z-index: 1;
+  background: rgba(15, 12, 22, 0.45);
+  backdrop-filter: blur(2px);
+}
+html.dark .tour-blocker {
+  background: rgba(4, 3, 12, 0.6);
 }
 
 /* Pulsing highlight ring over the target element. */
@@ -9341,7 +9349,9 @@ html:not(.dark) body #root .app-root[data-page="dashboard"] .hero-panel p,
 }
 .app-root[data-page="dashboard"] .quick-actions-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* auto-fit so the grid drops to 2 then 1 column as the viewport narrows,
+     instead of the old hardcoded 3 columns that crammed on phones. */
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
 }
 .app-root[data-page="dashboard"] .quick-action {
@@ -9670,9 +9680,13 @@ html.dark .app-root[data-page="dashboard"] .ai-note {
 html.dark .app-root[data-page="dashboard"] .goal span { color: #e2e8f0 !important; }
 html.dark .app-root[data-page="dashboard"] .goal strong { color: #64748b !important; }
 
-/* Responsive: quick actions collapse to 1 col on small screens */
-@media (max-width: 768px) {
-  .app-root[data-page="dashboard"] .quick-actions-grid { grid-template-columns: 1fr; }
+/* Responsive: quick actions collapse to 1 col + tighter padding on small screens */
+@media (max-width: 820px) {
+  .app-root[data-page="dashboard"] .quick-actions-grid { grid-template-columns: 1fr; gap: 12px; }
+  .app-root[data-page="dashboard"] .quick-action { padding: 14px; gap: 12px; }
+  .app-root[data-page="dashboard"] .qa-icon { width: 44px; height: 44px; }
+  .app-root[data-page="dashboard"] .qa-text strong { font-size: 0.95rem; }
+  .app-root[data-page="dashboard"] .qa-text small { font-size: 0.7rem; }
 }
 
 /* ============================================================
