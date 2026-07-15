@@ -2228,6 +2228,200 @@ html.dark body #root .modal-backdrop.gaussian-blur-modal {
   filter: none !important;
 }
 
+/* ============================================================
+   Product tour — branching UI walkthrough led by a guide cursor.
+   A transparent blocker prevents underlying clicks mid-tour; a
+   pulsing ring highlights the real target element, and a purple
+   arrow glides to it. The user's native OS cursor is untouched.
+   ============================================================ */
+.tour-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000000;
+  animation: tourFade 180ms ease both;
+}
+@keyframes tourFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes tourTipIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes tourRingPulse {
+  0%, 100% { box-shadow: 0 0 0 1px var(--primary), 0 0 14px 2px rgba(124, 58, 237, 0.35); }
+  50%      { box-shadow: 0 0 0 3px var(--primary), 0 0 22px 5px rgba(124, 58, 237, 0.55); }
+}
+
+/* Transparent click-blocker. Dismissing the tour marks it seen. */
+.tour-blocker {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* Pulsing highlight ring over the target element. */
+.tour-highlight {
+  position: absolute;
+  border-radius: 14px;
+  pointer-events: none;
+  z-index: 2;
+  animation: tourRingPulse 1.6s ease-in-out infinite;
+  transition: top 320ms cubic-bezier(0.22, 1, 0.36, 1),
+              left 320ms cubic-bezier(0.22, 1, 0.36, 1),
+              width 320ms cubic-bezier(0.22, 1, 0.36, 1),
+              height 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* The purple guide-cursor arrow. Glides to each target's corner.
+   Position is driven by transform (set inline); only transition it. */
+.guide-cursor {
+  position: absolute;
+  top: 0; left: 0;
+  width: 30px; height: 30px;
+  margin: 0;
+  pointer-events: none;
+  z-index: 4;
+  filter: drop-shadow(0 3px 6px rgba(76, 29, 149, 0.4));
+  transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Explanatory callout card near the target. */
+.tour-callout {
+  position: absolute;
+  display: grid;
+  gap: 8px;
+  width: min(360px, 92vw);
+  padding: 18px 20px;
+  border: 1px solid color-mix(in srgb, var(--primary) 32%, var(--border));
+  border-radius: 18px;
+  background: var(--card, #fff);
+  color: var(--foreground, #1f1934);
+  box-shadow: 0 24px 70px rgba(6, 10, 24, 0.34);
+  animation: tourTipIn 200ms ease 120ms both;
+  backdrop-filter: blur(6px);
+  /* Glide between targets in sync with the highlight ring; the callout now
+     stays mounted across steps (see Tour.measure), so it transitions instead
+     of remounting. */
+  transition: top 320ms cubic-bezier(0.22, 1, 0.36, 1),
+              left 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 3;
+}
+
+/* Centered card for welcome / done steps. */
+.tour-centered-card {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  gap: 10px;
+  width: min(440px, 92vw);
+  padding: 28px;
+  border: 1px solid color-mix(in srgb, var(--primary) 32%, var(--border));
+  border-radius: 22px;
+  background: var(--card, #fff);
+  color: var(--foreground, #1f1934);
+  box-shadow: 0 28px 80px rgba(31, 25, 52, 0.32);
+  animation: tourTipIn 220ms ease both;
+  z-index: 3;
+  text-align: center;
+}
+
+/* Branch-choice screen. */
+.tour-choice {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  z-index: 3;
+}
+.tour-choice-card {
+  display: grid;
+  gap: 14px;
+  width: min(560px, 94vw);
+  padding: 28px;
+  border: 1px solid color-mix(in srgb, var(--primary) 32%, var(--border));
+  border-radius: 22px;
+  background: var(--card, #fff);
+  color: var(--foreground, #1f1934);
+  box-shadow: 0 28px 80px rgba(31, 25, 52, 0.32);
+  animation: tourTipIn 220ms ease both;
+  text-align: center;
+}
+.tour-choice-grid {
+  display: grid;
+  gap: 10px;
+  text-align: left;
+  margin-top: 4px;
+}
+.tour-choice-btn {
+  display: grid;
+  gap: 2px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--card) 80%, transparent);
+  color: var(--foreground);
+  font-weight: 700;
+  font-size: 0.98rem;
+  cursor: pointer;
+  transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+}
+.tour-choice-btn small {
+  font-weight: 400;
+  font-size: 0.8rem;
+  color: color-mix(in srgb, var(--foreground) 60%, transparent);
+}
+.tour-choice-btn:hover {
+  transform: translateY(-1px);
+  border-color: var(--primary);
+  box-shadow: 0 10px 24px -16px rgba(124, 58, 237, 0.5);
+}
+.tour-choice-btn.recommended {
+  border-color: color-mix(in srgb, var(--primary) 50%, var(--border));
+  background: color-mix(in srgb, var(--primary) 8%, var(--card));
+}
+.tour-choice-foot { justify-content: center; }
+
+/* Shared callout typography + actions. */
+.tour-counter {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--primary, #7c3aed);
+}
+.tour-title { margin: 0; font-size: 1.12rem; font-weight: 800; letter-spacing: -0.01em; }
+.tour-body { margin: 0; font-size: 0.92rem; line-height: 1.55; color: color-mix(in srgb, var(--foreground) 80%, transparent); }
+.tour-actions { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.tour-spacer { flex: 1; }
+.tour-skip {
+  border: 0; background: transparent; cursor: pointer;
+  color: color-mix(in srgb, var(--foreground) 60%, transparent);
+  font-size: 0.85rem; font-weight: 600; padding: 6px 8px; border-radius: 10px;
+}
+.tour-skip:hover { color: var(--foreground); background: color-mix(in srgb, var(--muted, #999) 12%, transparent); }
+
+@media (max-width: 640px) {
+  /* Callout becomes a bottom sheet on phones for readability. */
+  .tour-callout {
+    width: auto;
+    left: 12px !important; right: 12px; top: auto !important;
+    bottom: 12px;
+    animation: tourTipBottom 200ms ease both;
+  }
+  @keyframes tourTipBottom {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Keep the tour usable but disable its motion/animations. */
+  .tour-highlight { animation: none; box-shadow: 0 0 0 3px var(--primary); transition: none; }
+  .guide-cursor { transition: none; }
+  .tour-callout, .tour-centered-card, .tour-choice-card { animation: none; transition: none; }
+}
+
 
 .modal-header {
   display: flex;
@@ -5844,6 +6038,61 @@ html body #root .app-root:has(.sidebar.is-collapsed:not(.sidebar-dock)) .topbar 
 
 html body #root .app-root:has(.sidebar.is-collapsed:not(.sidebar-dock)) .page-wrap {
   padding-left: 116px !important;
+}
+
+/* ============================================================
+   MOBILE SIDEBAR FIX — ≤760px
+   The desktop dock forces left:14px !important and reserves 84px
+   for the topbar/page-wrap. On phones these rules leave a floating
+   icon pill that never hides + dead 84px margin. This block wins
+   the cascade by source order + !important and resets the dock to
+   an off-canvas drawer that slides in via the .is-open class.
+   ============================================================ */
+@media (max-width: 760px) {
+  /* Hide the closed dock fully off-screen (beats the desktop left:14px !important
+     with a matching !important and a larger negative offset). */
+  html body #root .sidebar.sidebar-dock {
+    width: min(280px, calc(100vw - 32px)) !important;
+    left: -340px !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+    box-shadow: 0 8px 32px rgba(31, 25, 52, 0.28) !important;
+    transition: left 280ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+  }
+  /* Drawer slides in when the menu button is tapped. */
+  html body #root .sidebar.sidebar-dock.is-open {
+    left: 0 !important;
+    width: min(280px, calc(100vw - 32px)) !important;
+  }
+  html body #root .sidebar.sidebar-dock .dock-item {
+    justify-content: flex-start !important;
+    width: 100% !important;
+  }
+  html body #root .sidebar.sidebar-dock .dock-item .dock-item-label {
+    display: inline !important;
+  }
+  html body #root .sidebar.sidebar-dock .dock-active-highlight {
+    display: none !important;
+  }
+
+  /* Topbar + page content go full-width on phones — undo the 84px dock offset. */
+  html body #root .app-root .topbar,
+  html body #root .app-root:has(.sidebar.sidebar-dock) .topbar,
+  html body #root .app-root:has(.sidebar.is-collapsed:not(.sidebar-dock)) .topbar {
+    left: 10px !important;
+    right: 10px !important;
+    margin-left: 0 !important;
+    width: auto !important;
+  }
+  html body #root .app-root .page-wrap,
+  html body #root .app-root:has(.sidebar.sidebar-dock) .page-wrap,
+  html body #root .app-root:has(.sidebar.is-collapsed:not(.sidebar-dock)) .page-wrap {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    padding-top: 124px !important;
+  }
 }
 
 html body #root .sidebar .brand,
@@ -9625,4 +9874,256 @@ html.dark .app-root[data-page="lesson-planner"] .secondary-btn {
 html.dark .app-root[data-page="lesson-planner"] .sidebar {
   background: rgba(15, 23, 42, 0.7) !important;
 }
+
+/* =========================================================================
+   MASTER MOBILE UI & TOPBAR FIXES (Wins over all desktop/page specific rules)
+   ========================================================================= */
+
+/* 1. Prevent any horizontal overflow / right-shift on small & medium screens */
+@media (max-width: 1024px) {
+  html, body, #root, .app-root {
+    width: 100vw !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    margin: 0 !important;
+  }
+}
+
+/* 2. Full Phone UI overrides (<= 768px) */
+@media (max-width: 768px) {
+  html, body, #root, .app-root,
+  html body #root .app-root[data-page] {
+    width: 100vw !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  html body #root .app-root .main-column,
+  html body #root .app-root[data-page] .main-column {
+    width: 100% !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  /* Make closed sidebar dock completely off-screen and non-interactive on mobile
+     so NO buttons (like Dashboard) ever pop out onto the left edge of the page! */
+  html body #root .app-root .sidebar.sidebar-dock:not(.is-open),
+  html body #root .sidebar.sidebar-dock:not(.is-open),
+  .sidebar.sidebar-dock:not(.is-open),
+  html body #root .app-root[data-page] .sidebar:not(.is-open) {
+    left: -999px !important;
+    top: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+    overflow: hidden !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  html body #root .sidebar.sidebar-dock:not(.is-open) *,
+  .sidebar.sidebar-dock:not(.is-open) * {
+    pointer-events: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    display: none !important;
+  }
+
+  /* When Menu (☰) is tapped, slide drawer in smoothly */
+  html body #root .app-root .sidebar.sidebar-dock.is-open,
+  html body #root .sidebar.sidebar-dock.is-open,
+  .sidebar.sidebar-dock.is-open,
+  html body #root .app-root[data-page] .sidebar.is-open {
+    left: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    width: min(280px, calc(100vw - 32px)) !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    z-index: 100000 !important;
+    border-radius: 0 24px 24px 0 !important;
+    background: var(--card) !important;
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.35) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 16px 0 !important;
+  }
+
+  html body #root .sidebar.sidebar-dock.is-open .dock-nav,
+  .sidebar.sidebar-dock.is-open .dock-nav {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    padding: 0 12px !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  html body #root .sidebar.sidebar-dock.is-open .dock-item,
+  .sidebar.sidebar-dock.is-open .dock-item {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 46px !important;
+    margin: 0 !important;
+    padding: 0 14px !important;
+    justify-content: flex-start !important;
+    gap: 14px !important;
+    border-radius: 14px !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+    display: flex !important;
+  }
+
+  html body #root .sidebar.sidebar-dock.is-open .dock-item *,
+  .sidebar.sidebar-dock.is-open .dock-item * {
+    visibility: visible !important;
+    display: inline-flex !important;
+  }
+
+  html body #root .sidebar.sidebar-dock.is-open .dock-item .dock-item-label,
+  .sidebar.sidebar-dock.is-open .dock-item .dock-item-label {
+    display: inline-block !important;
+    font-size: 0.92rem !important;
+    font-weight: 600 !important;
+    opacity: 1 !important;
+    color: var(--foreground) !important;
+  }
+
+  html body #root .sidebar.sidebar-dock.is-open .dock-item.active .dock-item-label {
+    color: #ffffff !important;
+  }
+
+  /* 3. Topbar responsive alignment without bugs or cutoffs */
+  html body #root .app-root .topbar,
+  html body #root .app-root:has(.sidebar) .topbar,
+  html body #root .app-root[data-page] .topbar {
+    position: sticky !important;
+    top: 10px !important;
+    left: 10px !important;
+    right: 10px !important;
+    width: calc(100vw - 20px) !important;
+    max-width: calc(100vw - 20px) !important;
+    margin: 0 !important;
+    padding: 0 10px !important;
+    height: 56px !important;
+    border-radius: 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 6px !important;
+    box-sizing: border-box !important;
+    z-index: 90 !important;
+  }
+
+  html body #root .topbar .mobile-only {
+    display: inline-flex !important;
+    flex: 0 0 38px !important;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  html body #root .topbar .search-box {
+    display: flex !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    margin: 0 4px !important;
+    position: relative !important;
+  }
+
+  html body #root .topbar .search-box input {
+    width: 100% !important;
+    min-width: 0 !important;
+    font-size: 0.86rem !important;
+    padding: 0 10px 0 32px !important;
+    height: 38px !important;
+    border-radius: 12px !important;
+    box-sizing: border-box !important;
+  }
+
+  html body #root .topbar .search-box svg {
+    position: absolute !important;
+    left: 10px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 16px !important;
+    height: 16px !important;
+    pointer-events: none !important;
+  }
+
+  html body #root .topbar .search-box kbd,
+  html body #root .topbar .create-btn,
+  html body #root .topbar .profile {
+    display: none !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+  }
+
+  html body #root .topbar .icon-btn:not(.mobile-only) {
+    flex: 0 0 38px !important;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    margin: 0 1px !important;
+    padding: 0 !important;
+  }
+
+  html body #root .topbar .search-results {
+    position: absolute !important;
+    top: calc(100% + 8px) !important;
+    left: -44px !important;
+    width: min(340px, calc(100vw - 24px)) !important;
+    max-height: 380px !important;
+    overflow-y: auto !important;
+    z-index: 1000 !important;
+  }
+
+  /* 4. Full-width page content, perfectly centered and balanced */
+  html body #root .app-root .page-wrap,
+  html body #root .app-root:has(.sidebar) .page-wrap,
+  html body #root .app-root[data-page] .page-wrap {
+    padding: 80px 14px 40px !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  html body #root .app-root .page-wrap > div,
+  html body #root .app-root[data-page] .page-wrap > div,
+  .page-stack, .dashboard-grid, .planner-grid, .analytics-grid, .classes-grid {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Prevent table containers from stretching page beyond screen */
+  .table-container, .class-list, .analytics-kpi-row, .stat-grid {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
 
