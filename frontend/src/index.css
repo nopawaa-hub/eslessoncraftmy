@@ -9325,6 +9325,28 @@ html:not(.dark) body #root .app-root[data-page="dashboard"] .hero-panel p,
 }
 
 /* 15 — Quick Actions section */
+
+/* BASE reset (unscoped): a .quick-action is always a real button, never
+   collapsing to plain text. The dashboard rule below refines the look. */
+.quick-action {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--card);
+  color: var(--foreground);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.quick-action:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
 .app-root[data-page="dashboard"] .quick-actions {
   display: flex;
   flex-direction: column;

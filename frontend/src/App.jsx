@@ -1681,9 +1681,9 @@ function Dashboard({ setActivePage, setCopilotOpen, lessons = [], classes = [], 
 
       {/* SECTION 3 — QUICK ACTIONS */}
       <section className="quick-actions">
-      <div className="quick-actions-head">
-        <h3>Quick Actions</h3>
-      </div>
+        <div className="quick-actions-head">
+          <h3>Quick Actions</h3>
+        </div>
         <div className="quick-actions-grid">
           <button type="button" className="quick-action" onClick={() => setActivePage("lesson-planner")}>
             <span className="qa-icon qa-indigo"><Sparkles /></span>

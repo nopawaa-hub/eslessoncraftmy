@@ -3,7 +3,7 @@
  * ----------------------------------------------------------
  * Self-contained survey visualization (no external libraries).
  *
- * Renders diverging Likert stacked-bar charts and agreement donuts for two
+ * Renders diverging Likert stacked-bar charts and agreement donuts for three
  * Google Forms surveys whose response data is embedded below as CSV snapshots.
  * Every headline figure shown on the page (means, agreement rates, sample
  * sizes) is computed at runtime from these snapshots, so the displayed
@@ -19,9 +19,12 @@
  *     Source form:   https://docs.google.com/forms/d/1DkTKSg0r0OuVwWWPqaYFj4vOhkFKDOjt8XDpm0mRIN4
  *     Source sheet:  https://docs.google.com/spreadsheets/d/1LQly-xbpSVs9OEsl8aNiG5Ue7yq6T7EUw26Yy4LwaXo (gid=678881827)
  *
+ *   Pedagogical impact & evaluation survey (post-engagement) — 15 items, n = 54
+ *     Source sheet:  https://docs.google.com/spreadsheets/d/1O3xud7nrGyIiHlADm0p5cyS-soOxbT912vO-M5ENB10 (gid=0)
+ *
  * To re-sync: export each sheet's current responses via the Google Sheets
- * gviz CSV endpoint and replace the NEEDS_CSV / SATISFACTION_CSV template
- * strings below, then rebuild (`npm run build`).
+ * gviz CSV endpoint and replace the NEEDS_CSV / SATISFACTION_CSV /
+ * PEDAGOGICAL_CSV template strings below, then rebuild (`npm run build`).
  */
 (function () {
   "use strict";
@@ -121,6 +124,61 @@
 "25/05/2026 13:45:41","4 - Agree","4 - Agree","3 - Neutral","5 - Strongly Agree","4 - Agree","5 - Strongly Agree"
 "03/06/2026 10:42:46","3 - Neutral","5 - Strongly Agree","3 - Neutral","5 - Strongly Agree","3 - Neutral","5 - Strongly Agree"
 "04/06/2026 16:38:25","4 - Agree","5 - Strongly Agree","4 - Agree","4 - Agree","3 - Neutral","4 - Agree"`;
+  var PEDAGOGICAL_CSV = String.raw`"Timestamp","ESLessonCraftMY is easy to use.","The user interface of ESLessonCraftMY is attractive and user-friendly.","The platform generates lesson plans quickly.","The lesson plans generated are well-organized and easy to understand.","The generated lesson plans align with the Malaysian KSSR English curriculum.","The AI-generated teaching activities are relevant and practical for classroom use.","The platform provides sufficient information to support lesson preparation.","Overall, ESLessonCraftMY functions effectively as an AI-powered lesson planning platform.","ESLessonCraftMY reduces the time required to prepare lesson plans.","The platform reduces my workload in lesson planning.","Using ESLessonCraftMY improves the quality of my lesson planning.","The platform enhances my confidence in preparing English lessons.","ESLessonCraftMY increases my productivity as a teacher.","I would recommend ESLessonCraftMY to other English language teachers.","Overall, ESLessonCraftMY has a positive impact on my teaching practice.","","","","","","","","","","","","","","","","","","","","","","","","",""
+"4/16/2026 10:55:27","4 - Agree","3 - Neutral","4 - Agree","3 - Neutral","5 - Strongly Agree","5 - Strongly Agree","3 - Neutral","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","4 - Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"4/17/2026 11:11:05","5 - Strongly Agree","3 - Neutral","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","4 - Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","4 - Agree","4 - Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"4/17/2026 12:10:26","3 - Neutral","5 - Strongly Agree","4 - Agree","3 - Neutral","3 - Neutral","4 - Agree","5 - Strongly Agree","4 - Agree","4 - Agree","4 - Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"4/17/2026 13:05:52","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","4 - Agree","4 - Agree","4 - Agree","4 - Agree","4 - Agree","5 - Strongly Agree","4 - Agree","4 - Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"4/18/2026 22:15:01","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","4 - Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","4 - Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"4/21/2026 2:14:25","5 - Strongly Agree","5 - Strongly Agree","2 - Disagree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","4 - Agree","4 - Agree","4 - Agree","5 - Strongly Agree","4 - Agree","4 - Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"4/22/2026 14:47:57","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"4/23/2026 21:08:28","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","4 - Agree","4 - Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"4/24/2026 16:53:06","4 - Agree","4 - Agree","5 - Strongly Agree","4 - Agree","3 - Neutral","4 - Agree","4 - Agree","4 - Agree","3 - Neutral","2 - Disagree","4 - Agree","3 - Neutral","4 - Agree","3 - Neutral","4 - Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"4/25/2026 10:26:05","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","3 - Neutral","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"4/27/2026 5:52:19","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","4 - Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"4/29/2026 2:11:57","4 - Agree","4 - Agree","4 - Agree","4 - Agree","4 - Agree","4 - Agree","4 - Agree","5 - Strongly Agree","2 - Disagree","4 - Agree","4 - Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"4/29/2026 5:40:01","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","4 - Agree","3 - Neutral","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"4/29/2026 7:03:33","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","2 - Disagree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"5/4/2026 6:50:48","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","3 - Neutral","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","4 - Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"5/4/2026 17:51:45","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"5/8/2026 7:23:43","4 - Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","3 - Neutral","5 - Strongly Agree","3 - Neutral","4 - Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"5/8/2026 7:43:30","4 - Agree","5 - Strongly Agree","4 - Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","4 - Agree","4 - Agree","3 - Neutral","5 - Strongly Agree","4 - Agree","4 - Agree","4 - Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"5/8/2026 15:12:55","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","3 - Neutral","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","4 - Agree","4 - Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","4 - Agree","4 - Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"5/11/2026 3:52:53","5 - Strongly Agree","4 - Agree","3 - Neutral","2 - Disagree","2 - Disagree","2 - Disagree","2 - Disagree","3 - Neutral","3 - Neutral","4 - Agree","4 - Agree","3 - Neutral","3 - Neutral","3 - Neutral","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"5/13/2026 8:13:29","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","3 - Neutral","4 - Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","4 - Agree","3 - Neutral","4 - Agree","4 - Agree","4 - Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"5/14/2026 6:41:13","5 - Strongly Agree","4 - Agree","2 - Disagree","4 - Agree","3 - Neutral","4 - Agree","4 - Agree","4 - Agree","3 - Neutral","3 - Neutral","2 - Disagree","2 - Disagree","2 - Disagree","4 - Agree","4 - Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"5/15/2026 3:10:53","3 - Neutral","4 - Agree","4 - Agree","4 - Agree","2 - Disagree","4 - Agree","4 - Agree","3 - Neutral","4 - Agree","2 - Disagree","4 - Agree","3 - Neutral","3 - Neutral","5 - Strongly Agree","3 - Neutral","","","","","","","","","","","","","","","","","","","","","","","","",""
+"5/15/2026 23:35:11","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","4 - Agree","5 - Strongly Agree","4 - Agree","4 - Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"5/16/2026 17:16:50","4 - Agree","2 - Disagree","5 - Strongly Agree","3 - Neutral","2 - Disagree","5 - Strongly Agree","3 - Neutral","4 - Agree","4 - Agree","4 - Agree","5 - Strongly Agree","3 - Neutral","4 - Agree","5 - Strongly Agree","3 - Neutral","","","","","","","","","","","","","","","","","","","","","","","","",""
+"5/16/2026 21:22:46","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","3 - Neutral","3 - Neutral","4 - Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"5/18/2026 20:01:07","4 - Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","2 - Disagree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"5/20/2026 17:49:10","5 - Strongly Agree","3 - Neutral","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"5/23/2026 9:05:23","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"5/24/2026 10:04:47","5 - Strongly Agree","4 - Agree","4 - Agree","4 - Agree","4 - Agree","4 - Agree","4 - Agree","3 - Neutral","4 - Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"5/24/2026 18:59:44","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","3 - Neutral","5 - Strongly Agree","3 - Neutral","5 - Strongly Agree","4 - Agree","4 - Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"5/25/2026 14:26:07","5 - Strongly Agree","3 - Neutral","5 - Strongly Agree","4 - Agree","4 - Agree","5 - Strongly Agree","3 - Neutral","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","4 - Agree","5 - Strongly Agree","4 - Agree","4 - Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"5/26/2026 8:56:50","4 - Agree","5 - Strongly Agree","2 - Disagree","4 - Agree","4 - Agree","5 - Strongly Agree","4 - Agree","4 - Agree","4 - Agree","4 - Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"5/26/2026 11:14:31","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","4 - Agree","4 - Agree","4 - Agree","4 - Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"5/26/2026 21:24:52","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","4 - Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"5/27/2026 8:27:22","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","4 - Agree","4 - Agree","4 - Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"5/30/2026 13:03:37","5 - Strongly Agree","4 - Agree","4 - Agree","4 - Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","4 - Agree","3 - Neutral","4 - Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"5/31/2026 17:48:57","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"6/2/2026 9:24:23","4 - Agree","4 - Agree","4 - Agree","4 - Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","3 - Neutral","4 - Agree","4 - Agree","4 - Agree","5 - Strongly Agree","4 - Agree","3 - Neutral","","","","","","","","","","","","","","","","","","","","","","","","",""
+"6/3/2026 22:38:47","5 - Strongly Agree","3 - Neutral","3 - Neutral","4 - Agree","2 - Disagree","5 - Strongly Agree","4 - Agree","4 - Agree","4 - Agree","4 - Agree","2 - Disagree","2 - Disagree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"6/4/2026 8:24:19","3 - Neutral","4 - Agree","3 - Neutral","4 - Agree","4 - Agree","5 - Strongly Agree","4 - Agree","4 - Agree","4 - Agree","3 - Neutral","3 - Neutral","4 - Agree","4 - Agree","4 - Agree","4 - Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"6/4/2026 23:43:28","5 - Strongly Agree","4 - Agree","4 - Agree","4 - Agree","5 - Strongly Agree","4 - Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"6/5/2026 3:41:41","4 - Agree","4 - Agree","4 - Agree","5 - Strongly Agree","3 - Neutral","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"6/5/2026 13:26:06","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","4 - Agree","4 - Agree","4 - Agree","5 - Strongly Agree","3 - Neutral","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","4 - Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"6/5/2026 22:54:53","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","4 - Agree","3 - Neutral","4 - Agree","4 - Agree","4 - Agree","5 - Strongly Agree","3 - Neutral","3 - Neutral","4 - Agree","5 - Strongly Agree","4 - Agree","4 - Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"6/7/2026 10:00:50","4 - Agree","4 - Agree","4 - Agree","3 - Neutral","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","3 - Neutral","5 - Strongly Agree","5 - Strongly Agree","2 - Disagree","3 - Neutral","","","","","","","","","","","","","","","","","","","","","","","","",""
+"6/8/2026 1:38:09","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"6/8/2026 13:49:48","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"6/9/2026 7:58:59","5 - Strongly Agree","3 - Neutral","4 - Agree","5 - Strongly Agree","4 - Agree","3 - Neutral","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","4 - Agree","4 - Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"6/10/2026 16:34:07","4 - Agree","4 - Agree","3 - Neutral","4 - Agree","3 - Neutral","5 - Strongly Agree","4 - Agree","4 - Agree","3 - Neutral","4 - Agree","3 - Neutral","4 - Agree","3 - Neutral","2 - Disagree","2 - Disagree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"6/11/2026 4:04:46","4 - Agree","3 - Neutral","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","4 - Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"6/13/2026 3:28:39","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","4 - Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"6/13/2026 19:24:14","4 - Agree","4 - Agree","4 - Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""
+"6/14/2026 16:41:00","5 - Strongly Agree","5 - Strongly Agree","5 - Strongly Agree","3 - Neutral","5 - Strongly Agree","3 - Neutral","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","4 - Agree","5 - Strongly Agree","5 - Strongly Agree","","","","","","","","","","","","","","","","","","","","","","","","",""`;
 
   /* ---- Likert scale (diverging: rose -> amber -> emerald) -------------- */
   var SCALE = [
@@ -164,8 +222,12 @@
     var rows = parseCSV(csvText);
     var header = rows[0];
     var body = rows.slice(1);
+    // Only treat columns with a non-empty header as questions; Google Forms
+    // often pads the CSV with trailing empty columns that must be ignored.
+    var qIndex = 0;
     var questions = header.slice(1).map(function (label, qi) {
       var col = qi + 1;
+      var hasHeader = (label || "").trim() !== "";
       var counts = [0, 0, 0, 0, 0, 0]; // indexes 1..5
       var sum = 0, answered = 0;
       body.forEach(function (r) {
@@ -177,17 +239,20 @@
       var agree = counts[4] + counts[5];
       var pct = function (k) { return answered ? (counts[k] / answered) * 100 : 0; };
       var text = label.replace(/^\d+\.\s*/, "").replace(/^"|"$/g, "");
-      return {
-        num: qi + 1,
+      var question = {
+        num: hasHeader ? ++qIndex : null,
         label: label,
         text: text,
         counts: counts,
         n: n,
         mean: mean,
         agreePct: pct(4) + pct(5),
-        pct: pct
+        pct: pct,
+        hasHeader: hasHeader,
+        answered: answered
       };
-    });
+      return question;
+    }).filter(function (q) { return q.hasHeader && q.answered > 0; });
     var n = body.length;
     var overallMean = avg(questions.map(function (q) { return q.mean; }));
     var overallAgree = avg(questions.map(function (q) { return q.agreePct; }));
@@ -339,14 +404,18 @@
   function init() {
     var needs = buildSurvey(NEEDS_CSV, { name: "Needs assessment" });
     var sat = buildSurvey(SATISFACTION_CSV, { name: "User satisfaction" });
+    var ped = buildSurvey(PEDAGOGICAL_CSV, { name: "Pedagogical impact" });
 
     // Charts
     renderLikertGrid(document.getElementById("needs-charts"), needs);
     renderLikertGrid(document.getElementById("sat-charts"), sat);
+    renderLikertGrid(document.getElementById("ped-charts"), ped);
     renderDonut(document.getElementById("needs-donut"), needs, 9,
       { label: "Would use regularly", caption: "Q10 · intention to adopt a reliable RPH assistant" });
     renderDonut(document.getElementById("sat-donut"), sat, 5,
       { label: "Would recommend", caption: "Q6 · peer recommendation intent" });
+    renderDonut(document.getElementById("ped-donut"), ped, 14,
+      { label: "Positive impact", caption: "Q15 · overall positive impact on teaching practice" });
 
     // All computed headline figures (keys map to data-fill="<key>" in HTML).
     setFill("needs-n", needs.n);
@@ -369,6 +438,21 @@
     setFill("sat-q6-pct", fmt(sat.questions[5].agreePct, 0) + "%");
     setFill("sat-q6-mean", fmt(sat.questions[5].mean, 2));
 
+    setFill("ped-n", ped.n);
+    setFill("ped-overall-mean", fmt(ped.overallMean, 2));
+    setFill("ped-overall-agree", fmt(ped.overallAgree, 0) + "%");
+    setFill("ped-q1-pct", fmt(ped.questions[0].agreePct, 0) + "%");
+    setFill("ped-q1-mean", fmt(ped.questions[0].mean, 2));
+    setFill("ped-q5-pct", fmt(ped.questions[4].agreePct, 0) + "%");
+    setFill("ped-q5-mean", fmt(ped.questions[4].mean, 2));
+    setFill("ped-q6-pct", fmt(ped.questions[5].agreePct, 0) + "%");
+    setFill("ped-q9-pct", fmt(ped.questions[8].agreePct, 0) + "%");
+    setFill("ped-q10-pct", fmt(ped.questions[9].agreePct, 0) + "%");
+    setFill("ped-q14-pct", fmt(ped.questions[13].agreePct, 0) + "%");
+    setFill("ped-q14-mean", fmt(ped.questions[13].mean, 2));
+    setFill("ped-q15-pct", fmt(ped.questions[14].agreePct, 0) + "%");
+    setFill("ped-q15-mean", fmt(ped.questions[14].mean, 2));
+
     // Hero stat tile (corrected to the real computed satisfaction mean)
     fill("stat-sat-mean", fmt(sat.overallMean, 2) + " / 5.0");
     fill("stat-sat-note", "Post-use Satisfaction (n = " + sat.n + ")");
@@ -378,6 +462,7 @@
     if (window.console) {
       console.log("[research-charts] Needs: n=" + needs.n + ", M=" + fmt(needs.overallMean, 2) + ", agree=" + fmt(needs.overallAgree, 0) + "%");
       console.log("[research-charts] Satisfaction: n=" + sat.n + ", M=" + fmt(sat.overallMean, 2) + ", agree=" + fmt(sat.overallAgree, 0) + "%");
+      console.log("[research-charts] Pedagogical: n=" + ped.n + ", M=" + fmt(ped.overallMean, 2) + ", agree=" + fmt(ped.overallAgree, 0) + "%");
     }
   }
 

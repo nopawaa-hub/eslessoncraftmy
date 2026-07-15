@@ -3,7 +3,7 @@
  * ----------------------------------------------------------
  * Self-contained survey visualization (no external libraries).
  *
- * Renders diverging Likert stacked-bar charts and agreement donuts for two
+ * Renders diverging Likert stacked-bar charts and agreement donuts for three
  * Google Forms surveys whose response data is embedded below as CSV snapshots.
  * Every headline figure shown on the page (means, agreement rates, sample
  * sizes) is computed at runtime from these snapshots, so the displayed
@@ -19,9 +19,12 @@
  *     Source form:   https://docs.google.com/forms/d/1DkTKSg0r0OuVwWWPqaYFj4vOhkFKDOjt8XDpm0mRIN4
  *     Source sheet:  https://docs.google.com/spreadsheets/d/1LQly-xbpSVs9OEsl8aNiG5Ue7yq6T7EUw26Yy4LwaXo (gid=678881827)
  *
+ *   Pedagogical impact & evaluation survey (post-engagement) — 15 items, n = 54
+ *     Source sheet:  https://docs.google.com/spreadsheets/d/1O3xud7nrGyIiHlADm0p5cyS-soOxbT912vO-M5ENB10 (gid=0)
+ *
  * To re-sync: export each sheet's current responses via the Google Sheets
- * gviz CSV endpoint and replace the NEEDS_CSV / SATISFACTION_CSV template
- * strings below, then rebuild (`npm run build`).
+ * gviz CSV endpoint and replace the NEEDS_CSV / SATISFACTION_CSV /
+ * PEDAGOGICAL_CSV template strings below, then rebuild (`npm run build`).
  */
 (function () {
   "use strict";
@@ -29,6 +32,7 @@
   /* ---- Embedded CSV snapshots (captured 2026-07-15) -------------------- */
   var NEEDS_CSV = String.raw`/*__NEEDS_CSV__*/`;
   var SATISFACTION_CSV = String.raw`/*__SAT_CSV__*/`;
+  var PEDAGOGICAL_CSV = String.raw`/*__PED_CSV__*/`;
 
   /* ---- Likert scale (diverging: rose -> amber -> emerald) -------------- */
   var SCALE = [
@@ -72,8 +76,12 @@
     var rows = parseCSV(csvText);
     var header = rows[0];
     var body = rows.slice(1);
+    // Only treat columns with a non-empty header as questions; Google Forms
+    // often pads the CSV with trailing empty columns that must be ignored.
+    var qIndex = 0;
     var questions = header.slice(1).map(function (label, qi) {
       var col = qi + 1;
+      var hasHeader = (label || "").trim() !== "";
       var counts = [0, 0, 0, 0, 0, 0]; // indexes 1..5
       var sum = 0, answered = 0;
       body.forEach(function (r) {
@@ -85,17 +93,20 @@
       var agree = counts[4] + counts[5];
       var pct = function (k) { return answered ? (counts[k] / answered) * 100 : 0; };
       var text = label.replace(/^\d+\.\s*/, "").replace(/^"|"$/g, "");
-      return {
-        num: qi + 1,
+      var question = {
+        num: hasHeader ? ++qIndex : null,
         label: label,
         text: text,
         counts: counts,
         n: n,
         mean: mean,
         agreePct: pct(4) + pct(5),
-        pct: pct
+        pct: pct,
+        hasHeader: hasHeader,
+        answered: answered
       };
-    });
+      return question;
+    }).filter(function (q) { return q.hasHeader && q.answered > 0; });
     var n = body.length;
     var overallMean = avg(questions.map(function (q) { return q.mean; }));
     var overallAgree = avg(questions.map(function (q) { return q.agreePct; }));
@@ -247,14 +258,18 @@
   function init() {
     var needs = buildSurvey(NEEDS_CSV, { name: "Needs assessment" });
     var sat = buildSurvey(SATISFACTION_CSV, { name: "User satisfaction" });
+    var ped = buildSurvey(PEDAGOGICAL_CSV, { name: "Pedagogical impact" });
 
     // Charts
     renderLikertGrid(document.getElementById("needs-charts"), needs);
     renderLikertGrid(document.getElementById("sat-charts"), sat);
+    renderLikertGrid(document.getElementById("ped-charts"), ped);
     renderDonut(document.getElementById("needs-donut"), needs, 9,
       { label: "Would use regularly", caption: "Q10 · intention to adopt a reliable RPH assistant" });
     renderDonut(document.getElementById("sat-donut"), sat, 5,
       { label: "Would recommend", caption: "Q6 · peer recommendation intent" });
+    renderDonut(document.getElementById("ped-donut"), ped, 14,
+      { label: "Positive impact", caption: "Q15 · overall positive impact on teaching practice" });
 
     // All computed headline figures (keys map to data-fill="<key>" in HTML).
     setFill("needs-n", needs.n);
@@ -277,6 +292,21 @@
     setFill("sat-q6-pct", fmt(sat.questions[5].agreePct, 0) + "%");
     setFill("sat-q6-mean", fmt(sat.questions[5].mean, 2));
 
+    setFill("ped-n", ped.n);
+    setFill("ped-overall-mean", fmt(ped.overallMean, 2));
+    setFill("ped-overall-agree", fmt(ped.overallAgree, 0) + "%");
+    setFill("ped-q1-pct", fmt(ped.questions[0].agreePct, 0) + "%");
+    setFill("ped-q1-mean", fmt(ped.questions[0].mean, 2));
+    setFill("ped-q5-pct", fmt(ped.questions[4].agreePct, 0) + "%");
+    setFill("ped-q5-mean", fmt(ped.questions[4].mean, 2));
+    setFill("ped-q6-pct", fmt(ped.questions[5].agreePct, 0) + "%");
+    setFill("ped-q9-pct", fmt(ped.questions[8].agreePct, 0) + "%");
+    setFill("ped-q10-pct", fmt(ped.questions[9].agreePct, 0) + "%");
+    setFill("ped-q14-pct", fmt(ped.questions[13].agreePct, 0) + "%");
+    setFill("ped-q14-mean", fmt(ped.questions[13].mean, 2));
+    setFill("ped-q15-pct", fmt(ped.questions[14].agreePct, 0) + "%");
+    setFill("ped-q15-mean", fmt(ped.questions[14].mean, 2));
+
     // Hero stat tile (corrected to the real computed satisfaction mean)
     fill("stat-sat-mean", fmt(sat.overallMean, 2) + " / 5.0");
     fill("stat-sat-note", "Post-use Satisfaction (n = " + sat.n + ")");
@@ -286,6 +316,7 @@
     if (window.console) {
       console.log("[research-charts] Needs: n=" + needs.n + ", M=" + fmt(needs.overallMean, 2) + ", agree=" + fmt(needs.overallAgree, 0) + "%");
       console.log("[research-charts] Satisfaction: n=" + sat.n + ", M=" + fmt(sat.overallMean, 2) + ", agree=" + fmt(sat.overallAgree, 0) + "%");
+      console.log("[research-charts] Pedagogical: n=" + ped.n + ", M=" + fmt(ped.overallMean, 2) + ", agree=" + fmt(ped.overallAgree, 0) + "%");
     }
   }
 

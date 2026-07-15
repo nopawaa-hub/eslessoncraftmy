@@ -486,8 +486,9 @@
     <section class="data-section" id="pedagogical-data">
       <div class="data-header">
         <div class="data-header-left">
-          <h2>3. Pedagogical Impact &amp; Evaluation Engine Data</h2>
-          <p>Data metrics examining lesson quality, Higher-Order Thinking Skills (KBAT) inclusion, and curriculum alignment.</p>
+          <h2>3. Impact &amp; Effectiveness Survey of ESLessonCraft MY on Teaching</h2>
+          <p>A 15-item Likert questionnaire completed by teachers after hands-on use, measuring usability, curriculum alignment, workload reduction, planning-quality improvement, confidence, and perceived teaching impact.</p>
+          <span class="data-meta-chip"><span>n = <span data-fill="ped-n">54</span></span> · response window: Apr&ndash;Jun 2026 · instrument: Google Forms (5-point agreement scale)</span>
         </div>
         <div>
           <a href="https://docs.google.com/spreadsheets/d/1O3xud7nrGyIiHlADm0p5cyS-soOxbT912vO-M5ENB10/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">
@@ -501,7 +502,7 @@
         <div class="sheet-topbar">
           <div class="sheet-title">
             <i style="background:var(--primary);"></i>
-            <span>Pedagogical Evaluation Metrics Dataset (Read-Only Preview)</span>
+            <span>Pedagogical Evaluation Response Dataset (Read-Only Preview)</span>
           </div>
           <span style="font-size:12px; color:var(--muted); font-weight:600;">Google Sheets Live View</span>
         </div>
@@ -510,19 +511,43 @@
         </div>
       </div>
 
+      <!-- Computed response distributions -->
+      <div class="charts-block">
+        <div class="charts-head">
+          <h3>Response Distribution by Item</h3>
+          <p class="capture-note">Charts computed from a response snapshot captured 2026-07-15. The live spreadsheet above reflects any responses submitted since.</p>
+        </div>
+        <div class="charts-grid">
+          <div class="chart-panel" id="ped-charts" aria-label="Pedagogical impact Likert distributions"></div>
+          <div class="chart-panel--narrow">
+            <h4>Positive Impact</h4>
+            <div class="rc-donut-host" id="ped-donut" aria-label="Teaching impact donut"></div>
+            <p class="panel-note">Q15 measures overall perceived positive impact on teaching practice &mdash; the survey's highest-mean item, a strong summative endorsement of pedagogical value.</p>
+          </div>
+        </div>
+      </div>
+
       <div class="highlights-grid">
         <div class="highlight-box">
-          <h4>HOTS (KBAT) Integration</h4>
-          <p>Lessons processed through the Evaluation Engine demonstrated a <strong>64% higher occurrence of application, analysis, and creation prompts</strong> compared to baseline plans.</p>
+          <h4>Ease of Use &amp; Relevance</h4>
+          <p><strong data-fill="ped-q1-pct">94%</strong> found ESLessonCraft MY easy to use (Q1, M = <span data-fill="ped-q1-mean">4.50</span>), and <strong data-fill="ped-q6-pct">93%</strong> agreed the AI-generated activities were relevant and practical for the classroom (Q6) &mdash; among the survey's strongest items.</p>
         </div>
         <div class="highlight-box">
-          <h4>Pupil-Centred Shift</h4>
-          <p>AI feedback successfully prompted teachers to convert <strong>78% of teacher-dominated instruction segments</strong> into active pupil group discussions and roleplays.</p>
+          <h4>Time &amp; Workload Reduction</h4>
+          <p><strong data-fill="ped-q9-pct">87%</strong> agreed the platform reduces the time required to prepare lesson plans (Q9). The weaker link was workload reduction specifically (Q10, <strong data-fill="ped-q10-pct">83%</strong>), flagging an area for further iteration.</p>
         </div>
         <div class="highlight-box">
-          <h4>DSKP Standard Compliance</h4>
-          <p>100% of generated lesson plans maintained strict adherence to official Ministry of Education (MOE) Content and Learning Standard codes.</p>
+          <h4>Positive Teaching Impact</h4>
+          <p>The summit item was overall positive impact on teaching practice (Q15): <strong data-fill="ped-q15-pct">91%</strong> agreement, M = <span data-fill="ped-q15-mean">4.54</span> &mdash; the highest single-item mean in the entire study. Peer recommendation (Q14) was nearly as strong at <strong data-fill="ped-q14-pct">93%</strong>.</p>
         </div>
+      </div>
+
+      <!-- Analytical commentary -->
+      <div class="analysis-block">
+        <h4>Analysis &amp; Interpretation</h4>
+        <p>The impact &amp; effectiveness survey gathered <strong>n = <span data-fill="ped-n">54</span></strong> responses from teachers who had used ESLessonCraft MY, between 16 April and 30 June 2026, on a five-point Likert agreement scale across fifteen items. The composite mean was <strong>M = <span data-fill="ped-overall-mean">4.34</span></strong> and the overall agreement rate was <strong><span data-fill="ped-overall-agree">88%</span></strong>; no item fell below a 4.00 mean and every item recorded <strong>zero strong disagreement</strong>, indicating uniformly favourable reception with no systematically dissatisfied subgroup.</p>
+        <p>The <strong>strongest-performing items</strong> were overall positive teaching impact (Q15, <span data-fill="ped-q15-pct">91%</span>, M = <span data-fill="ped-q15-mean">4.54</span>), ease of use (Q1, <span data-fill="ped-q1-pct">94%</span>, M = <span data-fill="ped-q1-mean">4.50</span>), and peer recommendation intent (Q14, <span data-fill="ped-q14-pct">93%</span>). These three converge to suggest that teachers not only found the tool usable, but also perceived it as materially improving their teaching and were willing to advocate it to colleagues &mdash; a chain from usability through value to advocacy.</p>
+        <p>The <strong>weakest-performing item</strong> was KSSR curriculum alignment (Q5, <span data-fill="ped-q5-pct">78%</span>, M = <span data-fill="ped-q5-mean">4.20</span>), which, while still strong in absolute terms, drew the most neutral and disagree responses of any item. This is the clearest improvement signal in the dataset: teachers are broadly satisfied but want even tighter adherence to the Malaysian KSSR English curriculum standard. Workload reduction (Q10) and plan organisation (Q4) were the next-weakest, reinforcing that the platform's structural and curriculum-fit dimensions are where future development effort should concentrate. These findings are documented here for further academic research into AI-assisted lesson-planning efficacy in the Malaysian primary context.</p>
       </div>
     </section>
 
